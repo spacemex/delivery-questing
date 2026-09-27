@@ -1,0 +1,33 @@
+license = "MIT"
+#issueTrackerURL = ""
+
+[[mods]]
+modId = "example-mod"
+version = "${version}"
+displayName = "Example Mod"
+authors = "Example User"
+
+# displayURL = ""
+# logoFile = "icon.png"
+# credits = ""
+
+description = '''
+A Example Mod.
+'''
+
+#[[mixins]]
+#config = "example-mod.mixins.json"
+
+[[dependencies.example-mod]]
+modId = "neoforge"
+type = "required"
+versionRange = "[26.1.0.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.example-mod]]
+modId = "minecraft"
+type = "required"
+versionRange = "[26.1,)"
+ordering = "NONE"
+side = "BOTH"

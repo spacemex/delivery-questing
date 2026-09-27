@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "example-mod",
+  "version": "${version}",
+  "name": "Example Mod",
+  "description": "",
+  "authors": [
+    "Example User"
+  ],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "com.example.mod.data.ExampleModDataGenerator"
+    ],
+    "main": [
+      "com.example.mod.ExampleModFabric"
+    ],
+    "client": [
+      "com.example.mod.client.ExampleModFabricClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.5",
+    "minecraft": "~26.1",
+    "java": ">=25",
+    "architectury": ">=20.0.2",
+    "fabric-api": "*"
+  }
+}
