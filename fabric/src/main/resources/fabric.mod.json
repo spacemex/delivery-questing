@@ -1,23 +1,24 @@
 {
   "schemaVersion": 1,
-  "id": "example-mod",
+  "id": "delivery_questing",
   "version": "${version}",
-  "name": "Example Mod",
+  "name": "Delivery Questing - Reborn",
   "description": "",
   "authors": [
-    "Example User"
+    "Space_Mex"
   ],
+  "credits": "Henkelmax - Original Mod developer",
   "license": "MIT",
   "environment": "*",
   "entrypoints": {
     "fabric-datagen": [
-      "com.example.mod.data.ExampleModDataGenerator"
+      "com.github.spacemex.deliveryquesting.data.DeliveryQuestingDataGenerator"
     ],
     "main": [
-      "com.example.mod.ExampleModFabric"
+      "com.github.spacemex.deliveryquesting.DeliveryQuestingModFabric"
     ],
     "client": [
-      "com.example.mod.client.ExampleModFabricClient"
+      "com.github.spacemex.deliveryquesting.client.DeliveryQuestingFabricClient"
     ]
   },
   "depends": {

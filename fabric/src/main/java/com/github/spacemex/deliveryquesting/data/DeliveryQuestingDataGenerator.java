@@ -1,9 +1,9 @@
-package com.example.mod.data;
+package com.github.spacemex.deliveryquesting.data;
 
 import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 
-public class ExampleModDataGenerator implements DataGeneratorEntrypoint {
+public class DeliveryQuestingDataGenerator implements DataGeneratorEntrypoint {
 
     @Override
     public void onInitializeDataGenerator(FabricDataGenerator generator) {

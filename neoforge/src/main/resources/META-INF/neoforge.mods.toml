@@ -2,30 +2,30 @@ license = "MIT"
 #issueTrackerURL = ""
 
 [[mods]]
-modId = "example-mod"
+modId = "delivery_questing"
 version = "${version}"
-displayName = "Example Mod"
-authors = "Example User"
-
+displayName = "Delivery Questing - Reborn"
+authors = "Space_Mex"
+credits = "Henkelmax - Orginal Mod Devloper"
 # displayURL = ""
 # logoFile = "icon.png"
 # credits = ""
 
 description = '''
-A Example Mod.
+
 '''
 
 #[[mixins]]
 #config = "example-mod.mixins.json"
 
-[[dependencies.example-mod]]
+[[dependencies.delivery_questing]]
 modId = "neoforge"
 type = "required"
 versionRange = "[26.1.0.1,)"
 ordering = "NONE"
 side = "BOTH"
 
-[[dependencies.example-mod]]
+[[dependencies.delivery_questing]]
 modId = "minecraft"
 type = "required"
 versionRange = "[26.1,)"
