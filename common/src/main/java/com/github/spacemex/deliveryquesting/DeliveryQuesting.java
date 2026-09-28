@@ -2,8 +2,10 @@ package com.github.spacemex.deliveryquesting;
 
 import com.github.spacemex.deliveryquesting.config.CommonConfig;
 import com.github.spacemex.deliveryquesting.config.ConfigReader;
+import com.github.spacemex.deliveryquesting.networking.ClientConfigSyncHandler;
 import com.github.spacemex.deliveryquesting.networking.ConfigSyncHandler;
 import dev.architectury.platform.Platform;
+import dev.architectury.utils.Env;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,9 +19,13 @@ public final class DeliveryQuesting {
         Path configPath = Platform.getConfigFolder().resolve("DeliveryQuesting/config.yml");
         CommonConfig.generate(configPath);
         ConfigReader.load();
-        ConfigSyncHandler.handle();
+
+        if (Platform.getEnvironment() == Env.SERVER) {
+            ConfigSyncHandler.initialize();
+        }
     }
 
     public static void initializeClientOnly() {
+        ClientConfigSyncHandler.initialize();
     }
 }
