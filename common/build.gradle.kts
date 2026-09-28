@@ -7,11 +7,19 @@ sourceSets {
         resources.srcDir("src/main/generated")
     }
 }
-val fabricLoaderVersion = providers.gradleProperty("fabric_loader_version").get()
 
+repositories {
+    mavenCentral()
+    maven(url = uri("https://jitpack.io/"))
+}
+
+val fabricLoaderVersion = providers.gradleProperty("fabric_loader_version").get()
 val architecturyApiVersion = providers.gradleProperty("architectury_api_version").get()
 
 dependencies {
     implementation("net.fabricmc:fabric-loader:$fabricLoaderVersion")
     implementation("dev.architectury:architectury:$architecturyApiVersion")
+
+    compileOnly("org.yaml:snakeyaml:2.4")
+    compileOnly("com.github.spacemex:SimpleConfigApi:manual-5")
 }

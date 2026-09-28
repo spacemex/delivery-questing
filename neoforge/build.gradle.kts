@@ -13,6 +13,11 @@ architectury {
     neoForge()
 }
 
+repositories {
+    mavenCentral()
+    maven(url = uri("https://jitpack.io/"))
+}
+
 configurations {
     val common by configurations.creating {
         isCanBeResolved = true
@@ -52,6 +57,9 @@ dependencies {
     "shadowBundle"(project(path = ":common", configuration = "transformProductionNeoForge")) {
         isTransitive = false
     }
+
+    "bundledLibraries"("org.yaml:snakeyaml:2.4")
+    "bundledLibraries"("com.github.spacemex:SimpleConfigApi:manual-5")
 }
 
 tasks.processResources {
@@ -71,6 +79,9 @@ tasks.shadowJar {
         project.configurations.getByName("shadowBundle"),
         project.configurations.getByName("bundledLibraries")
     )
+
+    relocate("org.yaml.snakeyaml", "com.github.spacemex.deliveryquesting.libs.snakeyaml")
+    relocate("com.github.spacemex.SimpleConfigApi", "com.github.spacemex.deliveryquesting.libs.simpleconfigapi")
 
     archiveClassifier.set("")
 }

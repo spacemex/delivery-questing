@@ -8,6 +8,11 @@ plugins {
     id("com.gradleup.shadow") version "9.3.2" apply false
 }
 
+repositories {
+    mavenCentral()
+    maven(url = uri("https://jitpack.io/"))
+}
+
 val minecraftVersion = providers.gradleProperty("minecraft_version").get()
 val modName = providers.gradleProperty("archives_name").get()
 val mavenGroup = providers.gradleProperty("maven_group").get()
