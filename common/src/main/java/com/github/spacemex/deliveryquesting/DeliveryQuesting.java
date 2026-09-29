@@ -4,6 +4,7 @@ import com.github.spacemex.deliveryquesting.config.CommonConfig;
 import com.github.spacemex.deliveryquesting.config.ConfigReader;
 import com.github.spacemex.deliveryquesting.networking.ClientConfigSyncHandler;
 import com.github.spacemex.deliveryquesting.networking.ConfigSyncHandler;
+import com.github.spacemex.deliveryquesting.task.TaskManager;
 import dev.architectury.platform.Platform;
 import dev.architectury.utils.Env;
 import org.slf4j.Logger;
@@ -23,6 +24,8 @@ public final class DeliveryQuesting {
         if (Platform.getEnvironment() == Env.SERVER) {
             ConfigSyncHandler.initialize();
         }
+
+        TaskManager.initialize();
     }
 
     public static void initializeClientOnly() {
