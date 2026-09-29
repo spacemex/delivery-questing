@@ -12,6 +12,19 @@ architectury {
     fabric()
 }
 
+loom {
+    runs {
+        named("client") {
+            programArguments.addAll(
+                "--username",
+                "DevPlayer",
+                "--uuid",
+                "00000000-0000-0000-0000-000000000001"
+            )
+        }
+    }
+}
+
 fabricApi {
     configureDataGeneration() {
         client = true
