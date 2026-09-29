@@ -1,0 +1,205 @@
+package com.github.spacemex.deliveryquesting.progression;
+
+import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
+
+import java.util.*;
+
+public final class DeliveryQuestingSavedData extends SavedData {
+    public static final Codec<DeliveryQuestingSavedData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            DeliveryGroup.CODEC.listOf().optionalFieldOf("groups", List.of()).forGetter(data -> List.copyOf(data.groups.values()))
+    ).apply(instance, DeliveryQuestingSavedData::new));
+    private static final SavedDataType<DeliveryQuestingSavedData> TYPE = new SavedDataType<>(
+            Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "progression"),
+            DeliveryQuestingSavedData::new,
+            CODEC,
+            DataFixTypes.SAVED_DATA_COMMAND_STORAGE
+    );
+    private final Map<UUID, DeliveryGroup> groups = new LinkedHashMap<>();
+
+    public DeliveryQuestingSavedData() {
+    }
+
+    private DeliveryQuestingSavedData(List<DeliveryGroup> loadedGroups) {
+        Objects.requireNonNull(loadedGroups, "loadedGroups");
+
+        for (DeliveryGroup group : loadedGroups) {
+            DeliveryGroup existing = groups.putIfAbsent(group.id(), group);
+
+            if (existing != null) {
+                throw new IllegalArgumentException("Duplicate Delivery Questing group ID: " + group.id());
+            }
+        }
+        validateMembership();
+    }
+
+    public static DeliveryQuestingSavedData get(MinecraftServer server) {
+        Objects.requireNonNull(server, "server");
+        return server.getDataStorage().computeIfAbsent(TYPE);
+    }
+
+    public Collection<DeliveryGroup> groups() {
+        return Collections.unmodifiableCollection(groups.values());
+    }
+
+    public int groupCount() {
+        return groups.size();
+    }
+
+    public Optional<DeliveryGroup> getGroup(UUID groupId) {
+        return Optional.ofNullable(groups.get(groupId));
+    }
+
+    public Optional<DeliveryGroup> getGroupForPlayer(UUID playerId) {
+        return groups.values().stream().filter(group -> group.hasMember(playerId)).findFirst();
+    }
+
+    public Optional<DeliveryGroup> getGroupByName(String name) {
+        if (name == null) {
+            return Optional.empty();
+        }
+
+        return groups.values().stream().filter(group -> group.name().equalsIgnoreCase(name)).findFirst();
+    }
+
+    public DeliveryGroup createGroup(String name, UUID owner) {
+        Objects.requireNonNull(name, "name");
+        Objects.requireNonNull(owner, "owner");
+
+        String trimmedName = name.trim();
+
+        if (trimmedName.isEmpty()) {
+            throw new IllegalArgumentException("Group name cannot be blank");
+        }
+
+        if (getGroupByName(trimmedName).isPresent()) {
+            throw new IllegalArgumentException("A group named '" + trimmedName + "' already exists");
+        }
+
+        if (getGroupForPlayer(owner).isPresent()) {
+            throw new IllegalStateException("Player " + owner + " is already in a group");
+        }
+
+        UUID id = UUID.randomUUID();
+
+        DeliveryGroup group = DeliveryGroup.create(id, trimmedName, owner);
+        groups.put(id, group);
+
+        setDirty();
+        return group;
+    }
+
+    public boolean deleteGroup(UUID groupId) {
+        DeliveryGroup removed = groups.remove(groupId);
+
+        if (removed == null) {
+            return false;
+        }
+
+        setDirty();
+        return true;
+    }
+
+    public boolean addMember(UUID groupId, UUID playerId) {
+        Objects.requireNonNull(playerId, "playerId");
+
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        if (getGroupForPlayer(playerId).isPresent()) {
+            return false;
+        }
+
+        if (!group.addMember(playerId)) {
+            return false;
+        }
+
+        setDirty();
+        return true;
+    }
+
+    public boolean removeMember(UUID groupId, UUID playerId) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        if (!group.removeMember(playerId)) {
+            return false;
+        }
+
+        setDirty();
+        return true;
+    }
+
+    public boolean addExperience(UUID groupId, long amount) {
+        if (amount <= 0L) {
+            return false;
+        }
+
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        group.addExperience(amount);
+
+        setDirty();
+        return true;
+    }
+
+    public boolean addBalance(UUID groupId, long amount) {
+        if (amount <= 0L) {
+            return false;
+        }
+
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        group.addBalance(amount);
+
+        setDirty();
+        return true;
+    }
+
+    public boolean spendBalance(UUID groupId, long amount) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        if (!group.spendBalance(amount)) {
+            return false;
+        }
+
+        setDirty();
+        return true;
+    }
+
+    private void validateMembership() {
+        Set<UUID> seenPlayers = new HashSet<>();
+
+        for (DeliveryGroup group : groups.values()) {
+            for (UUID member : group.members()) {
+                if (!seenPlayers.add(member)) {
+                    throw new IllegalStateException("Player " + member + " belongs to multiple Delivery Questing groups");
+                }
+            }
+        }
+    }
+}

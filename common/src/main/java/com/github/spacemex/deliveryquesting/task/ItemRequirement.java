@@ -2,6 +2,7 @@ package com.github.spacemex.deliveryquesting.task;
 
 import net.minecraft.resources.Identifier;
 
+import java.util.Locale;
 import java.util.Objects;
 
 public record ItemRequirement(TargetType targetType, Identifier target, long amount) implements TaskRequirement {
@@ -25,6 +26,15 @@ public record ItemRequirement(TargetType targetType, Identifier target, long amo
 
     public boolean isItem() {
         return targetType == TargetType.ITEM;
+    }
+
+    public boolean isTag() {
+        return targetType == TargetType.TAG;
+    }
+
+    @Override
+    public String progressKey() {
+        return "item/" + targetType.name().toLowerCase(Locale.ROOT) + "/" + target;
     }
 
     public enum TargetType {
