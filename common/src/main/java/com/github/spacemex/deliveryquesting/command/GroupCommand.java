@@ -47,7 +47,6 @@ public final class GroupCommand {
                                 .then(Commands.literal("create").requires(CommandSourceStack::isPlayer)
                                         .then(Commands.argument("name", StringArgumentType.greedyString()).executes(GroupCommand::createGroup)))
                                 .then(Commands.literal("info").requires(CommandSourceStack::isPlayer).executes(GroupCommand::showGroupInfo)))
-
                         .then(Commands.literal("debug").then(Commands.literal("addxp").requires(GroupCommand::canUseDebugCommands)
                                         .then(Commands.argument("amount", LongArgumentType.longArg(1L)).executes(GroupCommand::addExperience)))
                                 .then(Commands.literal("addmoney").requires(GroupCommand::canUseDebugCommands)
@@ -141,7 +140,6 @@ public final class GroupCommand {
         }
 
         source.sendSuccess(() -> Component.literal("Added " + amount + " money to '" + group.name() + "'. New balance: " + group.balance()), false);
-
         return Command.SINGLE_SUCCESS;
     }
 

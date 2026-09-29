@@ -1,6 +1,7 @@
 package com.github.spacemex.deliveryquesting;
 
 import com.github.spacemex.deliveryquesting.command.GroupCommand;
+import com.github.spacemex.deliveryquesting.command.TaskCommand;
 import com.github.spacemex.deliveryquesting.config.CommonConfig;
 import com.github.spacemex.deliveryquesting.config.ConfigReader;
 import com.github.spacemex.deliveryquesting.networking.ClientConfigSyncHandler;
@@ -29,7 +30,9 @@ public final class DeliveryQuesting {
 
         TaskManager.initialize();
         ProgressionManager.initialize();
+
         GroupCommand.initialize();
+        TaskCommand.initialize();
     }
 
     public static void initializeClientOnly() {

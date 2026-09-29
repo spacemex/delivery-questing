@@ -97,6 +97,18 @@ public final class DeliveryGroup {
         return balance;
     }
 
+    public double level() {
+        return levelFromExperience(experience);
+    }
+
+    public int wholeLevel() {
+        return (int) Math.floor(level());
+    }
+
+    public static double levelFromExperience(long experience) {
+        return Math.sqrt(0.2D * experience + 0.25D) - 0.5D;
+    }
+
     public boolean hasMember(UUID playerId) {
         return members.contains(playerId);
     }

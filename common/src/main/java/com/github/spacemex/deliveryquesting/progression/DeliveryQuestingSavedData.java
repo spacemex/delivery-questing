@@ -1,6 +1,8 @@
 package com.github.spacemex.deliveryquesting.progression;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.task.TaskDefinition;
+import com.github.spacemex.deliveryquesting.task.TaskRequirement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.resources.Identifier;
@@ -186,6 +188,74 @@ public final class DeliveryQuestingSavedData extends SavedData {
         if (!group.spendBalance(amount)) {
             return false;
         }
+
+        setDirty();
+        return true;
+    }
+
+    public boolean acceptTask(UUID groupId, Identifier taskId) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        if (!group.addActiveTask(taskId)) {
+            return false;
+        }
+
+        setDirty();
+        return true;
+    }
+
+    public long addTaskProgress(UUID groupId, Identifier taskId, TaskRequirement requirement, long amount) {
+        if (amount <= 0L) {
+            return 0L;
+        }
+
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return 0L;
+        }
+
+        Optional<TaskProgress> optionalProgress = group.getActiveTask(taskId);
+
+        if (optionalProgress.isEmpty()) {
+            return 0L;
+        }
+
+        long accepted = optionalProgress.get().addProgress(requirement, amount);
+
+        if (accepted > 0L) {
+            setDirty();
+        }
+        return accepted;
+    }
+
+    public boolean completeTask(UUID groupId, TaskDefinition task) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        Optional<TaskProgress> optionalProgress = group.getActiveTask(task.id());
+
+        if (optionalProgress.isEmpty()) {
+            return false;
+        }
+
+        if (!optionalProgress.get().isComplete(task)) {
+            return false;
+        }
+
+        if (!group.markTaskCompleted(task.id())) {
+            return false;
+        }
+
+        group.addExperience(task.rewards().experience());
+        group.addBalance(task.rewards().money());
 
         setDirty();
         return true;
