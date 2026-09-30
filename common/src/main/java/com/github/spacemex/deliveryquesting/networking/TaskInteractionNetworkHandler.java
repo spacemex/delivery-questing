@@ -50,39 +50,11 @@ public final class TaskInteractionNetworkHandler {
 
     private static void handleAcceptTask(ServerPlayer serverPlayer, AcceptTaskPayload payload) {
         if (!(serverPlayer.containerMenu instanceof BulletinBoardMenu menu)) {
+
             return;
         }
 
-        if (!menu.hasActiveTask(payload.taskId())) {
-            return;
-        }
-
-        Optional<TaskDefinition> optionalTask = TaskManager.getTask(payload.taskId());
-
-        if (optionalTask.isEmpty()) {
-            serverPlayer.sendSystemMessage(Component.literal("That task no longer exists"));
-            serverPlayer.closeContainer();
-            return;
-        }
-
-        DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(serverPlayer.level().getServer());
-
-        Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(serverPlayer.getUUID());
-
-        if (optionalGroup.isEmpty()) {
-            serverPlayer.sendSystemMessage(Component.literal("You are not currently in a delivery group."));
-            serverPlayer.closeContainer();
-            return;
-        }
-
-        TaskRuntimeManager.ActionResult result = TaskRuntimeManager.acceptTask(data, optionalGroup.get(), optionalTask.get());
-
-        serverPlayer.sendSystemMessage(Component.literal(result.message()));
-        serverPlayer.closeContainer(); //TODO Add Menu Refreshing
-    }
-
-    private static void handleSubmitTask(ServerPlayer serverPlayer, SubmitTaskPayload payload) {
-        if (!(serverPlayer.containerMenu instanceof BulletinBoardMenu menu)) {
+        if (!menu.hasAvailableTask(payload.taskId())) {
             return;
         }
 
@@ -95,7 +67,38 @@ public final class TaskInteractionNetworkHandler {
         }
 
         DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(serverPlayer.level().getServer());
+        Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(serverPlayer.getUUID());
 
+        if (optionalGroup.isEmpty()) {
+            serverPlayer.sendSystemMessage(Component.literal("You are not currently in a delivery group."));
+            serverPlayer.closeContainer();
+            return;
+        }
+
+        TaskRuntimeManager.ActionResult result = TaskRuntimeManager.acceptTask(data, optionalGroup.get(), optionalTask.get());
+
+        serverPlayer.sendSystemMessage(Component.literal(result.message()));
+        serverPlayer.closeContainer(); //TODO: Add Refresh Menu
+    }
+
+    private static void handleSubmitTask(ServerPlayer serverPlayer, SubmitTaskPayload payload) {
+        if (!(serverPlayer.containerMenu instanceof BulletinBoardMenu menu)) {
+            return;
+        }
+
+        if (!menu.hasActiveTask(payload.taskId())) {
+            return;
+        }
+
+        Optional<TaskDefinition> optionalTask = TaskManager.getTask(payload.taskId());
+
+        if (optionalTask.isEmpty()) {
+            serverPlayer.sendSystemMessage(Component.literal("That task no longer exists."));
+            serverPlayer.closeContainer();
+            return;
+        }
+
+        DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(serverPlayer.level().getServer());
         Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(serverPlayer.getUUID());
 
         if (optionalGroup.isEmpty()) {
@@ -110,8 +113,7 @@ public final class TaskInteractionNetworkHandler {
         serverPlayer.sendSystemMessage(Component.literal(result.message()));
 
         if (result.completed()) {
-            serverPlayer.sendSystemMessage(Component.literal("Rewards: +" + task.rewards().experience() + " XP, +"
-                    + task.rewards().money() + " money"));
+            serverPlayer.sendSystemMessage(Component.literal("Rewards: +" + task.rewards().experience() + " XP, +" + task.rewards().money() + " money"));
         }
 
         serverPlayer.closeContainer(); //TODO: Add Menu Refresh
