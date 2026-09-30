@@ -66,21 +66,36 @@ public final class MailboxMenu extends AbstractContainerMenu {
         Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(player.getUUID());
 
         if (optionalGroup.isEmpty()) {
-            player.sendSystemMessage(Component.literal("You must be in a delivery group to use a mailbox."));
+            player.sendSystemMessage(
+                    Component.literal(
+                            "You must be in a delivery group to use a mailbox."
+                    )
+            );
+
             return;
         }
 
         DeliveryGroup group = optionalGroup.get();
+        Optional<UUID> boundGroup = mailbox.groupId();
 
-        if (!mailbox.bindToGroup(group.id())) {
-            player.sendSystemMessage(Component.literal("This mailbox belongs to another delivery group."));
+        if (boundGroup.isEmpty()) {
+            mailbox.bindToGroup(group.id());
+        } else if (!boundGroup.get().equals(group.id())) {
+            if (data.getGroup(boundGroup.get()).isPresent()) {
+                player.sendSystemMessage(Component.literal("This mailbox belongs to another delivery group."));
+                return;
+            }
 
-            return;
+            mailbox.rebindToGroup(group.id());
+            player.sendSystemMessage(Component.literal("Reclaimed abandoned mailbox for '" + group.name() + "'."));
         }
 
-        List<MailboxParcelEntry> entries = group.mailboxInbox().stream().map(MailboxParcelEntry::from).toList();
+        List<MailboxParcelEntry> entries =
+                group.mailboxInbox().stream().map(MailboxParcelEntry::from).toList();
+
         SimpleMenuProvider provider = new SimpleMenuProvider((containerId, inventory, menuPlayer) ->
-                new MailboxMenu(containerId, inventory, pos, entries, mailbox), Component.translatable("screen.delivery_questing.mailbox"));
+                new MailboxMenu(containerId, inventory, pos, entries, mailbox),
+                Component.translatable("screen.delivery_questing.mailbox"));
 
         MenuRegistry.openExtendedMenu(player, provider, buffer -> {
             buffer.writeBlockPos(pos);

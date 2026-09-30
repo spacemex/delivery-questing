@@ -93,6 +93,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         DeliveryGroup group = DeliveryGroup.create(id, trimmedName, owner);
 
         groups.put(id, group);
+        clearInvitationsForPlayer(owner);
 
         setDirty();
         return group;
@@ -125,6 +126,8 @@ public final class DeliveryQuestingSavedData extends SavedData {
         if (!group.addMember(playerId)) {
             return false;
         }
+
+        clearInvitationsForPlayer(playerId);
 
         setDirty();
         return true;
@@ -284,6 +287,89 @@ public final class DeliveryQuestingSavedData extends SavedData {
         return parcel;
     }
 
+    public List<DeliveryGroup> getInvitationsForPlayer(UUID playerId) {
+        return groups.values().stream().filter(group -> group.hasInvitation(playerId)).toList();
+    }
+
+    public boolean invitePlayer(UUID groupId, UUID playerId) {
+        Objects.requireNonNull(playerId, "playerId");
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        if (getGroupForPlayer(playerId).isPresent()) {
+            return false;
+        }
+
+        if (!group.invite(playerId)) {
+            return false;
+        }
+
+        setDirty();
+        return true;
+    }
+
+    public boolean acceptInvitation(UUID groupId, UUID playerId) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        if (!group.hasInvitation(playerId)) {
+            return false;
+        }
+
+        if (getGroupForPlayer(playerId).isPresent()) {
+            return false;
+        }
+
+        if (!group.addMember(playerId)) {
+            return false;
+        }
+
+        clearInvitationsForPlayer(playerId);
+
+        setDirty();
+        return true;
+    }
+
+    public boolean declineInvitation(UUID groupId, UUID playerId) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        if (!group.declineInvitation(playerId)) {
+            return false;
+        }
+
+        setDirty();
+        return true;
+    }
+
+    public boolean transferOwnership(UUID groupId, UUID currentOwner, UUID newOwner) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        if (!group.isOwner(currentOwner)) {
+            return false;
+        }
+
+        if (!group.transferOwnership(newOwner)) {
+            return false;
+        }
+
+        setDirty();
+        return true;
+    }
+
     private void validateMembership() {
         Set<UUID> seenPlayers = new HashSet<>();
 
@@ -293,6 +379,12 @@ public final class DeliveryQuestingSavedData extends SavedData {
                     throw new IllegalStateException("Player " + member + " belongs to multiple Delivery Questing groups");
                 }
             }
+        }
+    }
+
+    private void clearInvitationsForPlayer(UUID playerId) {
+        for (DeliveryGroup group : groups.values()) {
+            group.declineInvitation(playerId);
         }
     }
 }

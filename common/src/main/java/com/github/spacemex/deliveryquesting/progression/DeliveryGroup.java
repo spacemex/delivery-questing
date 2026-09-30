@@ -9,38 +9,51 @@ import java.util.*;
 
 public final class DeliveryGroup {
     public static final int MAILBOX_INBOX_SIZE = 4;
-
     public static final Codec<DeliveryGroup> CODEC =
             RecordCodecBuilder.create(instance -> instance.group(
-                    UUIDUtil.CODEC.fieldOf("id").forGetter(DeliveryGroup::id),
-                    Codec.STRING.fieldOf("name").forGetter(DeliveryGroup::name),
-                    UUIDUtil.CODEC.optionalFieldOf("owner").forGetter(group -> Optional.of(group.owner)),
-                    UUIDUtil.CODEC.listOf().optionalFieldOf("members", List.of()).forGetter(group -> List.copyOf(group.members)),
-                    TaskProgress.CODEC.listOf().optionalFieldOf("active_tasks", List.of())
-                            .forGetter(group -> List.copyOf(group.activeTasks.values())),
-                    Identifier.CODEC.listOf().optionalFieldOf("completed_tasks", List.of())
-                            .forGetter(group -> List.copyOf(group.completedTasks)),
-                    Codec.LONG.optionalFieldOf("experience", 0L).forGetter(DeliveryGroup::experience),
-                    Codec.LONG.optionalFieldOf("balance", 0L).forGetter(DeliveryGroup::balance),
-                    MailboxParcel.CODEC.listOf().optionalFieldOf("mailbox_inbox", List.of())
-                            .forGetter(group -> List.copyOf(group.mailboxInbox)),
-                    MailboxParcel.CODEC.listOf().optionalFieldOf("pending_mailbox", List.of())
-                            .forGetter(group -> List.copyOf(group.pendingMailbox))
-            ).apply(instance, DeliveryGroup::new));
+                            UUIDUtil.CODEC.fieldOf("id")
+                                    .forGetter(DeliveryGroup::id),
+                            Codec.STRING.fieldOf("name")
+                                    .forGetter(DeliveryGroup::name),
+                            UUIDUtil.CODEC.optionalFieldOf("owner")
+                                    .forGetter(group -> Optional.of(group.owner)),
+                            UUIDUtil.CODEC.listOf()
+                                    .optionalFieldOf("members", List.of())
+                                    .forGetter(group -> List.copyOf(group.members)),
+                            UUIDUtil.CODEC.listOf()
+                                    .optionalFieldOf("pending_invitations", List.of())
+                                    .forGetter(group -> List.copyOf(group.pendingInvitations)),
+                            TaskProgress.CODEC.listOf()
+                                    .optionalFieldOf("active_tasks", List.of())
+                                    .forGetter(group -> List.copyOf(group.activeTasks.values())),
+                            Identifier.CODEC.listOf()
+                                    .optionalFieldOf("completed_tasks", List.of())
+                                    .forGetter(group -> List.copyOf(group.completedTasks)),
+                            Codec.LONG.optionalFieldOf("experience", 0L)
+                                    .forGetter(DeliveryGroup::experience),
+                            Codec.LONG.optionalFieldOf("balance", 0L)
+                                    .forGetter(DeliveryGroup::balance),
+                            MailboxParcel.CODEC.listOf()
+                                    .optionalFieldOf("mailbox_inbox", List.of())
+                                    .forGetter(group -> List.copyOf(group.mailboxInbox)),
+                            MailboxParcel.CODEC.listOf().optionalFieldOf("pending_mailbox", List.of())
+                                    .forGetter(group -> List.copyOf(group.pendingMailbox)))
+                    .apply(instance, DeliveryGroup::new));
     private final UUID id;
-    private final UUID owner;
+    private UUID owner;
     private final String name;
     private final Set<UUID> members;
     private final Map<Identifier, TaskProgress> activeTasks;
     private final Set<Identifier> completedTasks;
     private final List<MailboxParcel> mailboxInbox;
     private final List<MailboxParcel> pendingMailbox;
+    private final Set<UUID> pendingInvitations;
     private long experience;
     private long balance;
 
-    private DeliveryGroup(UUID id, String name, Optional<UUID> owner, List<UUID> members, List<TaskProgress> activeTasks,
-                          List<Identifier> completedTasks, long experience, long balance, List<MailboxParcel> mailboxInbox,
-                          List<MailboxParcel> pendingMailbox) {
+    private DeliveryGroup(UUID id, String name, Optional<UUID> owner, List<UUID> members, List<UUID> pendingInvitations,
+                          List<TaskProgress> activeTasks, List<Identifier> completedTasks, long experience, long balance,
+                          List<MailboxParcel> mailboxInbox, List<MailboxParcel> pendingMailbox) {
         this.id = Objects.requireNonNull(id, "id");
         this.name = Objects.requireNonNull(name, "name");
 
@@ -66,6 +79,14 @@ public final class DeliveryGroup {
 
         if (!this.members.contains(this.owner)) {
             throw new IllegalArgumentException("Group owner must also be a member of the group");
+        }
+
+        this.pendingInvitations = new LinkedHashSet<>(Objects.requireNonNull(pendingInvitations, "pendingInvitations"));
+
+        for (UUID member : this.members) {
+            if (this.pendingInvitations.contains(member)) {
+                throw new IllegalArgumentException("Group member " + member + " cannot also have a pending invitation");
+            }
         }
 
         this.activeTasks = new LinkedHashMap<>();
@@ -103,7 +124,7 @@ public final class DeliveryGroup {
     }
 
     static DeliveryGroup create(UUID id, String name, UUID owner) {
-        return new DeliveryGroup(id, name, Optional.of(owner), List.of(owner), List.of(), List.of(), 0L, 0L, List.of(), List.of());
+        return new DeliveryGroup(id, name, Optional.of(owner), List.of(owner), List.of(), List.of(), List.of(), 0L, 0L, List.of(), List.of());
     }
 
     public UUID owner() {
@@ -183,7 +204,12 @@ public final class DeliveryGroup {
     }
 
     boolean addMember(UUID playerId) {
-        return members.add(playerId);
+        if (!members.add(playerId)) {
+            return false;
+        }
+
+        pendingInvitations.remove(playerId);
+        return true;
     }
 
     boolean removeMember(UUID playerId) {
@@ -225,6 +251,31 @@ public final class DeliveryGroup {
         }
 
         activeTasks.put(taskId, new TaskProgress(taskId));
+        return true;
+    }
+
+    boolean invite(UUID playerId) {
+        if (members.contains(playerId)) {
+            return false;
+        }
+
+        return pendingInvitations.add(playerId);
+    }
+
+    boolean declineInvitation(UUID playerId) {
+        return pendingInvitations.remove(playerId);
+    }
+
+    boolean transferOwnership(UUID newOwner) {
+        if (!members.contains(newOwner)) {
+            return false;
+        }
+
+        if (owner.equals(newOwner)) {
+            return false;
+        }
+
+        owner = newOwner;
         return true;
     }
 
@@ -273,6 +324,14 @@ public final class DeliveryGroup {
         while (mailboxInbox.size() < MAILBOX_INBOX_SIZE && !pendingMailbox.isEmpty()) {
             mailboxInbox.add(pendingMailbox.removeFirst());
         }
+    }
+
+    public Set<UUID> pendingInvitations() {
+        return Collections.unmodifiableSet(pendingInvitations);
+    }
+
+    public boolean hasInvitation(UUID playerId) {
+        return pendingInvitations.contains(playerId);
     }
 
     private void validateMailboxParcels() {

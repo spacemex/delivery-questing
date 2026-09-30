@@ -20,10 +20,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public final class MailboxBlockEntity extends BlockEntity implements Container {
     public static final int OUTBOX_SIZE = 4;
@@ -63,13 +60,8 @@ public final class MailboxBlockEntity extends BlockEntity implements Container {
             return;
         }
 
-        long debugTime = Math.floorMod(level.getOverworldClockTime(), 24000L);
-
-        if (debugTime != 20L) {
-            DeliveryQuesting.LOGGER.warn("Time: {}, Skipping Drain outbox", debugTime);
+        if (Math.floorMod(level.getOverworldClockTime(), 24000L) != 20L) {
             return;
-        } else {
-            DeliveryQuesting.LOGGER.warn("Time: {}, Draining outbox", debugTime);
         }
 
         if (level.getServer() == null) {
@@ -174,6 +166,11 @@ public final class MailboxBlockEntity extends BlockEntity implements Container {
         for (int i = 0; i < items.size(); i++) {
             items.set(i, ItemStack.EMPTY);
         }
+        setChanged();
+    }
+
+    public void rebindToGroup(UUID groupId) {
+        this.groupId = Objects.requireNonNull(groupId, "groupId");
         setChanged();
     }
 }
