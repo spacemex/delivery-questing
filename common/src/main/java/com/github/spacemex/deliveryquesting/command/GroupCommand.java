@@ -229,13 +229,14 @@ public final class GroupCommand {
         source.sendSuccess(() -> Component.literal("Owner: " + group.owner()), false);
         source.sendSuccess(() -> Component.literal("Members: " + group.members().size()), false);
         source.sendSuccess(() -> Component.literal("Pending Invitations: " + group.pendingInvitations().size()), false);
-        source.sendSuccess(() -> Component.literal("Pending Invitations: " + group.pendingInvitations().size()), false);
         source.sendSuccess(() -> Component.literal("Experience: " + group.experience()), false);
+        source.sendSuccess(() -> Component.literal("Level: " + group.wholeLevel() + " (" + group.level() + ")"), false);
         source.sendSuccess(() -> Component.literal("Balance: " + group.balance()), false);
         source.sendSuccess(() -> Component.literal("Active Tasks: " + group.activeTasks().size()), false);
         source.sendSuccess(() -> Component.literal("Completed Tasks: " + group.completedTasks().size()), false);
         source.sendSuccess(() -> Component.literal("Mailbox Inbox: " + group.mailboxInbox().size() + " / " + DeliveryGroup.MAILBOX_INBOX_SIZE), false);
         source.sendSuccess(() -> Component.literal("Pending Mail: " + group.pendingMailbox().size()), false);
+        source.sendSuccess(() -> Component.literal("Computer Unlocked: " + group.computerUnlocked()), false);
 
         return Command.SINGLE_SUCCESS;
     }

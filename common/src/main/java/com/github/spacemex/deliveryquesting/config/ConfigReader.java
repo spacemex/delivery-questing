@@ -76,7 +76,7 @@ public final class ConfigReader {
 
     public static int getMinComputerLevel() {
         int value = getConfig().getInt("minComputerLevel", DEFAULT_MIN_COMPUTER_LEVEL);
-        return Math.min(0, value);
+        return Math.max(0, value);
     }
 
     private static void ensureLoaded() {

@@ -33,6 +33,8 @@ public final class DeliveryGroup {
                                     .forGetter(DeliveryGroup::experience),
                             Codec.LONG.optionalFieldOf("balance", 0L)
                                     .forGetter(DeliveryGroup::balance),
+                            Codec.BOOL.optionalFieldOf("computer_unlocked", false)
+                                    .forGetter(DeliveryGroup::computerUnlocked),
                             MailboxParcel.CODEC.listOf()
                                     .optionalFieldOf("mailbox_inbox", List.of())
                                     .forGetter(group -> List.copyOf(group.mailboxInbox)),
@@ -50,10 +52,11 @@ public final class DeliveryGroup {
     private final Set<UUID> pendingInvitations;
     private long experience;
     private long balance;
+    private boolean computerUnlocked;
 
     private DeliveryGroup(UUID id, String name, Optional<UUID> owner, List<UUID> members, List<UUID> pendingInvitations,
                           List<TaskProgress> activeTasks, List<Identifier> completedTasks, long experience, long balance,
-                          List<MailboxParcel> mailboxInbox, List<MailboxParcel> pendingMailbox) {
+                          boolean computerUnlocked, List<MailboxParcel> mailboxInbox, List<MailboxParcel> pendingMailbox) {
         this.id = Objects.requireNonNull(id, "id");
         this.name = Objects.requireNonNull(name, "name");
 
@@ -121,10 +124,15 @@ public final class DeliveryGroup {
 
         this.experience = experience;
         this.balance = balance;
+        this.computerUnlocked = computerUnlocked;
     }
 
     static DeliveryGroup create(UUID id, String name, UUID owner) {
-        return new DeliveryGroup(id, name, Optional.of(owner), List.of(owner), List.of(), List.of(), List.of(), 0L, 0L, List.of(), List.of());
+        return new DeliveryGroup(id, name, Optional.of(owner), List.of(owner), List.of(), List.of(), List.of(), 0L, 0L, false, List.of(), List.of());
+    }
+
+    public boolean computerUnlocked() {
+        return computerUnlocked;
     }
 
     public UUID owner() {
@@ -318,6 +326,14 @@ public final class DeliveryGroup {
         }
 
         return Optional.empty();
+    }
+
+    boolean unlockComputer() {
+        if (computerUnlocked) {
+            return false;
+        }
+        computerUnlocked = true;
+        return true;
     }
 
     private void promotePendingMailbox() {

@@ -92,6 +92,8 @@ public final class DeliveryQuestingSavedData extends SavedData {
         UUID id = UUID.randomUUID();
         DeliveryGroup group = DeliveryGroup.create(id, trimmedName, owner);
 
+        ProgressionManager.reconcileGroup(group);
+
         groups.put(id, group);
         clearInvitationsForPlayer(owner);
 
@@ -159,7 +161,12 @@ public final class DeliveryQuestingSavedData extends SavedData {
             return false;
         }
 
+        int previousLevel = group.wholeLevel();
+
         group.addExperience(amount);
+
+        int currentLevel = group.wholeLevel();
+        ProgressionManager.processLevelChange(group, previousLevel, currentLevel);
 
         setDirty();
         return true;
@@ -258,7 +265,14 @@ public final class DeliveryQuestingSavedData extends SavedData {
             return false;
         }
 
+        int previousLevel = group.wholeLevel();
+
         group.addExperience(task.rewards().experience());
+
+        int currentLevel = group.wholeLevel();
+
+        ProgressionManager.processLevelChange(group, previousLevel, currentLevel);
+
         group.addBalance(task.rewards().money());
 
         if (!task.rewards().items().isEmpty()) {
@@ -368,6 +382,20 @@ public final class DeliveryQuestingSavedData extends SavedData {
 
         setDirty();
         return true;
+    }
+
+    public void reconcileProgression() {
+        boolean changed = false;
+
+        for (DeliveryGroup group : groups.values()) {
+            if (ProgressionManager.reconcileGroup(group)) {
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            setDirty();
+        }
     }
 
     private void validateMembership() {
