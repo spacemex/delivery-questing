@@ -1,4 +1,4 @@
-package com.github.deliveryquesting;
+package com.github.spacemex.deliveryquesting;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import net.neoforged.bus.api.IEventBus;

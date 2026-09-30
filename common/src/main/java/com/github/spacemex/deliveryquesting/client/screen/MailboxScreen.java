@@ -19,7 +19,7 @@ public final class MailboxScreen extends AbstractContainerScreen<MailboxMenu> {
     private final List<Button> collectButtons = new ArrayList<>();
 
     public MailboxScreen(MailboxMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title, 280, 180);
+        super(menu, inventory, title, 280, 252);
     }
 
     @Override
@@ -66,6 +66,14 @@ public final class MailboxScreen extends AbstractContainerScreen<MailboxMenu> {
 
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xFFD7D7D7);
         graphics.outline(leftPos, topPos, imageWidth, imageHeight, 0xFF454545);
+
+        for (int i = 0; i < 4; i++) {
+            int x = leftPos + 196 + i * 18;
+            int y = topPos + 142;
+
+            graphics.fill(x - 1, y - 1, x + 17, y + 17, 0xFFAAAAAA);
+            graphics.outline(x - 1, y - 1, 18, 18, 0xFF555555);
+        }
     }
 
     @Override
@@ -85,5 +93,9 @@ public final class MailboxScreen extends AbstractContainerScreen<MailboxMenu> {
             graphics.text(font, Component.literal("From: " + parcel.sender()), 12, y, 0xFF222222, false);
             graphics.text(font, Component.literal(parcel.itemCount() + " item(s)"), 12, y + 11, 0xFF666666, false);
         }
+
+        graphics.text(font, Component.literal("Outbox"), 196, 130, 0xFF555555, false);
+        graphics.text(font, Component.literal("Collected each Minecraft morning"), 12, 145, 0xFF777777, false);
+        graphics.text(font, playerInventoryTitle, 59, 163, 0xFF555555, false);
     }
 }

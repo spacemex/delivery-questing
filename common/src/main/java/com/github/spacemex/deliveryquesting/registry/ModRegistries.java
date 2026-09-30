@@ -6,6 +6,8 @@ public final class ModRegistries {
         ModDataComponents.initialize();
 
         ModBlocks.initialize();
+        ModBlockEntities.initialize();
+
         ModItems.initialize();
         ModMenus.initialize();
     }

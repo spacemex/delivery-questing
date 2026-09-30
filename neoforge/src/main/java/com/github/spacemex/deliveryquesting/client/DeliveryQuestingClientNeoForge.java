@@ -1,4 +1,4 @@
-package com.github.deliveryquesting.client;
+package com.github.spacemex.deliveryquesting.client;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import net.neoforged.api.distmarker.Dist;

@@ -4,7 +4,6 @@ import com.github.spacemex.deliveryquesting.menu.BulletinBoardMenu;
 import com.github.spacemex.deliveryquesting.menu.BulletinBoardRequirementEntry;
 import com.github.spacemex.deliveryquesting.menu.BulletinBoardTaskEntry;
 import com.github.spacemex.deliveryquesting.networking.packets.AcceptTaskPayload;
-import com.github.spacemex.deliveryquesting.networking.packets.SubmitTaskPayload;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -81,6 +80,10 @@ public final class BulletinBoardScreen extends AbstractContainerScreen<BulletinB
     }
 
     private void handleRow(int row) {
+        if (view != View.AVAILABLE) {
+            return;
+        }
+
         int index = page * ROWS_PER_PAGE + row;
 
         List<BulletinBoardTaskEntry> tasks = currentTasks();
@@ -90,13 +93,8 @@ public final class BulletinBoardScreen extends AbstractContainerScreen<BulletinB
         }
 
         BulletinBoardTaskEntry entry = tasks.get(index);
-
         disableActionButtons();
-
-        switch (view) {
-            case AVAILABLE -> NetworkManager.sendToServer(new AcceptTaskPayload(entry.id()));
-            case ACTIVE -> NetworkManager.sendToServer(new SubmitTaskPayload(entry.id()));
-        }
+        NetworkManager.sendToServer(new AcceptTaskPayload(entry.id()));
     }
 
     private void disableActionButtons() {
@@ -107,15 +105,16 @@ public final class BulletinBoardScreen extends AbstractContainerScreen<BulletinB
 
     private void refreshButtons() {
         List<BulletinBoardTaskEntry> tasks = currentTasks();
-
         int start = page * ROWS_PER_PAGE;
 
         for (int row = 0; row < ROWS_PER_PAGE; row++) {
             int index = start + row;
             Button button = actionButtons.get(row);
+            boolean visible = view == View.AVAILABLE && index < tasks.size();
 
-            button.setMessage(Component.literal(view == View.AVAILABLE ? "Accept" : "Submit"));
-            button.active = index < tasks.size();
+            button.setMessage(Component.literal("Accept"));
+            button.visible = visible;
+            button.active = visible;
         }
 
         availableTab.active = view != View.AVAILABLE;

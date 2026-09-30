@@ -2,14 +2,18 @@ package com.github.spacemex.deliveryquesting.progression;
 
 import com.github.spacemex.deliveryquesting.task.ItemRequirement;
 import com.github.spacemex.deliveryquesting.task.TaskDefinition;
+import com.github.spacemex.deliveryquesting.task.TaskManager;
 import com.github.spacemex.deliveryquesting.task.TaskRequirement;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public final class TaskRuntimeManager {
@@ -128,6 +132,94 @@ public final class TaskRuntimeManager {
         return consumed;
     }
 
+    public static MailboxSubmissionResult submitMailboxItems(DeliveryQuestingSavedData data, DeliveryGroup group, List<ItemStack> outgoing) {
+        long submitted = 0L;
+        long totalItems = 0L;
+
+        for (ItemStack original : outgoing) {
+            if (original.isEmpty()) {
+                continue;
+            }
+
+            ItemStack stack = original.copy();
+
+            totalItems += stack.getCount();
+
+            while (!stack.isEmpty()) {
+                boolean inserted = false;
+                List<TaskProgress> activeTasks = new ArrayList<>(group.activeTasks());
+
+                taskLoop:
+                for (TaskProgress progress : activeTasks) {
+                    Optional<TaskDefinition> optionalTask = TaskManager.getTask(progress.taskId());
+
+                    if (optionalTask.isEmpty()) {
+                        continue;
+                    }
+
+                    TaskDefinition task = optionalTask.get();
+
+                    for (TaskRequirement requirement : task.requirements()) {
+                        if (!(requirement instanceof ItemRequirement itemRequirement)) {
+                            continue;
+                        }
+
+                        long remaining = progress.getRemaining(requirement);
+
+                        if (remaining <= 0L) {
+                            continue;
+                        }
+
+                        if (!matches(stack, itemRequirement)) {
+                            continue;
+                        }
+
+                        int amount = (int) Math.min(remaining, stack.getCount());
+                        long accepted = data.addTaskProgress(group.id(), task.id(), requirement, amount);
+
+                        if (accepted <= 0L) {
+                            continue;
+                        }
+
+                        stack.shrink((int) accepted);
+                        submitted += accepted;
+                        inserted = true;
+
+                        break taskLoop;
+                    }
+                }
+
+                if (!inserted) {
+                    break;
+                }
+            }
+        }
+
+        List<Identifier> completedTasks = new ArrayList<>();
+
+        List<TaskProgress> activeTasks = new ArrayList<>(group.activeTasks());
+
+        for (TaskProgress progress : activeTasks) {
+            Optional<TaskDefinition> optionalTask = TaskManager.getTask(progress.taskId());
+
+            if (optionalTask.isEmpty()) {
+                continue;
+            }
+
+            TaskDefinition task = optionalTask.get();
+
+            if (!progress.isComplete(task)) {
+                continue;
+            }
+
+            if (data.completeTask(group.id(), task)) {
+                completedTasks.add(task.id());
+            }
+        }
+
+        return new MailboxSubmissionResult(submitted, Math.max(0L, totalItems - submitted), List.copyOf(completedTasks));
+    }
+
     @SuppressWarnings("deprecation")
     private static boolean matches(ItemStack stack, ItemRequirement requirement) {
         return switch (requirement.targetType()) {
@@ -143,5 +235,8 @@ public final class TaskRuntimeManager {
     }
 
     public record SubmissionResult(boolean success, long submitted, boolean completed, String message) {
+    }
+
+    public record MailboxSubmissionResult(long submitted, long discarded, List<Identifier> completedTasks) {
     }
 }
