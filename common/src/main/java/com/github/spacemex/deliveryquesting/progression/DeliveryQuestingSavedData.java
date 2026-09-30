@@ -267,6 +267,23 @@ public final class DeliveryQuestingSavedData extends SavedData {
         return true;
     }
 
+    public Optional<MailboxParcel> collectMailboxParcel(UUID groupId, UUID parcelId) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return Optional.empty();
+        }
+
+        Optional<MailboxParcel> parcel = group.removeMailboxParcel(parcelId);
+
+        if (parcel.isEmpty()) {
+            return Optional.empty();
+        }
+
+        setDirty();
+        return parcel;
+    }
+
     private void validateMembership() {
         Set<UUID> seenPlayers = new HashSet<>();
 

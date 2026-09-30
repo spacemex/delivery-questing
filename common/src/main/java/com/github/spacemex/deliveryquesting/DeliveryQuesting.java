@@ -7,6 +7,7 @@ import com.github.spacemex.deliveryquesting.config.CommonConfig;
 import com.github.spacemex.deliveryquesting.config.ConfigReader;
 import com.github.spacemex.deliveryquesting.networking.ClientConfigSyncHandler;
 import com.github.spacemex.deliveryquesting.networking.ConfigSyncHandler;
+import com.github.spacemex.deliveryquesting.networking.MailboxNetworkHandler;
 import com.github.spacemex.deliveryquesting.networking.TaskInteractionNetworkHandler;
 import com.github.spacemex.deliveryquesting.progression.ProgressionManager;
 import com.github.spacemex.deliveryquesting.registry.ModRegistries;
@@ -32,7 +33,9 @@ public final class DeliveryQuesting {
         if (Platform.getEnvironment() == Env.SERVER) {
             ConfigSyncHandler.initialize();
         }
+
         TaskInteractionNetworkHandler.initialize();
+        MailboxNetworkHandler.initialize();
 
         TaskManager.initialize();
         ProgressionManager.initialize();

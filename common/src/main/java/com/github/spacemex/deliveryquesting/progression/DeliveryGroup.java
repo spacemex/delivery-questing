@@ -226,6 +226,31 @@ public final class DeliveryGroup {
         pendingMailbox.add(parcel);
     }
 
+    Optional<MailboxParcel> removeMailboxParcel(UUID parcelId) {
+        Objects.requireNonNull(parcelId, "parcelId");
+
+        for (int i = 0; i < mailboxInbox.size(); i++) {
+            MailboxParcel parcel = mailboxInbox.get(i);
+
+            if (!parcel.id().equals(parcelId)) {
+                continue;
+            }
+
+            mailboxInbox.remove(i);
+            promotePendingMailbox();
+
+            return Optional.of(parcel);
+        }
+
+        return Optional.empty();
+    }
+
+    private void promotePendingMailbox() {
+        while (mailboxInbox.size() < MAILBOX_INBOX_SIZE && !pendingMailbox.isEmpty()) {
+            mailboxInbox.add(pendingMailbox.removeFirst());
+        }
+    }
+
     private void validateMailboxParcels() {
         Set<UUID> ids = new HashSet<>();
 
@@ -236,7 +261,6 @@ public final class DeliveryGroup {
         }
 
         for (MailboxParcel parcel : pendingMailbox) {
-
             if (!ids.add(parcel.id())) {
                 throw new IllegalArgumentException("Duplicate mailbox parcel ID: " + parcel.id());
             }

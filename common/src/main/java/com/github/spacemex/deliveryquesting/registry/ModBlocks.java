@@ -2,6 +2,7 @@ package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.block.BulletinBoardBlock;
+import com.github.spacemex.deliveryquesting.block.MailboxBlock;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
@@ -15,6 +16,7 @@ public final class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.BLOCK);
 
     public static final RegistrySupplier<BulletinBoardBlock> BULLETIN_BOARD;
+    public static final RegistrySupplier<MailboxBlock> MAILBOX;
 
     public static void initialize() {
         BLOCKS.register();
@@ -25,7 +27,11 @@ public final class ModBlocks {
     }
 
     static {
-        BULLETIN_BOARD = BLOCKS.register("bulletin_board", () -> new BulletinBoardBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OAK_PLANKS).strength(2.f, 3.f)
-                .setId(key("bulletin_board"))));
+        BULLETIN_BOARD = BLOCKS.register("bulletin_board", () ->
+                new BulletinBoardBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OAK_PLANKS).strength(2.f, 3.f)
+                        .setId(key("bulletin_board"))));
+        MAILBOX = BLOCKS.register("mailbox", () ->
+                new MailboxBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(2.f, 6.f)
+                        .setId(key("mailbox"))));
     }
 }

@@ -1,4 +1,10 @@
 {
   "block.delivery_questing.bulletin_board": "Bulletin Board",
-  "screen.delivery_questing.bulletin_board": "Bulletin Board"
+  "block.delivery_questing.mailbox": "Mailbox",
+  "item.delivery_questing.sealed_parcel": "Sealed Parcel",
+  "screen.delivery_questing.bulletin_board": "Bulletin Board",
+  "screen.delivery_questing.mailbox": "Mailbox",
+  "tooltip.delivery_questing.sealed_parcel.sender": "From: %s",
+  "tooltip.delivery_questing.sealed_parcel.items": "Contains %s item(s)",
+  "tooltip.delivery_questing.sealed_parcel.open": "Right-click to open"
 }

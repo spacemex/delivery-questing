@@ -1,6 +1,7 @@
 package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.item.SealedParcelItem;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
@@ -13,6 +14,8 @@ public final class ModItems {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.ITEM);
 
     public static final RegistrySupplier<BlockItem> BULLETIN_BOARD;
+    public static final RegistrySupplier<BlockItem> MAILBOX;
+    public static final RegistrySupplier<SealedParcelItem> SEALED_PARCEL;
 
     public static void initialize() {
         ITEMS.register();
@@ -23,7 +26,11 @@ public final class ModItems {
     }
 
     static {
-        BULLETIN_BOARD = ITEMS.register("bulletin_board", ()-> new BlockItem(ModBlocks.BULLETIN_BOARD.get(),
+        BULLETIN_BOARD = ITEMS.register("bulletin_board", () -> new BlockItem(ModBlocks.BULLETIN_BOARD.get(),
                 new Item.Properties().useBlockDescriptionPrefix().setId(key("bulletin_board"))));
+        MAILBOX = ITEMS.register("mailbox", () -> new BlockItem(ModBlocks.MAILBOX.get(),
+                new Item.Properties().useBlockDescriptionPrefix().setId(key("mailbox"))));
+        SEALED_PARCEL = ITEMS.register("sealed_parcel", () -> new SealedParcelItem(new Item.Properties()
+                .stacksTo(1).setId(key("sealed_parcel"))));
     }
 }

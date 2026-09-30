@@ -1,6 +1,6 @@
 {
-  "parent": "minecraft:block/cube_all",
-  "textures": {
-    "all": "minecraft:block/oak_planks"
+  "model": {
+    "type": "minecraft:model",
+    "model": "delivery_questing:block/bulletin_board"
   }
 }
