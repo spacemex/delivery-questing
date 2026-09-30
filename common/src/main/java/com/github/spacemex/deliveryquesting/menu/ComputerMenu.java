@@ -4,8 +4,10 @@ import com.github.spacemex.deliveryquesting.block.entity.ComputerBlockEntity;
 import com.github.spacemex.deliveryquesting.config.ConfigReader;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
+import com.github.spacemex.deliveryquesting.progression.GroupEmail;
 import com.github.spacemex.deliveryquesting.registry.ModBlocks;
 import com.github.spacemex.deliveryquesting.registry.ModMenus;
+import com.github.spacemex.deliveryquesting.task.TaskManager;
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -18,8 +20,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public final class ComputerMenu extends AbstractContainerMenu {
     private final BlockPos blockPos;
@@ -28,9 +29,11 @@ public final class ComputerMenu extends AbstractContainerMenu {
     private final long balance;
     private final int activeTasks;
     private final int completedTasks;
+    private final List<ComputerMailEntry> mail;
+
 
     public ComputerMenu(int containerId, Inventory inventory, BlockPos blockPos, String groupName, int level, long balance,
-                        int activeTasks, int completedTasks) {
+                        int activeTasks, int completedTasks, List<ComputerMailEntry> mail) {
         super(ModMenus.COMPUTER.get(), containerId);
 
         this.blockPos = blockPos;
@@ -39,6 +42,7 @@ public final class ComputerMenu extends AbstractContainerMenu {
         this.balance = balance;
         this.activeTasks = activeTasks;
         this.completedTasks = completedTasks;
+        this.mail = List.copyOf(mail);
     }
 
     public static ComputerMenu fromNetwork(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
@@ -48,8 +52,9 @@ public final class ComputerMenu extends AbstractContainerMenu {
         long balance = buffer.readLong();
         int activeTasks = buffer.readVarInt();
         int completedTasks = buffer.readVarInt();
+        List<ComputerMailEntry> mail = ComputerMailEntry.readList(buffer);
 
-        return new ComputerMenu(containerId, inventory, blockPos, groupName, level, balance, activeTasks, completedTasks);
+        return new ComputerMenu(containerId, inventory, blockPos, groupName, level, balance, activeTasks, completedTasks, mail);
     }
 
     public static void open(ServerPlayer player, BlockPos pos, ComputerBlockEntity computer) {
@@ -62,6 +67,10 @@ public final class ComputerMenu extends AbstractContainerMenu {
         }
 
         DeliveryGroup group = optionalGroup.get();
+
+        data.validateEmails(group.id());
+
+        List<ComputerMailEntry> mail = createMailEntries(group);
 
         if (!group.computerUnlocked()) {
             player.sendSystemMessage(Component.literal("Computer access requires delivery level " + ConfigReader.getMinComputerLevel() + "."));
@@ -84,8 +93,8 @@ public final class ComputerMenu extends AbstractContainerMenu {
         }
 
         SimpleMenuProvider provider = new SimpleMenuProvider((containerId, inventory, menuPlayer) ->
-                new ComputerMenu(containerId, inventory, pos, group.name(), group.wholeLevel(),
-                        group.balance(), group.activeTasks().size(), group.completedTasks().size()),
+                new ComputerMenu(containerId, inventory, pos, group.name(), group.wholeLevel(), group.balance(),
+                        group.activeTasks().size(), group.completedTasks().size(), mail),
                 Component.translatable("screen.delivery_questing.computer"));
 
         MenuRegistry.openExtendedMenu(player, provider, buffer -> {
@@ -95,6 +104,7 @@ public final class ComputerMenu extends AbstractContainerMenu {
             buffer.writeLong(group.balance());
             buffer.writeVarInt(group.activeTasks().size());
             buffer.writeVarInt(group.completedTasks().size());
+            ComputerMailEntry.writeList(buffer, mail);
         });
     }
 
@@ -116,6 +126,36 @@ public final class ComputerMenu extends AbstractContainerMenu {
 
     public int completedTasks() {
         return completedTasks;
+    }
+
+    public List<ComputerMailEntry> mail() {
+        return mail;
+    }
+
+    public boolean hasMail(UUID emailId) {
+        return mail.stream().anyMatch(email -> email.emailId().equals(emailId));
+    }
+
+    public long unreadMailCount() {
+        return mail.stream().filter(email -> !email.read()).count();
+    }
+
+    private static List<ComputerMailEntry> createMailEntries(DeliveryGroup group) {
+        List<ComputerMailEntry> result = new ArrayList<>();
+
+        for (GroupEmail email :
+                group.emails()) {
+
+            if (email.type() != GroupEmail.Type.CONTRACT) {
+                continue;
+            }
+
+            TaskManager.getTask(email.referenceId()).ifPresent(task -> result.add(ComputerMailEntry.from(email, group, task)));
+        }
+
+        Collections.reverse(result);
+
+        return List.copyOf(result);
     }
 
     @Override

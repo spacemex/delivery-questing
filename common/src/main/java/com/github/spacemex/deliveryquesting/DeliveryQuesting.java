@@ -5,10 +5,7 @@ import com.github.spacemex.deliveryquesting.command.GroupCommand;
 import com.github.spacemex.deliveryquesting.command.TaskCommand;
 import com.github.spacemex.deliveryquesting.config.CommonConfig;
 import com.github.spacemex.deliveryquesting.config.ConfigReader;
-import com.github.spacemex.deliveryquesting.networking.ClientConfigSyncHandler;
-import com.github.spacemex.deliveryquesting.networking.ConfigSyncHandler;
-import com.github.spacemex.deliveryquesting.networking.MailboxNetworkHandler;
-import com.github.spacemex.deliveryquesting.networking.TaskInteractionNetworkHandler;
+import com.github.spacemex.deliveryquesting.networking.*;
 import com.github.spacemex.deliveryquesting.progression.ProgressionManager;
 import com.github.spacemex.deliveryquesting.registry.ModRegistries;
 import com.github.spacemex.deliveryquesting.task.TaskManager;
@@ -36,6 +33,8 @@ public final class DeliveryQuesting {
 
         TaskInteractionNetworkHandler.initialize();
         MailboxNetworkHandler.initialize();
+        ComputerNetworkHandler.initialize();
+
 
         TaskManager.initialize();
         ProgressionManager.initialize();

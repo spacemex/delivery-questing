@@ -2,6 +2,7 @@ package com.github.spacemex.deliveryquesting.progression;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.task.TaskDefinition;
+import com.github.spacemex.deliveryquesting.task.TaskManager;
 import com.github.spacemex.deliveryquesting.task.TaskRequirement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -12,6 +13,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class DeliveryQuestingSavedData extends SavedData {
     public static final Codec<DeliveryQuestingSavedData> CODEC =
@@ -396,6 +398,99 @@ public final class DeliveryQuestingSavedData extends SavedData {
         if (changed) {
             setDirty();
         }
+    }
+
+    public boolean markEmailRead(UUID groupId, UUID emailId) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        if (!group.markEmailRead(emailId)) {
+            return false;
+        }
+
+        setDirty();
+        return true;
+    }
+
+    public int validateEmails(UUID groupId) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return 0;
+        }
+
+        int removed = 0;
+
+        for (GroupEmail email : new ArrayList<>(group.emails())) {
+            if (email.type() != GroupEmail.Type.CONTRACT) {
+                continue;
+            }
+
+            if (TaskManager.contains(email.referenceId())) {
+                continue;
+            }
+
+            if (group.removeEmail(email.id())) {
+                removed++;
+            }
+        }
+
+        if (removed > 0) {
+            setDirty();
+        }
+
+        return removed;
+    }
+
+    public Optional<GroupEmail> generateContractEmail(DeliveryGroup group) {
+        Objects.requireNonNull(group, "group");
+
+        if (!group.computerUnlocked()) {
+            return Optional.empty();
+        }
+
+        validateEmails(group.id());
+
+        if (group.unacceptedContractEmailCount() >= 3L) {
+            return Optional.empty();
+        }
+
+        if (group.activeTasks().size() >= 5) {
+            return Optional.empty();
+        }
+
+        List<TaskDefinition> possibleTasks = TaskManager.getTasks().stream().filter(task -> !task.forced())
+                .filter(task -> TaskRuntimeManager.getAcceptanceFailure(group, task).isEmpty())
+                .filter(task -> !group.hasContractEmail(task.id())).toList();
+
+        if (possibleTasks.isEmpty()) {
+            return Optional.empty();
+        }
+
+        TaskDefinition task = possibleTasks.get(ThreadLocalRandom.current().nextInt(possibleTasks.size()));
+        GroupEmail email = GroupEmail.contract(task);
+
+        if (!group.addEmail(email)) {
+            return Optional.empty();
+        }
+
+        setDirty();
+        return Optional.of(email);
+    }
+
+    public int generateContractEmails() {
+        int generated = 0;
+
+        for (DeliveryGroup group : groups.values()) {
+            if (generateContractEmail(group).isPresent()) {
+                generated++;
+            }
+        }
+
+        return generated;
     }
 
     private void validateMembership() {

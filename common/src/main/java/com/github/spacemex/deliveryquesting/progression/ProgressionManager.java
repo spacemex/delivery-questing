@@ -6,6 +6,7 @@ import com.github.spacemex.deliveryquesting.task.ItemReward;
 import com.github.spacemex.deliveryquesting.task.TaskDefinition;
 import com.github.spacemex.deliveryquesting.task.TaskManager;
 import dev.architectury.event.events.common.LifecycleEvent;
+import dev.architectury.event.events.common.TickEvent;
 import net.minecraft.resources.Identifier;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.List;
 public final class ProgressionManager {
     private static boolean initialized;
     private static final Identifier COMPUTER_ITEM = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "computer");
+    private static final int CONTRACT_EMAIL_INTERVAL_TICKS = 3600;
 
     public static void initialize() {
         if (initialized) {
@@ -25,6 +27,13 @@ public final class ProgressionManager {
             DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(server);
             data.reconcileProgression();
             DeliveryQuesting.LOGGER.info("Loaded Delivery Questing progression with {} group(s)", data.groupCount());
+        });
+
+        TickEvent.SERVER_POST.register(server -> {
+            if (server.getTickCount() % CONTRACT_EMAIL_INTERVAL_TICKS != 0) {
+                return;
+            }
+            DeliveryQuestingSavedData.get(server).generateContractEmails();
         });
     }
 

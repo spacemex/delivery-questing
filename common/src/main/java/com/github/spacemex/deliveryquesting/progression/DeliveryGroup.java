@@ -37,6 +37,9 @@ public final class DeliveryGroup {
                                     .forGetter(DeliveryGroup::computerUnlocked),
                             Codec.BOOL.optionalFieldOf("computer_reward_delivered", false)
                                     .forGetter(DeliveryGroup::computerRewardDelivered),
+                            GroupEmail.CODEC.listOf()
+                                    .optionalFieldOf("emails", List.of())
+                                    .forGetter(group -> List.copyOf(group.emails)),
                             MailboxParcel.CODEC.listOf()
                                     .optionalFieldOf("mailbox_inbox", List.of())
                                     .forGetter(group -> List.copyOf(group.mailboxInbox)),
@@ -56,10 +59,12 @@ public final class DeliveryGroup {
     private long balance;
     private boolean computerUnlocked;
     private boolean computerRewardDelivered;
+    private final List<GroupEmail> emails;
 
     private DeliveryGroup(UUID id, String name, Optional<UUID> owner, List<UUID> members, List<UUID> pendingInvitations,
                           List<TaskProgress> activeTasks, List<Identifier> completedTasks, long experience, long balance,
-                          boolean computerUnlocked, boolean computerRewardDelivered, List<MailboxParcel> mailboxInbox, List<MailboxParcel> pendingMailbox) {
+                          boolean computerUnlocked, boolean computerRewardDelivered, List<GroupEmail> emails,
+                          List<MailboxParcel> mailboxInbox, List<MailboxParcel> pendingMailbox) {
         this.id = Objects.requireNonNull(id, "id");
         this.name = Objects.requireNonNull(name, "name");
 
@@ -113,6 +118,10 @@ public final class DeliveryGroup {
             }
         }
 
+        this.emails = new ArrayList<>(Objects.requireNonNull(emails, "emails"));
+
+        validateEmails();
+
         Objects.requireNonNull(mailboxInbox, "mailboxInbox");
         Objects.requireNonNull(pendingMailbox, "pendingMailbox");
 
@@ -133,7 +142,8 @@ public final class DeliveryGroup {
 
     static DeliveryGroup create(UUID id, String name, UUID owner) {
         return new DeliveryGroup(id, name, Optional.of(owner), List.of(owner),
-                List.of(), List.of(), List.of(), 0L, 0L, false, false, List.of(), List.of());
+                List.of(), List.of(), List.of(), 0L, 0L, false,
+                false, List.of(), List.of(), List.of());
     }
 
     public boolean computerUnlocked() {
@@ -353,10 +363,51 @@ public final class DeliveryGroup {
         return true;
     }
 
+    boolean addEmail(GroupEmail email) {
+        Objects.requireNonNull(email, "email");
+
+        if (getEmail(email.id()).isPresent()) {
+            return false;
+        }
+
+        emails.add(email);
+        return true;
+    }
+
+    boolean markEmailRead(UUID emailId) {
+        return getEmail(emailId).map(GroupEmail::markRead).orElse(false);
+    }
+
+    boolean removeEmail(UUID emailId) {
+        return emails.removeIf(email -> email.id().equals(emailId));
+    }
+
     private void promotePendingMailbox() {
         while (mailboxInbox.size() < MAILBOX_INBOX_SIZE && !pendingMailbox.isEmpty()) {
             mailboxInbox.add(pendingMailbox.removeFirst());
         }
+    }
+
+    public List<GroupEmail> emails() {
+        return Collections.unmodifiableList(emails);
+    }
+
+    public Optional<GroupEmail> getEmail(UUID emailId) {
+        return emails.stream().filter(email -> email.id().equals(emailId)).findFirst();
+    }
+
+    public long unreadEmailCount() {
+        return emails.stream()
+                .filter(email -> !email.read()).count();
+    }
+
+    public long unacceptedContractEmailCount() {
+        return emails.stream().filter(email -> email.type() == GroupEmail.Type.CONTRACT)
+                .filter(email -> !hasActiveTask(email.referenceId())).filter(email -> !hasCompletedTask(email.referenceId())).count();
+    }
+
+    public boolean hasContractEmail(Identifier taskId) {
+        return emails.stream().anyMatch(email -> email.type() == GroupEmail.Type.CONTRACT && email.referenceId().equals(taskId));
     }
 
     public Set<UUID> pendingInvitations() {
@@ -379,6 +430,16 @@ public final class DeliveryGroup {
         for (MailboxParcel parcel : pendingMailbox) {
             if (!ids.add(parcel.id())) {
                 throw new IllegalArgumentException("Duplicate mailbox parcel ID: " + parcel.id());
+            }
+        }
+    }
+
+    private void validateEmails() {
+        Set<UUID> ids = new HashSet<>();
+
+        for (GroupEmail email : emails) {
+            if (!ids.add(email.id())) {
+                throw new IllegalArgumentException("Duplicate group email ID: " + email.id());
             }
         }
     }

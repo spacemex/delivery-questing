@@ -2,6 +2,7 @@ package com.github.spacemex.deliveryquesting.command;
 
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
+import com.github.spacemex.deliveryquesting.progression.GroupEmail;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -187,6 +188,17 @@ public final class GroupCommand {
                                                                         )
                                                         )
                                         )
+                                        .then(
+                                                Commands.literal(
+                                                                "generatemail"
+                                                        )
+                                                        .requires(
+                                                                GroupCommand::canUseDebugCommands
+                                                        )
+                                                        .executes(
+                                                                GroupCommand::generateMail
+                                                        )
+                                        )
                         )
         );
     }
@@ -237,6 +249,8 @@ public final class GroupCommand {
         source.sendSuccess(() -> Component.literal("Mailbox Inbox: " + group.mailboxInbox().size() + " / " + DeliveryGroup.MAILBOX_INBOX_SIZE), false);
         source.sendSuccess(() -> Component.literal("Pending Mail: " + group.pendingMailbox().size()), false);
         source.sendSuccess(() -> Component.literal("Computer Unlocked: " + group.computerUnlocked()), false);
+        source.sendSuccess(() -> Component.literal("Emails: " + group.emails().size()), false);
+        source.sendSuccess(() -> Component.literal("Unread Emails: " + group.unreadEmailCount()), false);
 
         return Command.SINGLE_SUCCESS;
     }
@@ -594,5 +608,29 @@ public final class GroupCommand {
     private static Optional<ServerPlayer> findOnlinePlayer(CommandSourceStack source, String name) {
         return source.getServer().getPlayerList().getPlayers().stream()
                 .filter(player -> player.getName().getString().equalsIgnoreCase(name)).findFirst();
+    }
+
+    private static int generateMail(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(source.getServer());
+        Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(player.getUUID());
+
+        if (optionalGroup.isEmpty()) {
+            source.sendFailure(Component.literal("You are not currently in a delivery group."));
+            return 0;
+        }
+
+        DeliveryGroup group = optionalGroup.get();
+        Optional<GroupEmail> generated = data.generateContractEmail(group);
+
+        if (generated.isEmpty()) {
+            source.sendFailure(Component.literal("No contract email could be generated."));
+            return 0;
+        }
+
+        source.sendSuccess(() -> Component.literal("Generated contract email for " + generated.get().referenceId()), false);
+
+        return Command.SINGLE_SUCCESS;
     }
 }
