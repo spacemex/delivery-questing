@@ -15,6 +15,7 @@ public final class ModItems {
 
     public static final RegistrySupplier<BlockItem> BULLETIN_BOARD;
     public static final RegistrySupplier<BlockItem> MAILBOX;
+    public static final RegistrySupplier<BlockItem> COMPUTER;
     public static final RegistrySupplier<SealedParcelItem> SEALED_PARCEL;
 
     public static void initialize() {
@@ -32,5 +33,7 @@ public final class ModItems {
                 new Item.Properties().useBlockDescriptionPrefix().setId(key("mailbox"))));
         SEALED_PARCEL = ITEMS.register("sealed_parcel", () -> new SealedParcelItem(new Item.Properties()
                 .stacksTo(1).setId(key("sealed_parcel"))));
+        COMPUTER = ITEMS.register("computer", () -> new BlockItem(ModBlocks.COMPUTER.get(),
+                new Item.Properties().useBlockDescriptionPrefix().setId(key("computer"))));
     }
 }

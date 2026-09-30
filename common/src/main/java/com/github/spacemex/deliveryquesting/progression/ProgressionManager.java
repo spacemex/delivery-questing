@@ -2,12 +2,17 @@ package com.github.spacemex.deliveryquesting.progression;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.config.ConfigReader;
+import com.github.spacemex.deliveryquesting.task.ItemReward;
 import com.github.spacemex.deliveryquesting.task.TaskDefinition;
 import com.github.spacemex.deliveryquesting.task.TaskManager;
 import dev.architectury.event.events.common.LifecycleEvent;
+import net.minecraft.resources.Identifier;
+
+import java.util.List;
 
 public final class ProgressionManager {
     private static boolean initialized;
+    private static final Identifier COMPUTER_ITEM = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "computer");
 
     public static void initialize() {
         if (initialized) {
@@ -60,6 +65,10 @@ public final class ProgressionManager {
             DeliveryQuesting.LOGGER.info("Group '{}' reached the Computer age at level {}", group.name(), currentLevel);
         }
 
+        if (deliverComputerReward(group)) {
+            changed = true;
+        }
+
         return changed;
     }
 
@@ -97,6 +106,27 @@ public final class ProgressionManager {
             DeliveryQuesting.LOGGER.info("Reconciled Computer unlock for group '{}'", group.name());
         }
 
+        if (deliverComputerReward(group)) {
+            changed = true;
+        }
+
         return changed;
+    }
+
+    private static boolean deliverComputerReward(DeliveryGroup group) {
+        if (!group.computerUnlocked()) {
+            return false;
+        }
+
+        if (!group.markComputerRewardDelivered()) {
+            return false;
+        }
+
+        MailboxParcel parcel = MailboxParcel.create("Unknown", List.of(new ItemReward(COMPUTER_ITEM, 1)));
+
+        group.addMailboxParcel(parcel);
+        DeliveryQuesting.LOGGER.info("Delivered Computer unlock parcel to group '{}'", group.name());
+
+        return true;
     }
 }

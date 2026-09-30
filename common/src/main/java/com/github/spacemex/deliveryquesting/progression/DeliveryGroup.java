@@ -35,6 +35,8 @@ public final class DeliveryGroup {
                                     .forGetter(DeliveryGroup::balance),
                             Codec.BOOL.optionalFieldOf("computer_unlocked", false)
                                     .forGetter(DeliveryGroup::computerUnlocked),
+                            Codec.BOOL.optionalFieldOf("computer_reward_delivered", false)
+                                    .forGetter(DeliveryGroup::computerRewardDelivered),
                             MailboxParcel.CODEC.listOf()
                                     .optionalFieldOf("mailbox_inbox", List.of())
                                     .forGetter(group -> List.copyOf(group.mailboxInbox)),
@@ -53,10 +55,11 @@ public final class DeliveryGroup {
     private long experience;
     private long balance;
     private boolean computerUnlocked;
+    private boolean computerRewardDelivered;
 
     private DeliveryGroup(UUID id, String name, Optional<UUID> owner, List<UUID> members, List<UUID> pendingInvitations,
                           List<TaskProgress> activeTasks, List<Identifier> completedTasks, long experience, long balance,
-                          boolean computerUnlocked, List<MailboxParcel> mailboxInbox, List<MailboxParcel> pendingMailbox) {
+                          boolean computerUnlocked, boolean computerRewardDelivered, List<MailboxParcel> mailboxInbox, List<MailboxParcel> pendingMailbox) {
         this.id = Objects.requireNonNull(id, "id");
         this.name = Objects.requireNonNull(name, "name");
 
@@ -125,14 +128,28 @@ public final class DeliveryGroup {
         this.experience = experience;
         this.balance = balance;
         this.computerUnlocked = computerUnlocked;
+        this.computerRewardDelivered = computerRewardDelivered;
     }
 
     static DeliveryGroup create(UUID id, String name, UUID owner) {
-        return new DeliveryGroup(id, name, Optional.of(owner), List.of(owner), List.of(), List.of(), List.of(), 0L, 0L, false, List.of(), List.of());
+        return new DeliveryGroup(id, name, Optional.of(owner), List.of(owner),
+                List.of(), List.of(), List.of(), 0L, 0L, false, false, List.of(), List.of());
     }
 
     public boolean computerUnlocked() {
         return computerUnlocked;
+    }
+
+    public boolean computerRewardDelivered() {
+        return computerRewardDelivered;
+    }
+
+    boolean markComputerRewardDelivered() {
+        if (computerRewardDelivered) {
+            return false;
+        }
+        computerRewardDelivered = true;
+        return true;
     }
 
     public UUID owner() {

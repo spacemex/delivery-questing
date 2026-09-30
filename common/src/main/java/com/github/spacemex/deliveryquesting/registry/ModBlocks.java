@@ -2,6 +2,7 @@ package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.block.BulletinBoardBlock;
+import com.github.spacemex.deliveryquesting.block.ComputerBlock;
 import com.github.spacemex.deliveryquesting.block.MailboxBlock;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -17,6 +18,7 @@ public final class ModBlocks {
 
     public static final RegistrySupplier<BulletinBoardBlock> BULLETIN_BOARD;
     public static final RegistrySupplier<MailboxBlock> MAILBOX;
+    public static final RegistrySupplier<ComputerBlock> COMPUTER;
 
     public static void initialize() {
         BLOCKS.register();
@@ -33,5 +35,8 @@ public final class ModBlocks {
         MAILBOX = BLOCKS.register("mailbox", () ->
                 new MailboxBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(2.f, 6.f)
                         .setId(key("mailbox"))));
+        COMPUTER = BLOCKS.register("computer", () ->
+                new ComputerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(1.5f, 3.f)
+                        .setId(key("computer"))));
     }
 }
