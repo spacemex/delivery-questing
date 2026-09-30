@@ -12,22 +12,23 @@ public final class DeliveryGroup {
 
     public static final Codec<DeliveryGroup> CODEC =
             RecordCodecBuilder.create(instance -> instance.group(
-                            UUIDUtil.CODEC.fieldOf("id").forGetter(DeliveryGroup::id),
-                            Codec.STRING.fieldOf("name").forGetter(DeliveryGroup::name),
-                            UUIDUtil.CODEC.listOf().optionalFieldOf("members", List.of())
-                                    .forGetter(group -> List.copyOf(group.members)),
-                            TaskProgress.CODEC.listOf().optionalFieldOf("active_tasks", List.of())
-                                    .forGetter(group -> List.copyOf(group.activeTasks.values())),
-                            Identifier.CODEC.listOf().optionalFieldOf("completed_tasks", List.of())
-                                    .forGetter(group -> List.copyOf(group.completedTasks)),
-                            Codec.LONG.optionalFieldOf("experience", 0L).forGetter(DeliveryGroup::experience),
-                            Codec.LONG.optionalFieldOf("balance", 0L).forGetter(DeliveryGroup::balance),
-                            MailboxParcel.CODEC.listOf().optionalFieldOf("mailbox_inbox", List.of())
-                                    .forGetter(group -> List.copyOf(group.mailboxInbox)),
-                            MailboxParcel.CODEC.listOf().optionalFieldOf("pending_mailbox", List.of())
-                                    .forGetter(group -> List.copyOf(group.pendingMailbox)))
-                    .apply(instance, DeliveryGroup::new));
+                    UUIDUtil.CODEC.fieldOf("id").forGetter(DeliveryGroup::id),
+                    Codec.STRING.fieldOf("name").forGetter(DeliveryGroup::name),
+                    UUIDUtil.CODEC.optionalFieldOf("owner").forGetter(group -> Optional.of(group.owner)),
+                    UUIDUtil.CODEC.listOf().optionalFieldOf("members", List.of()).forGetter(group -> List.copyOf(group.members)),
+                    TaskProgress.CODEC.listOf().optionalFieldOf("active_tasks", List.of())
+                            .forGetter(group -> List.copyOf(group.activeTasks.values())),
+                    Identifier.CODEC.listOf().optionalFieldOf("completed_tasks", List.of())
+                            .forGetter(group -> List.copyOf(group.completedTasks)),
+                    Codec.LONG.optionalFieldOf("experience", 0L).forGetter(DeliveryGroup::experience),
+                    Codec.LONG.optionalFieldOf("balance", 0L).forGetter(DeliveryGroup::balance),
+                    MailboxParcel.CODEC.listOf().optionalFieldOf("mailbox_inbox", List.of())
+                            .forGetter(group -> List.copyOf(group.mailboxInbox)),
+                    MailboxParcel.CODEC.listOf().optionalFieldOf("pending_mailbox", List.of())
+                            .forGetter(group -> List.copyOf(group.pendingMailbox))
+            ).apply(instance, DeliveryGroup::new));
     private final UUID id;
+    private final UUID owner;
     private final String name;
     private final Set<UUID> members;
     private final Map<Identifier, TaskProgress> activeTasks;
@@ -37,8 +38,9 @@ public final class DeliveryGroup {
     private long experience;
     private long balance;
 
-    private DeliveryGroup(UUID id, String name, List<UUID> members, List<TaskProgress> activeTasks, List<Identifier> completedTasks,
-                          long experience, long balance, List<MailboxParcel> mailboxInbox, List<MailboxParcel> pendingMailbox) {
+    private DeliveryGroup(UUID id, String name, Optional<UUID> owner, List<UUID> members, List<TaskProgress> activeTasks,
+                          List<Identifier> completedTasks, long experience, long balance, List<MailboxParcel> mailboxInbox,
+                          List<MailboxParcel> pendingMailbox) {
         this.id = Objects.requireNonNull(id, "id");
         this.name = Objects.requireNonNull(name, "name");
 
@@ -55,6 +57,17 @@ public final class DeliveryGroup {
         }
 
         this.members = new LinkedHashSet<>(Objects.requireNonNull(members, "members"));
+
+        if (this.members.isEmpty()) {
+            throw new IllegalArgumentException("Group '" + name + "' must contain at least one member");
+        }
+
+        this.owner = owner.orElseGet(() -> this.members.iterator().next());
+
+        if (!this.members.contains(this.owner)) {
+            throw new IllegalArgumentException("Group owner must also be a member of the group");
+        }
+
         this.activeTasks = new LinkedHashMap<>();
 
         for (TaskProgress task : Objects.requireNonNull(activeTasks, "activeTasks")) {
@@ -68,7 +81,6 @@ public final class DeliveryGroup {
         this.completedTasks = new LinkedHashSet<>(Objects.requireNonNull(completedTasks, "completedTasks"));
 
         for (Identifier completed : this.completedTasks) {
-
             if (this.activeTasks.containsKey(completed)) {
                 throw new IllegalArgumentException("Task '" + completed + "' cannot be active and completed");
             }
@@ -91,7 +103,15 @@ public final class DeliveryGroup {
     }
 
     static DeliveryGroup create(UUID id, String name, UUID owner) {
-        return new DeliveryGroup(id, name, List.of(owner), List.of(), List.of(), 0L, 0L, List.of(), List.of());
+        return new DeliveryGroup(id, name, Optional.of(owner), List.of(owner), List.of(), List.of(), 0L, 0L, List.of(), List.of());
+    }
+
+    public UUID owner() {
+        return owner;
+    }
+
+    public boolean isOwner(UUID playerId) {
+        return owner.equals(playerId);
     }
 
     public UUID id() {
@@ -167,6 +187,10 @@ public final class DeliveryGroup {
     }
 
     boolean removeMember(UUID playerId) {
+        if (isOwner(playerId)) {
+            return false;
+        }
+
         return members.remove(playerId);
     }
 

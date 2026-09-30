@@ -31,21 +31,31 @@ public final class GroupCommand {
     }
 
     private static void register(
-            CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(Commands.literal("delivery")
-                .then(Commands.literal("group")
-                        .then(Commands.literal("create").requires(CommandSourceStack::isPlayer)
-                                .then(Commands.argument("name", StringArgumentType.greedyString())
-                                        .executes(GroupCommand::createGroup)))
-                        .then(Commands.literal("info").requires(CommandSourceStack::isPlayer)
-                                .executes(GroupCommand::showGroupInfo)))
-                .then(Commands.literal("debug")
-                        .then(Commands.literal("addxp").requires(GroupCommand::canUseDebugCommands)
-                                .then(Commands.argument("amount", LongArgumentType.longArg(1L))
-                                        .executes(GroupCommand::addExperience)))
-                        .then(Commands.literal("addmoney").requires(GroupCommand::canUseDebugCommands)
-                                .then(Commands.argument("amount", LongArgumentType.longArg(1L))
-                                        .executes(GroupCommand::addMoney))))
+            CommandDispatcher<CommandSourceStack> dispatcher
+    ) {
+        dispatcher.register(
+                Commands.literal("delivery")
+                        .then(Commands.literal("group")
+                                .then(Commands.literal("create").requires(CommandSourceStack::isPlayer)
+                                        .then(Commands.argument("name", StringArgumentType.greedyString())
+                                                .executes(GroupCommand::createGroup)))
+                                .then(Commands.literal("info").requires(CommandSourceStack::isPlayer)
+                                        .executes(GroupCommand::showGroupInfo))
+                                .then(Commands.literal("add").requires(CommandSourceStack::isPlayer)
+                                        .then(Commands.argument("player", StringArgumentType.word())
+                                                .executes(GroupCommand::addMember)))
+                                .then(Commands.literal("remove").requires(CommandSourceStack::isPlayer)
+                                        .then(Commands.argument("player", StringArgumentType.word())
+                                                .executes(GroupCommand::removeMember)))
+                                .then(Commands.literal("leave").requires(CommandSourceStack::isPlayer)
+                                        .executes(GroupCommand::leaveGroup)))
+                        .then(Commands.literal("debug")
+                                .then(Commands.literal("addxp").requires(GroupCommand::canUseDebugCommands)
+                                        .then(Commands.argument("amount", LongArgumentType.longArg(1L))
+                                                .executes(GroupCommand::addExperience)))
+                                .then(Commands.literal("addmoney").requires(GroupCommand::canUseDebugCommands)
+                                        .then(Commands.argument("amount", LongArgumentType.longArg(1L))
+                                                .executes(GroupCommand::addMoney))))
         );
     }
 
@@ -84,6 +94,7 @@ public final class GroupCommand {
         source.sendSuccess(() -> Component.literal("----- Delivery Group -----"), false);
         source.sendSuccess(() -> Component.literal("Name: " + group.name()), false);
         source.sendSuccess(() -> Component.literal("ID: " + group.id()), false);
+        source.sendSuccess(() -> Component.literal("Owner: " + group.owner()), false);
         source.sendSuccess(() -> Component.literal("Members: " + group.members().size()), false);
         source.sendSuccess(() -> Component.literal("Experience: " + group.experience()), false);
         source.sendSuccess(() -> Component.literal("Balance: " + group.balance()), false);
@@ -142,7 +153,137 @@ public final class GroupCommand {
         return Command.SINGLE_SUCCESS;
     }
 
+    private static int addMember(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(source.getServer());
+
+        Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(player.getUUID());
+
+        if (optionalGroup.isEmpty()) {
+            source.sendFailure(Component.literal("You are not currently in a delivery group."));
+            return 0;
+        }
+
+        DeliveryGroup group = optionalGroup.get();
+
+        if (!group.isOwner(player.getUUID())) {
+            source.sendFailure(Component.literal("Only the group owner can add members."));
+
+            return 0;
+        }
+
+        String playerName = StringArgumentType.getString(context, "player");
+        Optional<ServerPlayer> optionalTarget = findOnlinePlayer(source, playerName);
+
+        if (optionalTarget.isEmpty()) {
+            source.sendFailure(Component.literal("Player '" + playerName + "' is not online."));
+            return 0;
+        }
+
+        ServerPlayer target = optionalTarget.get();
+
+        if (data.getGroupForPlayer(target.getUUID()).isPresent()) {
+            source.sendFailure(Component.literal(target.getName().getString() + " is already in a delivery group."));
+            return 0;
+        }
+
+        if (!data.addMember(group.id(), target.getUUID())) {
+            source.sendFailure(Component.literal("Failed to add " + target.getName().getString() + " to the group."));
+            return 0;
+        }
+
+        source.sendSuccess(() -> Component.literal("Added " + target.getName().getString() + " to '" + group.name() + "'."), false);
+        target.sendSystemMessage(Component.literal("You were added to delivery group '" + group.name() + "'."));
+
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int removeMember(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+
+        ServerPlayer player = source.getPlayerOrException();
+
+        DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(source.getServer());
+        Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(player.getUUID());
+
+        if (optionalGroup.isEmpty()) {
+            source.sendFailure(Component.literal("You are not currently in a delivery group."));
+            return 0;
+        }
+
+        DeliveryGroup group = optionalGroup.get();
+
+        if (!group.isOwner(player.getUUID())) {
+            source.sendFailure(Component.literal("Only the group owner can remove members."));
+            return 0;
+        }
+
+        String playerName = StringArgumentType.getString(context, "player");
+        Optional<ServerPlayer> optionalTarget = findOnlinePlayer(source, playerName);
+
+        if (optionalTarget.isEmpty()) {
+            source.sendFailure(Component.literal("Player '" + playerName + "' is not online."));
+            return 0;
+        }
+
+        ServerPlayer target = optionalTarget.get();
+
+        if (target.getUUID().equals(player.getUUID())) {
+            source.sendFailure(Component.literal("The group owner cannot remove themselves."));
+            return 0;
+        }
+
+        if (!group.hasMember(target.getUUID())) {
+            source.sendFailure(Component.literal(target.getName().getString() + " is not a member of your group."));
+            return 0;
+        }
+
+        if (!data.removeMember(group.id(), target.getUUID())) {
+            source.sendFailure(Component.literal("Failed to remove " + target.getName().getString() + "."));
+            return 0;
+        }
+
+        source.sendSuccess(() -> Component.literal("Removed " + target.getName().getString() + " from '" + group.name() + "'."), false);
+        target.sendSystemMessage(Component.literal("You were removed from delivery group '" + group.name() + "'."));
+
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int leaveGroup(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(source.getServer());
+        Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(player.getUUID());
+
+        if (optionalGroup.isEmpty()) {
+            source.sendFailure(Component.literal("You are not currently in a delivery group."));
+            return 0;
+        }
+
+        DeliveryGroup group = optionalGroup.get();
+
+        if (group.isOwner(player.getUUID())) {
+            source.sendFailure(Component.literal("The group owner cannot leave the group."));
+            return 0;
+        }
+
+        if (!data.removeMember(group.id(), player.getUUID())) {
+            source.sendFailure(Component.literal("Failed to leave the delivery group."));
+            return 0;
+        }
+
+        source.sendSuccess(() -> Component.literal("You left delivery group '" + group.name() + "'."), false);
+
+        return Command.SINGLE_SUCCESS;
+    }
+
     private static boolean canUseDebugCommands(CommandSourceStack source) {
         return source.isPlayer() && source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER);
+    }
+
+    private static Optional<ServerPlayer> findOnlinePlayer(CommandSourceStack source, String name) {
+        return source.getServer().getPlayerList().getPlayers().stream()
+                .filter(player -> player.getName().getString().equalsIgnoreCase(name)).findFirst();
     }
 }
