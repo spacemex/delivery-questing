@@ -14,9 +14,11 @@ import net.minecraft.world.level.saveddata.SavedDataType;
 import java.util.*;
 
 public final class DeliveryQuestingSavedData extends SavedData {
-    public static final Codec<DeliveryQuestingSavedData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            DeliveryGroup.CODEC.listOf().optionalFieldOf("groups", List.of()).forGetter(data -> List.copyOf(data.groups.values()))
-    ).apply(instance, DeliveryQuestingSavedData::new));
+    public static final Codec<DeliveryQuestingSavedData> CODEC =
+            RecordCodecBuilder.create(instance ->
+                    instance.group(DeliveryGroup.CODEC.listOf().optionalFieldOf("groups", List.of())
+                                    .forGetter(data -> List.copyOf(data.groups.values())))
+                            .apply(instance, DeliveryQuestingSavedData::new));
     private static final SavedDataType<DeliveryQuestingSavedData> TYPE = new SavedDataType<>(
             Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "progression"),
             DeliveryQuestingSavedData::new,
@@ -73,7 +75,6 @@ public final class DeliveryQuestingSavedData extends SavedData {
     public DeliveryGroup createGroup(String name, UUID owner) {
         Objects.requireNonNull(name, "name");
         Objects.requireNonNull(owner, "owner");
-
         String trimmedName = name.trim();
 
         if (trimmedName.isEmpty()) {
@@ -89,8 +90,8 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         UUID id = UUID.randomUUID();
-
         DeliveryGroup group = DeliveryGroup.create(id, trimmedName, owner);
+
         groups.put(id, group);
 
         setDirty();
@@ -256,6 +257,11 @@ public final class DeliveryQuestingSavedData extends SavedData {
 
         group.addExperience(task.rewards().experience());
         group.addBalance(task.rewards().money());
+
+        if (!task.rewards().items().isEmpty()) {
+            MailboxParcel parcel = MailboxParcel.create(task.contractor().name(), task.rewards().items());
+            group.addMailboxParcel(parcel);
+        }
 
         setDirty();
         return true;

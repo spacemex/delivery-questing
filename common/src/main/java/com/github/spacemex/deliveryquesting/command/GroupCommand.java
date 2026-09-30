@@ -17,14 +17,6 @@ import net.minecraft.server.permissions.Permissions;
 
 import java.util.Optional;
 
-/**
- * TODO:
- * Add Command Suggestions,
- * Add Context Suggestions,
- * <p>
- * Add More Commands,
- * Remove Debug Commands
- */
 public final class GroupCommand {
     private static boolean initialized;
 
@@ -39,18 +31,21 @@ public final class GroupCommand {
     }
 
     private static void register(
-            CommandDispatcher<CommandSourceStack> dispatcher
-    ) {
-        dispatcher.register(
-                Commands.literal("delivery")
-                        .then(Commands.literal("group")
-                                .then(Commands.literal("create").requires(CommandSourceStack::isPlayer)
-                                        .then(Commands.argument("name", StringArgumentType.greedyString()).executes(GroupCommand::createGroup)))
-                                .then(Commands.literal("info").requires(CommandSourceStack::isPlayer).executes(GroupCommand::showGroupInfo)))
-                        .then(Commands.literal("debug").then(Commands.literal("addxp").requires(GroupCommand::canUseDebugCommands)
-                                        .then(Commands.argument("amount", LongArgumentType.longArg(1L)).executes(GroupCommand::addExperience)))
-                                .then(Commands.literal("addmoney").requires(GroupCommand::canUseDebugCommands)
-                                        .then(Commands.argument("amount", LongArgumentType.longArg(1L)).executes(GroupCommand::addMoney))))
+            CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(Commands.literal("delivery")
+                .then(Commands.literal("group")
+                        .then(Commands.literal("create").requires(CommandSourceStack::isPlayer)
+                                .then(Commands.argument("name", StringArgumentType.greedyString())
+                                        .executes(GroupCommand::createGroup)))
+                        .then(Commands.literal("info").requires(CommandSourceStack::isPlayer)
+                                .executes(GroupCommand::showGroupInfo)))
+                .then(Commands.literal("debug")
+                        .then(Commands.literal("addxp").requires(GroupCommand::canUseDebugCommands)
+                                .then(Commands.argument("amount", LongArgumentType.longArg(1L))
+                                        .executes(GroupCommand::addExperience)))
+                        .then(Commands.literal("addmoney").requires(GroupCommand::canUseDebugCommands)
+                                .then(Commands.argument("amount", LongArgumentType.longArg(1L))
+                                        .executes(GroupCommand::addMoney))))
         );
     }
 
@@ -67,8 +62,8 @@ public final class GroupCommand {
             source.sendSuccess(() -> Component.literal("Group ID: " + group.id()), false);
 
             return Command.SINGLE_SUCCESS;
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            source.sendFailure(Component.literal(e.getMessage()));
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            source.sendFailure(Component.literal(exception.getMessage()));
             return 0;
         }
     }
@@ -85,6 +80,7 @@ public final class GroupCommand {
         }
 
         DeliveryGroup group = optionalGroup.get();
+
         source.sendSuccess(() -> Component.literal("----- Delivery Group -----"), false);
         source.sendSuccess(() -> Component.literal("Name: " + group.name()), false);
         source.sendSuccess(() -> Component.literal("ID: " + group.id()), false);
@@ -93,12 +89,15 @@ public final class GroupCommand {
         source.sendSuccess(() -> Component.literal("Balance: " + group.balance()), false);
         source.sendSuccess(() -> Component.literal("Active Tasks: " + group.activeTasks().size()), false);
         source.sendSuccess(() -> Component.literal("Completed Tasks: " + group.completedTasks().size()), false);
+        source.sendSuccess(() -> Component.literal("Mailbox Inbox: " + group.mailboxInbox().size() + " / " + DeliveryGroup.MAILBOX_INBOX_SIZE), false);
+        source.sendSuccess(() -> Component.literal("Pending Mail: " + group.pendingMailbox().size()), false);
 
         return Command.SINGLE_SUCCESS;
     }
 
     private static int addExperience(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
+
         ServerPlayer player = source.getPlayerOrException();
         long amount = LongArgumentType.getLong(context, "amount");
         DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(source.getServer());

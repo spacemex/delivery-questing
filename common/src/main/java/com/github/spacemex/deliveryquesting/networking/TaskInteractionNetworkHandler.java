@@ -50,7 +50,6 @@ public final class TaskInteractionNetworkHandler {
 
     private static void handleAcceptTask(ServerPlayer serverPlayer, AcceptTaskPayload payload) {
         if (!(serverPlayer.containerMenu instanceof BulletinBoardMenu menu)) {
-
             return;
         }
 
@@ -78,7 +77,7 @@ public final class TaskInteractionNetworkHandler {
         TaskRuntimeManager.ActionResult result = TaskRuntimeManager.acceptTask(data, optionalGroup.get(), optionalTask.get());
 
         serverPlayer.sendSystemMessage(Component.literal(result.message()));
-        serverPlayer.closeContainer(); //TODO: Add Refresh Menu
+        serverPlayer.closeContainer();
     }
 
     private static void handleSubmitTask(ServerPlayer serverPlayer, SubmitTaskPayload payload) {
@@ -114,8 +113,11 @@ public final class TaskInteractionNetworkHandler {
 
         if (result.completed()) {
             serverPlayer.sendSystemMessage(Component.literal("Rewards: +" + task.rewards().experience() + " XP, +" + task.rewards().money() + " money"));
-        }
 
-        serverPlayer.closeContainer(); //TODO: Add Menu Refresh
+            if (!task.rewards().items().isEmpty()) {
+                serverPlayer.sendSystemMessage(Component.literal("Item rewards were delivered to your group's mailbox."));
+            }
+        }
+        serverPlayer.closeContainer();
     }
 }

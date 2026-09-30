@@ -1,8 +1,6 @@
 package com.github.spacemex.deliveryquesting.progression;
 
-import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.task.ItemRequirement;
-import com.github.spacemex.deliveryquesting.task.ItemReward;
 import com.github.spacemex.deliveryquesting.task.TaskDefinition;
 import com.github.spacemex.deliveryquesting.task.TaskRequirement;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -11,7 +9,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 import java.util.Optional;
 
@@ -65,7 +62,7 @@ public final class TaskRuntimeManager {
 
         for (TaskRequirement requirement : task.requirements()) {
             if (!(requirement instanceof ItemRequirement itemRequirement)) {
-                continue; // Todo
+                continue; //Todo: Future Fluid and Other Misc Requirements
             }
 
             long remaining = progress.getRemaining(requirement);
@@ -86,10 +83,8 @@ public final class TaskRuntimeManager {
 
         if (progress.isComplete(task)) {
             if (!data.completeTask(group.id(), task)) {
-                return new SubmissionResult(false, submitted, false, "Task progress is complete, but the task could not be finalized");
+                return new SubmissionResult(false, submitted, false, "Task progress is complete, but the task could not be finalized.");
             }
-
-            giveItemRewards(player, task);
 
             return new SubmissionResult(true, submitted, true, "Completed task '" + task.name() + "'.");
         }
@@ -139,41 +134,9 @@ public final class TaskRuntimeManager {
             case ITEM -> requirement.target().equals(BuiltInRegistries.ITEM.getKey(stack.getItem()));
             case TAG -> {
                 TagKey<Item> tag = TagKey.create(Registries.ITEM, requirement.target());
-                yield stack.getItem().builtInRegistryHolder().is(tag); // todo: find a replacement for `.builtInRegistryHolder()`
+                yield stack.getItem().builtInRegistryHolder().is(tag);
             }
         };
-    }
-
-    private static void giveItemRewards(ServerPlayer player, TaskDefinition task) {
-        for (ItemReward reward : task.rewards().items()) {
-            Item item = BuiltInRegistries.ITEM.getValue(reward.item());
-
-            if (item == null || item == Items.AIR) {
-                DeliveryQuesting.LOGGER.error("Task {} has an invalid reward item {}", task.id(), reward.item());
-                continue;
-            }
-
-            giveItem(player, item, reward.count());
-        }
-    }
-
-    private static void giveItem(ServerPlayer player, Item item, int amount) {
-        int remaining = amount;
-        ItemStack example = new ItemStack(item);
-        int maxStackSize = example.getMaxStackSize();
-
-        while (remaining > 0) {
-            int amountForStack = Math.min(remaining, maxStackSize);
-
-            ItemStack stack = new ItemStack(item, amountForStack);
-
-            player.getInventory().add(stack);
-
-            if (!stack.isEmpty()) {
-                player.drop(stack, false, false);
-            }
-            remaining -= amountForStack;
-        }
     }
 
     public record ActionResult(boolean success, String message) {
