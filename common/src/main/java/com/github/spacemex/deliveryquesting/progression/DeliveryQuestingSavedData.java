@@ -20,14 +20,16 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class DeliveryQuestingSavedData extends SavedData {
-    public static final Codec<DeliveryQuestingSavedData> CODEC =
-            RecordCodecBuilder.create(instance -> instance.group(
-                            DeliveryGroup.CODEC.listOf().optionalFieldOf("groups", List.of())
-                                    .forGetter(data -> List.copyOf(data.groups.values())),
-                            UUIDUtil.CODEC.listOf().optionalFieldOf("starter_kits_delivered", List.of())
-                                    .forGetter(data -> List.copyOf(data.starterKitsDelivered)))
-                    .apply(instance, DeliveryQuestingSavedData::new)
-            );
+    public static final Codec<DeliveryQuestingSavedData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                    DeliveryGroup.CODEC.listOf().optionalFieldOf("groups", List.of())
+                            .forGetter(data -> List.copyOf(data.groups.values())),
+                    UUIDUtil.CODEC.listOf().optionalFieldOf("starter_kits_delivered", List.of())
+                            .forGetter(data -> List.copyOf(data.starterKitsDelivered)),
+                    PhysicalContractReservation.CODEC.listOf().optionalFieldOf("outstanding_physical_contracts", List.of())
+                            .forGetter(data -> data.outstandingPhysicalContracts.entrySet().stream().map(entry ->
+                                    new PhysicalContractReservation(entry.getKey(), entry.getValue())).toList()))
+            .apply(instance, DeliveryQuestingSavedData::new)
+    );
     private static final SavedDataType<DeliveryQuestingSavedData> TYPE = new SavedDataType<>(
             Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "progression"),
             DeliveryQuestingSavedData::new,
@@ -40,13 +42,15 @@ public final class DeliveryQuestingSavedData extends SavedData {
     private static final int STARTER_PARCELS = 4;
     private final Map<UUID, DeliveryGroup> groups = new LinkedHashMap<>();
     private final Set<UUID> starterKitsDelivered = new LinkedHashSet<>();
+    private final Map<UUID, Identifier> outstandingPhysicalContracts = new LinkedHashMap<>();
 
     private DeliveryQuestingSavedData() {
     }
 
-    private DeliveryQuestingSavedData(List<DeliveryGroup> loadedGroups, List<UUID> starterKitsDelivered) {
+    private DeliveryQuestingSavedData(List<DeliveryGroup> loadedGroups, List<UUID> starterKitsDelivered, List<PhysicalContractReservation> physicalContracts) {
         Objects.requireNonNull(loadedGroups, "loadedGroups");
         Objects.requireNonNull(starterKitsDelivered, "starterKitsDelivered");
+        Objects.requireNonNull(physicalContracts, "physicalContracts");
 
         for (DeliveryGroup group : loadedGroups) {
             DeliveryGroup existing = groups.putIfAbsent(group.id(), group);
@@ -58,6 +62,18 @@ public final class DeliveryQuestingSavedData extends SavedData {
 
         this.starterKitsDelivered.addAll(starterKitsDelivered);
         this.starterKitsDelivered.retainAll(groups.keySet());
+
+        for (PhysicalContractReservation reservation : physicalContracts) {
+            if (!groups.containsKey(reservation.groupId())) {
+                continue;
+            }
+
+            Identifier existing = outstandingPhysicalContracts.putIfAbsent(reservation.groupId(), reservation.taskId());
+
+            if (existing != null) {
+                throw new IllegalArgumentException("Group " + reservation.groupId() + " contains multiple outstanding physical contracts");
+            }
+        }
 
         validateMembership();
     }
@@ -131,6 +147,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         starterKitsDelivered.remove(groupId);
+        outstandingPhysicalContracts.remove(groupId);
 
         setDirty();
         return true;
@@ -138,6 +155,24 @@ public final class DeliveryQuestingSavedData extends SavedData {
 
     public boolean hasStarterKitDelivered(UUID groupId) {
         return starterKitsDelivered.contains(groupId);
+    }
+
+    public Optional<Identifier> getOutstandingPhysicalContract(UUID groupId) {
+        return Optional.ofNullable(outstandingPhysicalContracts.get(groupId));
+    }
+
+    public boolean clearOutstandingPhysicalContract(UUID groupId, Identifier taskId) {
+        Identifier outstanding = outstandingPhysicalContracts.get(groupId);
+
+        if (outstanding == null || !outstanding.equals(taskId)) {
+
+            return false;
+        }
+
+        outstandingPhysicalContracts.remove(groupId);
+
+        setDirty();
+        return true;
     }
 
     public boolean addMember(UUID groupId, UUID playerId) {
@@ -422,6 +457,24 @@ public final class DeliveryQuestingSavedData extends SavedData {
 
             if (ensureStarterKit(group)) {
                 changed = true;
+            }
+
+            Identifier physicalTask = outstandingPhysicalContracts.get(group.id());
+
+            if (physicalTask != null && (group.computerUnlocked() || !TaskManager.contains(physicalTask) || group.hasActiveTask(physicalTask)
+                    || group.hasCompletedTask(physicalTask))) {
+                outstandingPhysicalContracts.remove(group.id());
+
+                changed = true;
+            }
+
+            if (!outstandingPhysicalContracts.containsKey(group.id())) {
+                Optional<Identifier> physicalContract = findPhysicalContractInMailbox(group);
+
+                if (physicalContract.isPresent()) {
+                    outstandingPhysicalContracts.put(group.id(), physicalContract.get());
+                    changed = true;
+                }
             }
         }
 
@@ -800,14 +853,21 @@ public final class DeliveryQuestingSavedData extends SavedData {
             return Optional.empty();
         }
 
-        if (hasPhysicalContractInMailbox(group)) {
+        if (hasOutstandingPhysicalContract(group)) {
             return Optional.empty();
         }
 
-        List<TaskDefinition> possibleTasks = TaskManager.getTasks()
-                .stream()
-                .filter(task -> !task.forced()).filter(task ->
-                        TaskRuntimeManager.getAcceptanceFailure(group, task).isEmpty()).toList();
+        Optional<Identifier> existingContract = findPhysicalContractInMailbox(group);
+
+        if (existingContract.isPresent()) {
+            outstandingPhysicalContracts.put(group.id(), existingContract.get());
+
+            setDirty();
+            return Optional.empty();
+        }
+
+        List<TaskDefinition> possibleTasks = TaskManager.getTasks().stream().filter(task -> !task.forced())
+                .filter(task -> TaskRuntimeManager.getAcceptanceFailure(group, task).isEmpty()).toList();
 
         if (possibleTasks.isEmpty()) {
             return Optional.empty();
@@ -815,6 +875,8 @@ public final class DeliveryQuestingSavedData extends SavedData {
 
         TaskDefinition task = possibleTasks.get(ThreadLocalRandom.current().nextInt(possibleTasks.size()));
         MailboxParcel envelope = MailboxParcel.createContract(task.contractor().name(), task.id());
+
+        outstandingPhysicalContracts.put(group.id(), task.id());
 
         group.addMailboxParcel(envelope);
 
@@ -834,20 +896,48 @@ public final class DeliveryQuestingSavedData extends SavedData {
         return generated;
     }
 
-    private boolean hasPhysicalContractInMailbox(DeliveryGroup group) {
+    private Optional<Identifier> findPhysicalContractInMailbox(DeliveryGroup group) {
         for (MailboxParcel parcel : group.mailboxInbox()) {
-            if (parcel.isContractEnvelope()) {
-                return true;
+            if (!parcel.isContractEnvelope()) {
+                continue;
+            }
+
+            Optional<Identifier> taskId = parcel.contractTaskId();
+
+            if (taskId.isPresent()) {
+                return taskId;
             }
         }
 
         for (MailboxParcel parcel : group.pendingMailbox()) {
-            if (parcel.isContractEnvelope()) {
-                return true;
+            if (!parcel.isContractEnvelope()) {
+                continue;
+            }
+
+            Optional<Identifier> taskId = parcel.contractTaskId();
+
+            if (taskId.isPresent()) {
+                return taskId;
             }
         }
 
-        return false;
+        return Optional.empty();
+    }
+
+    private boolean hasOutstandingPhysicalContract(DeliveryGroup group) {
+        Identifier taskId = outstandingPhysicalContracts.get(group.id());
+
+        if (taskId == null) {
+            return false;
+        }
+
+        if (group.computerUnlocked() || !TaskManager.contains(taskId) || group.hasActiveTask(taskId) || group.hasCompletedTask(taskId)) {
+            outstandingPhysicalContracts.remove(group.id());
+            setDirty();
+            return false;
+        }
+
+        return true;
     }
 
     public record PurchaseResult(boolean success, String message, long balance) {

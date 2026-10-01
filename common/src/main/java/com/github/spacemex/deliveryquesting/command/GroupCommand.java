@@ -294,6 +294,7 @@ public final class GroupCommand {
         source.sendSuccess(() -> Component.literal("Pending Deliveries: " + group.pendingDeliveries().size()), false);
         source.sendSuccess(() -> Component.literal("Active Jobs: " + group.activeJobs().size()), false);
         source.sendSuccess(() -> Component.literal("Starter Kit Delivered: " + data.hasStarterKitDelivered(group.id())), false);
+        source.sendSuccess(() -> Component.literal("Outstanding Physical Contract: " + data.getOutstandingPhysicalContract(group.id()).map(Identifier::toString).orElse("none")), false);
 
         return Command.SINGLE_SUCCESS;
     }

@@ -63,10 +63,10 @@ public final class BulletinBoardBlock extends Block {
 
         if (optionalGroup.isEmpty()) {
             serverPlayer.sendSystemMessage(Component.literal("You must be in a delivery group to accept a contract."));
-
             return InteractionResult.SUCCESS_SERVER;
         }
 
+        DeliveryGroup group = optionalGroup.get();
         Optional<TaskDefinition> optionalTask = TaskManager.getTask(taskId);
 
         if (optionalTask.isEmpty()) {
@@ -74,14 +74,17 @@ public final class BulletinBoardBlock extends Block {
             return InteractionResult.SUCCESS_SERVER;
         }
 
-        TaskRuntimeManager.ActionResult result = TaskRuntimeManager.acceptTask(data, optionalGroup.get(), optionalTask.get());
+        TaskRuntimeManager.ActionResult result = TaskRuntimeManager.acceptTask(data, group, optionalTask.get());
+
+        if (result.success()) {
+            data.clearOutstandingPhysicalContract(group.id(), taskId);
+        }
 
         if (!serverPlayer.isCreative()) {
             stack.shrink(1);
         }
 
         serverPlayer.sendSystemMessage(Component.literal(result.message()));
-
         return InteractionResult.SUCCESS_SERVER;
     }
 }
