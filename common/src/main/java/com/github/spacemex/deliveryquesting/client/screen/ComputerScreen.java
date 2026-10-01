@@ -1,14 +1,18 @@
 package com.github.spacemex.deliveryquesting.client.screen;
 
+import com.github.spacemex.deliveryquesting.menu.ComputerInboxEntry;
 import com.github.spacemex.deliveryquesting.menu.ComputerMailEntry;
 import com.github.spacemex.deliveryquesting.menu.ComputerMenu;
+import com.github.spacemex.deliveryquesting.menu.ComputerOfferEntry;
 import com.github.spacemex.deliveryquesting.networking.packets.AcceptEmailContractPayload;
+import com.github.spacemex.deliveryquesting.networking.packets.BuyOfferPayload;
 import com.github.spacemex.deliveryquesting.networking.packets.MarkEmailReadPayload;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import org.jspecify.annotations.NonNull;
 
@@ -18,13 +22,16 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
     private static final int MAILS_PER_PAGE = 4;
     private View view = View.DESKTOP;
     private int mailPage;
-    private int selectedMail = -1;
     private final Set<UUID> readThisSession = new HashSet<>();
+    private static final int OFFERS_PER_PAGE = 4;
+    private int minazonPage;
+    private UUID selectedMailId;
 
     private enum View {
         DESKTOP,
         MAIL_LIST,
-        MAIL_DETAIL
+        MAIL_DETAIL,
+        MINAZON
     }
 
     public ComputerScreen(ComputerMenu menu, Inventory inventory, Component title) {
@@ -45,6 +52,7 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             case DESKTOP -> buildDesktop();
             case MAIL_LIST -> buildMailList();
             case MAIL_DETAIL -> buildMailDetail();
+            case MINAZON -> buildMinazon();
         }
     }
 
@@ -52,42 +60,44 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         this.addRenderableWidget(Button.builder(Component.literal("Mail (" + getUnreadMailCount() + ")"), button -> {
             view = View.MAIL_LIST;
             mailPage = 0;
-            selectedMail = -1;
+            selectedMailId = null;
             rebuildView();
         }).bounds(leftPos + 25, topPos + 118, 110, 24).build());
 
-        Button minazon = this.addRenderableWidget(Button.builder(Component.literal("Minazon"),
-                button -> {
-                }).bounds(leftPos + 165, topPos + 118, 110, 24).build());
-
-        minazon.active = false;
+        this.addRenderableWidget(Button.builder(Component.literal("Minazon"), button -> {
+            view = View.MINAZON;
+            minazonPage = 0;
+            rebuildView();
+        }).bounds(leftPos + 165, topPos + 118, 110, 24).build());
     }
 
     private void buildMailList() {
-        List<ComputerMailEntry> mail = menu.mail();
+        List<ComputerInboxEntry> inbox = menu.inbox();
+
         int start = mailPage * MAILS_PER_PAGE;
 
         for (int row = 0; row < MAILS_PER_PAGE; row++) {
             int index = start + row;
 
-            if (index >= mail.size()) {
+            if (index >= inbox.size()) {
                 break;
             }
 
-            ComputerMailEntry entry = mail.get(index);
+            ComputerInboxEntry entry = inbox.get(index);
 
             String prefix = isRead(entry) ? "" : "* ";
 
-            this.addRenderableWidget(Button.builder(Component.literal(prefix + entry.task().name() + " - " + entry.task().contractor()),
-                    button -> openMail(index)).bounds(leftPos + 15, topPos + 35 + row * 27, 270, 22).build());
+            this.addRenderableWidget(Button.builder(Component.literal(prefix + entry.title() + " - " + entry.sender()),
+                    button -> openMail(entry)
+            ).bounds(leftPos + 15, topPos + 35 + row * 27, 270, 22).build());
         }
 
-        this.addRenderableWidget(
-                Button.builder(Component.literal("Desktop"), button -> {
+        this.addRenderableWidget(Button.builder(Component.literal("Desktop"), button -> {
                     view = View.DESKTOP;
-                    selectedMail = -1;
+                    selectedMailId = null;
                     rebuildView();
-                }).bounds(leftPos + 15, topPos + 153, 80, 22).build());
+                }).bounds(leftPos + 15, topPos + 153, 80, 22).build()
+        );
 
         Button previous = this.addRenderableWidget(Button.builder(Component.literal("Previous"), button -> {
             mailPage--;
@@ -96,7 +106,8 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
 
         previous.active = mailPage > 0;
 
-        Button next = this.addRenderableWidget(Button.builder(Component.literal("Next"), button -> {
+        Button next = this.addRenderableWidget(Button.builder(Component.literal("Next"
+        ), button -> {
             mailPage++;
             rebuildView();
         }).bounds(leftPos + 205, topPos + 153, 80, 22).build());
@@ -126,41 +137,99 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         accept.active = entry.canAccept();
     }
 
-    private void openMail(int index) {
-        if (index < 0 || index >= menu.mail().size()) {
-            return;
+    private void buildMinazon() {
+        List<ComputerOfferEntry> offers = menu.offers();
+
+        int start = minazonPage * OFFERS_PER_PAGE;
+
+        for (int row = 0; row < OFFERS_PER_PAGE; row++) {
+            int index = start + row;
+
+            if (index >= offers.size()) {
+                break;
+            }
+
+            ComputerOfferEntry offer = offers.get(index);
+
+            String label = offer.item() + " x" + offer.count() + " - " + offer.price();
+
+            if (offer.forEveryMember()) {
+                label += " [each member]";
+            }
+
+            if (!offer.unlocked()) {
+                label += " [Lv " + offer.minLevel() + "]";
+            }
+
+            Button button = this.addRenderableWidget(Button.builder(
+                    Component.literal(label), pressed -> {
+                        pressed.active = false;
+                        NetworkManager.sendToServer(new BuyOfferPayload(offer.id()));
+                    }
+            ).bounds(leftPos + 15, topPos + 38 + row * 27, 270, 22).build());
+
+            button.active = offer.canBuy();
         }
 
-        ComputerMailEntry entry = menu.mail().get(index);
-        selectedMail = index;
+        this.addRenderableWidget(Button.builder(Component.literal("Desktop"), button -> {
+            view = View.DESKTOP;
+            rebuildView();
+        }).bounds(leftPos + 15, topPos + 153, 80, 22).build());
 
+        Button previous = this.addRenderableWidget(Button.builder(Component.literal("Previous"), button -> {
+            minazonPage--;
+            rebuildView();
+        }).bounds(leftPos + 110, topPos + 153, 80, 22).build());
+
+        previous.active = minazonPage > 0;
+
+        Button next = this.addRenderableWidget(Button.builder(Component.literal("Next"), button -> {
+            minazonPage++;
+            rebuildView();
+        }).bounds(leftPos + 205, topPos + 153, 80, 22).build());
+
+        next.active = minazonPage < getOfferPageCount() - 1;
+    }
+
+    private void openMail(ComputerInboxEntry entry) {
         if (!isRead(entry)) {
             readThisSession.add(entry.emailId());
+
             NetworkManager.sendToServer(new MarkEmailReadPayload(entry.emailId()));
         }
 
-        view = View.MAIL_DETAIL;
+        switch (entry.type()) {
+            case CONTRACT -> {
+                selectedMailId = entry.emailId();
+                view = View.MAIL_DETAIL;
+            }
+            case OFFER -> {
+                selectedMailId = null;
+                view = View.MINAZON;
+                minazonPage = findOfferPage(entry.referenceId());
+            }
+        }
+
         rebuildView();
     }
 
     private ComputerMailEntry getSelectedMail() {
-        if (selectedMail < 0 || selectedMail >= menu.mail().size()) {
+        if (selectedMailId == null) {
             return null;
         }
-
-        return menu.mail().get(selectedMail);
+        return menu.mail().stream().filter(entry -> entry.emailId().equals(selectedMailId)).findFirst().orElse(null);
     }
 
-    private boolean isRead(ComputerMailEntry entry) {
+    private boolean isRead(ComputerInboxEntry entry) {
         return entry.read() || readThisSession.contains(entry.emailId());
     }
 
     private long getUnreadMailCount() {
-        return menu.mail().stream().filter(entry -> !isRead(entry)).count();
+        return menu.inbox().stream().filter(entry -> !isRead(entry)).count();
     }
 
     private int getMailPageCount() {
-        return Math.max(1, (menu.mail().size() + MAILS_PER_PAGE - 1) / MAILS_PER_PAGE);
+        return Math.max(1, (menu.inbox().size() + MAILS_PER_PAGE - 1) / MAILS_PER_PAGE);
     }
 
     @Override
@@ -178,8 +247,10 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             case DESKTOP -> extractDesktopLabels(graphics);
             case MAIL_LIST -> extractMailListLabels(graphics);
             case MAIL_DETAIL -> extractMailDetailLabels(graphics);
+            case MINAZON -> extractMinazonLabels(graphics);
         }
     }
+
 
     private void extractDesktopLabels(GuiGraphicsExtractor graphics) {
         graphics.text(font, title, 14, 12, 0xFFFFFFFF, false);
@@ -195,7 +266,7 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         graphics.text(font, Component.literal("Mail"), 14, 12, 0xFFFFFFFF, false);
         graphics.text(font, Component.literal("Inbox - " + getUnreadMailCount() + " unread"), 14, 23, 0xFF80CBC4, false);
 
-        if (menu.mail().isEmpty()) {
+        if (menu.inbox().isEmpty()) {
             graphics.centeredText(font, Component.literal("No mail."), imageWidth / 2, 85, 0xFF9EA7AA);
         }
     }
@@ -247,6 +318,18 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         graphics.text(font, Component.literal("Rewards: +" + task.experienceReward() + " XP, +" + task.moneyReward() + " money"), 14, 139, 0xFF80CBC4, false);
     }
 
+    private void extractMinazonLabels(GuiGraphicsExtractor graphics) {
+        graphics.text(font, Component.literal("Minazon"), 14, 12, 0xFFFFFFFF, false);
+
+        graphics.text(font, Component.literal("Balance: " + menu.balance()), 14, 24, 0xFF80CBC4, false);
+
+        if (menu.offers().isEmpty()) {
+            graphics.centeredText(font, Component.literal("No offers available."), imageWidth / 2, 85, 0xFF9EA7AA);
+        }
+
+        graphics.centeredText(font, Component.literal("Orders arrive the next Minecraft morning"), imageWidth / 2, 142, 0xFF9EA7AA);
+    }
+
     private static List<String> wrapText(String text, int maxCharacters) {
         List<String> lines = new ArrayList<>();
         StringBuilder current = new StringBuilder();
@@ -269,5 +352,19 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         }
 
         return lines;
+    }
+
+    private int getOfferPageCount() {
+        return Math.max(1, (menu.offers().size() + OFFERS_PER_PAGE - 1) / OFFERS_PER_PAGE);
+    }
+
+    private int findOfferPage(Identifier offerId) {
+        for (int i = 0; i < menu.offers().size(); i++) {
+            if (menu.offers().get(i).id().equals(offerId)) {
+                return i / OFFERS_PER_PAGE;
+            }
+        }
+
+        return 0;
     }
 }

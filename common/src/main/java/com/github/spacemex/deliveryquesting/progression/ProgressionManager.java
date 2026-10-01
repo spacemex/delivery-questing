@@ -2,9 +2,7 @@ package com.github.spacemex.deliveryquesting.progression;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.config.ConfigReader;
-import com.github.spacemex.deliveryquesting.task.ItemReward;
-import com.github.spacemex.deliveryquesting.task.TaskDefinition;
-import com.github.spacemex.deliveryquesting.task.TaskManager;
+import com.github.spacemex.deliveryquesting.task.*;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.TickEvent;
 import net.minecraft.resources.Identifier;
@@ -30,10 +28,21 @@ public final class ProgressionManager {
         });
 
         TickEvent.SERVER_POST.register(server -> {
-            if (server.getTickCount() % CONTRACT_EMAIL_INTERVAL_TICKS != 0) {
-                return;
+            DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(server);
+
+            if (server.getTickCount() % CONTRACT_EMAIL_INTERVAL_TICKS == 0) {
+                data.generateContractEmails();
             }
-            DeliveryQuestingSavedData.get(server).generateContractEmails();
+
+            long overworldTime = Math.floorMod(server.overworld().getOverworldClockTime(), 24000L);
+
+            if (overworldTime == 20L) {
+                int delivered = data.deliverPendingDeliveries();
+
+                if (delivered > 0) {
+                    DeliveryQuesting.LOGGER.debug("Delivered pending Minazon orders for {} group(s)", delivered);
+                }
+            }
         });
     }
 
@@ -65,6 +74,10 @@ public final class ProgressionManager {
                 changed = true;
                 DeliveryQuesting.LOGGER.info("Forced task {} activated for group '{}' at level {}", task.id(), group.name(), currentLevel);
             }
+        }
+
+        if (addOfferEmails(group, previousLevel + 1, currentLevel)) {
+            changed = true;
         }
 
         int computerLevel = ConfigReader.getMinComputerLevel();
@@ -110,6 +123,10 @@ public final class ProgressionManager {
             }
         }
 
+        if (addOfferEmails(group, 0, currentLevel)) {
+            changed = true;
+        }
+
         if (currentLevel >= ConfigReader.getMinComputerLevel() && group.unlockComputer()) {
             changed = true;
             DeliveryQuesting.LOGGER.info("Reconciled Computer unlock for group '{}'", group.name());
@@ -137,5 +154,30 @@ public final class ProgressionManager {
         DeliveryQuesting.LOGGER.info("Delivered Computer unlock parcel to group '{}'", group.name());
 
         return true;
+    }
+
+    private static boolean addOfferEmails(DeliveryGroup group, int minimumLevel, int maximumLevel) {
+        boolean changed = false;
+
+        for (OfferDefinition offer : OfferManager.getOffers()) {
+            if (offer.minLevel() < minimumLevel) {
+                continue;
+            }
+
+            if (offer.minLevel() > maximumLevel) {
+                continue;
+            }
+
+            if (group.hasOfferEmail(offer.id())) {
+                continue;
+            }
+
+            if (group.addEmail(GroupEmail.offer(offer))) {
+                changed = true;
+                DeliveryQuesting.LOGGER.info("Offer {} unlocked for group '{}'", offer.id(), group.name());
+            }
+        }
+
+        return changed;
     }
 }

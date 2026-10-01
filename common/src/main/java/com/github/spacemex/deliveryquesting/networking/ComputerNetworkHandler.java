@@ -2,6 +2,7 @@ package com.github.spacemex.deliveryquesting.networking;
 
 import com.github.spacemex.deliveryquesting.menu.ComputerMenu;
 import com.github.spacemex.deliveryquesting.networking.packets.AcceptEmailContractPayload;
+import com.github.spacemex.deliveryquesting.networking.packets.BuyOfferPayload;
 import com.github.spacemex.deliveryquesting.networking.packets.MarkEmailReadPayload;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
@@ -27,6 +28,7 @@ public final class ComputerNetworkHandler {
 
         registerMarkEmailRead();
         registerAcceptEmailContract();
+        registerBuyOffer();
     }
 
     private static void registerMarkEmailRead() {
@@ -54,7 +56,7 @@ public final class ComputerNetworkHandler {
             return;
         }
 
-        if (!menu.hasMail(payload.emailId())) {
+        if (!menu.hasEmail(payload.emailId())) {
             return;
         }
 
@@ -111,6 +113,40 @@ public final class ComputerNetworkHandler {
         data.markEmailRead(group.id(), email.id());
 
         TaskRuntimeManager.ActionResult result = TaskRuntimeManager.acceptTask(data, group, optionalTask.get());
+
+        player.sendSystemMessage(Component.literal(result.message()));
+        player.closeContainer();
+    }
+
+    private static void registerBuyOffer() {
+        NetworkManager.registerReceiver(NetworkManager.Side.C2S, BuyOfferPayload.TYPE, BuyOfferPayload.CODEC, (payload, context) -> {
+                    if (!(context.getPlayer() instanceof ServerPlayer player)) {
+                        return;
+                    }
+                    context.queue(() -> handleBuyOffer(player, payload));
+                }
+        );
+    }
+
+    private static void handleBuyOffer(ServerPlayer player, BuyOfferPayload payload) {
+        if (!(player.containerMenu instanceof ComputerMenu menu)) {
+            return;
+        }
+
+        if (!menu.hasOffer(payload.offerId())) {
+            return;
+        }
+
+        DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(player.level().getServer());
+
+        Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(player.getUUID());
+
+        if (optionalGroup.isEmpty()) {
+            player.closeContainer();
+            return;
+        }
+
+        DeliveryQuestingSavedData.PurchaseResult result = data.purchaseOffer(optionalGroup.get().id(), payload.offerId());
 
         player.sendSystemMessage(Component.literal(result.message()));
         player.closeContainer();

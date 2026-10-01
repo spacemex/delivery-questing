@@ -1,14 +1,15 @@
 package com.github.spacemex.deliveryquesting.progression;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
-import com.github.spacemex.deliveryquesting.task.TaskDefinition;
-import com.github.spacemex.deliveryquesting.task.TaskManager;
-import com.github.spacemex.deliveryquesting.task.TaskRequirement;
+import com.github.spacemex.deliveryquesting.task.*;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
@@ -425,11 +426,12 @@ public final class DeliveryQuestingSavedData extends SavedData {
         int removed = 0;
 
         for (GroupEmail email : new ArrayList<>(group.emails())) {
-            if (email.type() != GroupEmail.Type.CONTRACT) {
-                continue;
-            }
+            boolean valid = switch (email.type()) {
+                case CONTRACT -> TaskManager.contains(email.referenceId());
+                case OFFER -> OfferManager.contains(email.referenceId());
+            };
 
-            if (TaskManager.contains(email.referenceId())) {
+            if (valid) {
                 continue;
             }
 
@@ -509,5 +511,86 @@ public final class DeliveryQuestingSavedData extends SavedData {
         for (DeliveryGroup group : groups.values()) {
             group.declineInvitation(playerId);
         }
+    }
+
+    public PurchaseResult purchaseOffer(UUID groupId, Identifier offerId) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return new PurchaseResult(false, "Delivery group no longer exists.", 0L);
+        }
+
+        Optional<OfferDefinition> optionalOffer = OfferManager.getOffer(offerId);
+
+        if (optionalOffer.isEmpty()) {
+            return new PurchaseResult(false, "That Minazon offer no longer exists.", group.balance());
+        }
+
+        OfferDefinition offer = optionalOffer.get();
+
+        if (!group.computerUnlocked()) {
+            return new PurchaseResult(false, "Your group has not unlocked the Computer.", group.balance());
+        }
+
+        if (group.wholeLevel() < offer.minLevel()) {
+            return new PurchaseResult(false, "That offer requires delivery level " + offer.minLevel() + ".", group.balance());
+        }
+
+        if (group.balance() < offer.price()) {
+            return new PurchaseResult(false, "Your group does not have enough money.", group.balance());
+        }
+
+        Item item = BuiltInRegistries.ITEM.getValue(offer.item());
+
+        if (item == null || item == Items.AIR) {
+            return new PurchaseResult(false, "That offer contains an invalid item.", group.balance());
+        }
+
+        int multiplier = offer.forEveryMember() ? group.members().size() : 1;
+        long totalCount;
+
+        try {
+            totalCount = Math.multiplyExact((long) offer.count(), multiplier);
+
+        } catch (ArithmeticException exception) {
+            return new PurchaseResult(false, "The resulting order is too large.", group.balance());
+        }
+
+        if (totalCount > Integer.MAX_VALUE) {
+            return new PurchaseResult(false, "The resulting order is too large.", group.balance());
+        }
+
+        if (!group.spendBalance(offer.price())) {
+            return new PurchaseResult(false, "Failed to charge the group balance.", group.balance());
+        }
+
+        MailboxParcel parcel = MailboxParcel.create("Minazon", List.of(new ItemReward(offer.item(), (int) totalCount)));
+
+        group.addPendingDelivery(parcel);
+
+        setDirty();
+        return new PurchaseResult(true, "Purchased " + totalCount + "x " + offer.item() + " for " + offer.price()
+                + ". Delivery is scheduled for the next morning.", group.balance());
+    }
+
+    public int deliverPendingDeliveries() {
+        int groupsDelivered = 0;
+
+        for (DeliveryGroup group : groups.values()) {
+            if (!group.deliverPendingDeliveries()) {
+                continue;
+            }
+
+            groupsDelivered++;
+        }
+
+        if (groupsDelivered > 0) {
+            setDirty();
+        }
+
+        return groupsDelivered;
+    }
+
+    public record PurchaseResult(boolean success, String message, long balance) {
     }
 }

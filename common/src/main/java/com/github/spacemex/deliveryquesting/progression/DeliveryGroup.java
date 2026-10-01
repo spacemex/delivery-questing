@@ -44,7 +44,10 @@ public final class DeliveryGroup {
                                     .optionalFieldOf("mailbox_inbox", List.of())
                                     .forGetter(group -> List.copyOf(group.mailboxInbox)),
                             MailboxParcel.CODEC.listOf().optionalFieldOf("pending_mailbox", List.of())
-                                    .forGetter(group -> List.copyOf(group.pendingMailbox)))
+                                    .forGetter(group -> List.copyOf(group.pendingMailbox)),
+                            MailboxParcel.CODEC.listOf()
+                                    .optionalFieldOf("pending_deliveries", List.of())
+                                    .forGetter(group -> List.copyOf(group.pendingDeliveries)))
                     .apply(instance, DeliveryGroup::new));
     private final UUID id;
     private UUID owner;
@@ -60,11 +63,12 @@ public final class DeliveryGroup {
     private boolean computerUnlocked;
     private boolean computerRewardDelivered;
     private final List<GroupEmail> emails;
+    private final List<MailboxParcel> pendingDeliveries;
 
     private DeliveryGroup(UUID id, String name, Optional<UUID> owner, List<UUID> members, List<UUID> pendingInvitations,
                           List<TaskProgress> activeTasks, List<Identifier> completedTasks, long experience, long balance,
                           boolean computerUnlocked, boolean computerRewardDelivered, List<GroupEmail> emails,
-                          List<MailboxParcel> mailboxInbox, List<MailboxParcel> pendingMailbox) {
+                          List<MailboxParcel> mailboxInbox, List<MailboxParcel> pendingMailbox, List<MailboxParcel> pendingDeliveries) {
         this.id = Objects.requireNonNull(id, "id");
         this.name = Objects.requireNonNull(name, "name");
 
@@ -132,6 +136,8 @@ public final class DeliveryGroup {
         this.mailboxInbox = new ArrayList<>(mailboxInbox);
         this.pendingMailbox = new ArrayList<>(pendingMailbox);
 
+        this.pendingDeliveries = new ArrayList<>(Objects.requireNonNull(pendingDeliveries, "pendingDeliveries"));
+
         validateMailboxParcels();
 
         this.experience = experience;
@@ -141,9 +147,40 @@ public final class DeliveryGroup {
     }
 
     static DeliveryGroup create(UUID id, String name, UUID owner) {
-        return new DeliveryGroup(id, name, Optional.of(owner), List.of(owner),
-                List.of(), List.of(), List.of(), 0L, 0L, false,
-                false, List.of(), List.of(), List.of());
+        return new DeliveryGroup(
+                id, name,
+                Optional.of(owner), List.of(owner), List.of(), List.of(), List.of(),
+                0L, 0L,
+                false, false,
+                List.of(), List.of(), List.of(), List.of());
+    }
+
+    public List<MailboxParcel> pendingDeliveries() {
+        return Collections.unmodifiableList(pendingDeliveries);
+    }
+
+    public boolean hasOfferEmail(Identifier offerId) {
+        return emails.stream().anyMatch(email -> email.type() == GroupEmail.Type.OFFER && email.referenceId().equals(offerId));
+    }
+
+    void addPendingDelivery(MailboxParcel parcel) {
+        Objects.requireNonNull(parcel, "parcel");
+        pendingDeliveries.add(parcel);
+    }
+
+    boolean deliverPendingDeliveries() {
+        if (pendingDeliveries.isEmpty()) {
+            return false;
+        }
+
+        List<MailboxParcel> deliveries = new ArrayList<>(pendingDeliveries);
+
+        pendingDeliveries.clear();
+        for (MailboxParcel parcel : deliveries) {
+            addMailboxParcel(parcel);
+        }
+
+        return true;
     }
 
     public boolean computerUnlocked() {
@@ -430,6 +467,12 @@ public final class DeliveryGroup {
         for (MailboxParcel parcel : pendingMailbox) {
             if (!ids.add(parcel.id())) {
                 throw new IllegalArgumentException("Duplicate mailbox parcel ID: " + parcel.id());
+            }
+        }
+
+        for (MailboxParcel parcel : pendingDeliveries) {
+            if (!ids.add(parcel.id())) {
+                throw new IllegalArgumentException("Duplicate pending delivery parcel ID: " + parcel.id());
             }
         }
     }

@@ -251,6 +251,7 @@ public final class GroupCommand {
         source.sendSuccess(() -> Component.literal("Computer Unlocked: " + group.computerUnlocked()), false);
         source.sendSuccess(() -> Component.literal("Emails: " + group.emails().size()), false);
         source.sendSuccess(() -> Component.literal("Unread Emails: " + group.unreadEmailCount()), false);
+        source.sendSuccess(() -> Component.literal("Pending Deliveries: " + group.pendingDeliveries().size()), false);
 
         return Command.SINGLE_SUCCESS;
     }

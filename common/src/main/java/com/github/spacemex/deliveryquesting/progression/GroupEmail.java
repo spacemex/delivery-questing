@@ -1,5 +1,6 @@
 package com.github.spacemex.deliveryquesting.progression;
 
+import com.github.spacemex.deliveryquesting.task.OfferDefinition;
 import com.github.spacemex.deliveryquesting.task.TaskDefinition;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -36,6 +37,10 @@ public final class GroupEmail {
         return new GroupEmail(UUID.randomUUID(), Type.CONTRACT, task.id(), false);
     }
 
+    public static GroupEmail offer(OfferDefinition offer) {
+        return new GroupEmail(UUID.randomUUID(), Type.OFFER, offer.id(), false);
+    }
+
     public UUID id() {
         return id;
     }
@@ -62,6 +67,7 @@ public final class GroupEmail {
     }
 
     public enum Type {
-        CONTRACT
+        CONTRACT,
+        OFFER
     }
 }
