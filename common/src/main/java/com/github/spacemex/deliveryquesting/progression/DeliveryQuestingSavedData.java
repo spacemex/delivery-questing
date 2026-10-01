@@ -6,6 +6,7 @@ import com.github.spacemex.deliveryquesting.job.JobManager;
 import com.github.spacemex.deliveryquesting.task.*;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
@@ -20,23 +21,32 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public final class DeliveryQuestingSavedData extends SavedData {
     public static final Codec<DeliveryQuestingSavedData> CODEC =
-            RecordCodecBuilder.create(instance ->
-                    instance.group(DeliveryGroup.CODEC.listOf().optionalFieldOf("groups", List.of())
-                                    .forGetter(data -> List.copyOf(data.groups.values())))
-                            .apply(instance, DeliveryQuestingSavedData::new));
+            RecordCodecBuilder.create(instance -> instance.group(
+                            DeliveryGroup.CODEC.listOf().optionalFieldOf("groups", List.of())
+                                    .forGetter(data -> List.copyOf(data.groups.values())),
+                            UUIDUtil.CODEC.listOf().optionalFieldOf("starter_kits_delivered", List.of())
+                                    .forGetter(data -> List.copyOf(data.starterKitsDelivered)))
+                    .apply(instance, DeliveryQuestingSavedData::new)
+            );
     private static final SavedDataType<DeliveryQuestingSavedData> TYPE = new SavedDataType<>(
             Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "progression"),
             DeliveryQuestingSavedData::new,
             CODEC,
             DataFixTypes.SAVED_DATA_COMMAND_STORAGE
     );
+    private static final Identifier ENVELOPE_ITEM = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "envelope");
+    private static final Identifier PARCEL_ITEM = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "parcel");
+    private static final int STARTER_ENVELOPES = 8;
+    private static final int STARTER_PARCELS = 4;
     private final Map<UUID, DeliveryGroup> groups = new LinkedHashMap<>();
+    private final Set<UUID> starterKitsDelivered = new LinkedHashSet<>();
 
-    public DeliveryQuestingSavedData() {
+    private DeliveryQuestingSavedData() {
     }
 
-    private DeliveryQuestingSavedData(List<DeliveryGroup> loadedGroups) {
+    private DeliveryQuestingSavedData(List<DeliveryGroup> loadedGroups, List<UUID> starterKitsDelivered) {
         Objects.requireNonNull(loadedGroups, "loadedGroups");
+        Objects.requireNonNull(starterKitsDelivered, "starterKitsDelivered");
 
         for (DeliveryGroup group : loadedGroups) {
             DeliveryGroup existing = groups.putIfAbsent(group.id(), group);
@@ -45,6 +55,10 @@ public final class DeliveryQuestingSavedData extends SavedData {
                 throw new IllegalArgumentException("Duplicate Delivery Questing group ID: " + group.id());
             }
         }
+
+        this.starterKitsDelivered.addAll(starterKitsDelivered);
+        this.starterKitsDelivered.retainAll(groups.keySet());
+
         validateMembership();
     }
 
@@ -100,6 +114,9 @@ public final class DeliveryQuestingSavedData extends SavedData {
         ProgressionManager.reconcileGroup(group);
 
         groups.put(id, group);
+
+        ensureStarterKit(group);
+
         clearInvitationsForPlayer(owner);
 
         setDirty();
@@ -113,8 +130,14 @@ public final class DeliveryQuestingSavedData extends SavedData {
             return false;
         }
 
+        starterKitsDelivered.remove(groupId);
+
         setDirty();
         return true;
+    }
+
+    public boolean hasStarterKitDelivered(UUID groupId) {
+        return starterKitsDelivered.contains(groupId);
     }
 
     public boolean addMember(UUID groupId, UUID playerId) {
@@ -394,6 +417,10 @@ public final class DeliveryQuestingSavedData extends SavedData {
 
         for (DeliveryGroup group : groups.values()) {
             if (ProgressionManager.reconcileGroup(group)) {
+                changed = true;
+            }
+
+            if (ensureStarterKit(group)) {
                 changed = true;
             }
         }
@@ -743,6 +770,23 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         return groupsDelivered;
+    }
+
+    private boolean ensureStarterKit(DeliveryGroup group) {
+        if (starterKitsDelivered.contains(group.id())) {
+            return false;
+        }
+
+        MailboxParcel starterParcel = MailboxParcel.create("Unknown", List.of(new ItemReward(ENVELOPE_ITEM, STARTER_ENVELOPES),
+                new ItemReward(PARCEL_ITEM, STARTER_PARCELS)));
+
+        group.addMailboxParcel(starterParcel);
+
+        starterKitsDelivered.add(group.id());
+
+        DeliveryQuesting.LOGGER.info("Delivered starter kit to group '{}'", group.name());
+
+        return true;
     }
 
     public record PurchaseResult(boolean success, String message, long balance) {
