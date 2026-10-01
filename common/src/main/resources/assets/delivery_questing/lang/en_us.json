@@ -12,5 +12,12 @@
   "item.delivery_questing.envelope": "Envelope",
   "item.delivery_questing.parcel": "Parcel",
   "tooltip.delivery_questing.delivery_container.items": "Contains %s / %s item(s)",
-  "tooltip.delivery_questing.delivery_container.open": "Right-click to open"
+  "tooltip.delivery_questing.delivery_container.open": "Right-click to open",
+  "item.delivery_questing.contract": "Contract",
+  "item.delivery_questing.sealed_envelope": "Sealed Envelope",
+  "screen.delivery_questing.contract": "Contract",
+  "tooltip.delivery_questing.contract.inspect": "Right-click to inspect",
+  "tooltip.delivery_questing.sealed_envelope.sender": "From: %s",
+  "tooltip.delivery_questing.sealed_envelope.contract": "Contains a delivery contract",
+  "tooltip.delivery_questing.sealed_envelope.open": "Right-click to open"
 }

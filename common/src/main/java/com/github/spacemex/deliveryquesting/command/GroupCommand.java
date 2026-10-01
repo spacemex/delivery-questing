@@ -2,10 +2,7 @@ package com.github.spacemex.deliveryquesting.command;
 
 import com.github.spacemex.deliveryquesting.job.JobDefinition;
 import com.github.spacemex.deliveryquesting.job.JobManager;
-import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
-import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
-import com.github.spacemex.deliveryquesting.progression.GroupEmail;
-import com.github.spacemex.deliveryquesting.progression.JobRuntimeManager;
+import com.github.spacemex.deliveryquesting.progression.*;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -229,6 +226,17 @@ public final class GroupCommand {
                                                                         .executes(
                                                                                 GroupCommand::acceptJob
                                                                         )
+                                                        )
+                                        )
+                                        .then(
+                                                Commands.literal(
+                                                                "generatephysicalcontract"
+                                                        )
+                                                        .requires(
+                                                                GroupCommand::canUseDebugCommands
+                                                        )
+                                                        .executes(
+                                                                GroupCommand::generatePhysicalContract
                                                         )
                                         )
                         )
@@ -731,6 +739,29 @@ public final class GroupCommand {
         }
 
         source.sendSuccess(() -> Component.literal("Generated repeatable job email for " + generated.get().referenceId()), false);
+
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int generatePhysicalContract(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(source.getServer());
+        Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(player.getUUID());
+
+        if (optionalGroup.isEmpty()) {
+            source.sendFailure(Component.literal("You are not currently in a delivery group."));
+            return 0;
+        }
+
+        Optional<MailboxParcel> generated = data.generateMailboxContract(optionalGroup.get());
+
+        if (generated.isEmpty()) {
+            source.sendFailure(Component.literal("No physical contract could be generated."));
+            return 0;
+        }
+
+        source.sendSuccess(() -> Component.literal("Generated physical contract for " + generated.get().contractTaskId().map(Identifier::toString).orElse("unknown")), false);
 
         return Command.SINGLE_SUCCESS;
     }

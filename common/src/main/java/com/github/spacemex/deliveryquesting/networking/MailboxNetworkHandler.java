@@ -1,5 +1,6 @@
 package com.github.spacemex.deliveryquesting.networking;
 
+import com.github.spacemex.deliveryquesting.item.SealedEnvelopeItem;
 import com.github.spacemex.deliveryquesting.item.SealedParcelItem;
 import com.github.spacemex.deliveryquesting.menu.MailboxMenu;
 import com.github.spacemex.deliveryquesting.networking.packets.CollectParcelPayload;
@@ -60,7 +61,16 @@ public final class MailboxNetworkHandler {
         }
 
         MailboxParcel parcel = optionalParcel.get();
-        ItemStack stack = SealedParcelItem.create(parcel);
+        ItemStack stack;
+        String type;
+
+        if (parcel.isContractEnvelope()) {
+            stack = SealedEnvelopeItem.create(parcel);
+            type = "envelope";
+        } else {
+            stack = SealedParcelItem.create(parcel);
+            type = "parcel";
+        }
 
         player.getInventory().add(stack);
 
@@ -68,7 +78,7 @@ public final class MailboxNetworkHandler {
             player.drop(stack, false, false);
         }
 
-        player.sendSystemMessage(Component.literal("Collected parcel from " + parcel.sender() + "."));
+        player.sendSystemMessage(Component.literal("Collected " + type + " from " + parcel.sender() + "."));
         player.closeContainer();
     }
 }

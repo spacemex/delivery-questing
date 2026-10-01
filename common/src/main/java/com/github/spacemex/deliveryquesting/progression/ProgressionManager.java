@@ -13,6 +13,7 @@ public final class ProgressionManager {
     private static boolean initialized;
     private static final Identifier COMPUTER_ITEM = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "computer");
     private static final int CONTRACT_EMAIL_INTERVAL_TICKS = 3600;
+    private static final int MAILBOX_CONTRACT_INTERVAL_TICKS = 1200;
 
     public static void initialize() {
         if (initialized) {
@@ -29,6 +30,10 @@ public final class ProgressionManager {
 
         TickEvent.SERVER_POST.register(server -> {
             DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(server);
+
+            if (server.getTickCount() % MAILBOX_CONTRACT_INTERVAL_TICKS == 0) {
+                data.generateMailboxContracts();
+            }
 
             if (server.getTickCount() % CONTRACT_EMAIL_INTERVAL_TICKS == 0) {
                 data.generateContractEmails();

@@ -1,10 +1,7 @@
 package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
-import com.github.spacemex.deliveryquesting.menu.BulletinBoardMenu;
-import com.github.spacemex.deliveryquesting.menu.ComputerMenu;
-import com.github.spacemex.deliveryquesting.menu.DeliveryContainerMenu;
-import com.github.spacemex.deliveryquesting.menu.MailboxMenu;
+import com.github.spacemex.deliveryquesting.menu.*;
 import dev.architectury.registry.menu.MenuRegistry;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -18,6 +15,7 @@ public final class ModMenus {
     public static final RegistrySupplier<MenuType<MailboxMenu>> MAILBOX;
     public static final RegistrySupplier<MenuType<ComputerMenu>> COMPUTER;
     public static final RegistrySupplier<MenuType<DeliveryContainerMenu>> DELIVERY_CONTAINER;
+    public static final RegistrySupplier<MenuType<ContractMenu>> CONTRACT;
 
     public static void initialize() {
         MENUS.register();
@@ -28,5 +26,6 @@ public final class ModMenus {
         MAILBOX = MENUS.register("mailbox", () -> MenuRegistry.ofExtended(MailboxMenu::fromNetwork));
         COMPUTER = MENUS.register("computer", () -> MenuRegistry.ofExtended(ComputerMenu::fromNetwork));
         DELIVERY_CONTAINER = MENUS.register("delivery_container", () -> MenuRegistry.ofExtended(DeliveryContainerMenu::fromNetwork));
+        CONTRACT = MENUS.register("contract", () -> MenuRegistry.ofExtended(ContractMenu::fromNetwork));
     }
 }

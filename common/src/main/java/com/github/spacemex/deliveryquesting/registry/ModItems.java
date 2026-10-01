@@ -1,7 +1,9 @@
 package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.item.ContractItem;
 import com.github.spacemex.deliveryquesting.item.DeliveryContainerItem;
+import com.github.spacemex.deliveryquesting.item.SealedEnvelopeItem;
 import com.github.spacemex.deliveryquesting.item.SealedParcelItem;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -20,6 +22,8 @@ public final class ModItems {
     public static final RegistrySupplier<SealedParcelItem> SEALED_PARCEL;
     public static final RegistrySupplier<DeliveryContainerItem> ENVELOPE;
     public static final RegistrySupplier<DeliveryContainerItem> PARCEL;
+    public static final RegistrySupplier<ContractItem> CONTRACT;
+    public static final RegistrySupplier<SealedEnvelopeItem> SEALED_ENVELOPE;
 
     public static void initialize() {
         ITEMS.register();
@@ -42,5 +46,9 @@ public final class ModItems {
                 new Item.Properties().stacksTo(1).setId(key("envelope")), 1));
         PARCEL = ITEMS.register("parcel", () -> new DeliveryContainerItem(
                 new Item.Properties().stacksTo(1).setId(key("parcel")), 16));
+        CONTRACT = ITEMS.register("contract", () -> new ContractItem(
+                new Item.Properties().stacksTo(1).setId(key("contract"))));
+        SEALED_ENVELOPE = ITEMS.register("sealed_envelope", () -> new SealedEnvelopeItem(
+                new Item.Properties().stacksTo(1).setId(key("sealed_envelope"))));
     }
 }

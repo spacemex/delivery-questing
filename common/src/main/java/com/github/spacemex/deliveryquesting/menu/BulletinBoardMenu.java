@@ -68,14 +68,8 @@ public final class BulletinBoardMenu extends AbstractContainerMenu {
         });
     }
 
-    private static List<BulletinBoardTaskEntry> createAvailableEntries(DeliveryGroup group) {
-        if (group.computerUnlocked()) {
-            return List.of();
-        }
-
-        return TaskManager.getTasks().stream().filter(task -> TaskRuntimeManager.getAcceptanceFailure(group, task).isEmpty())
-                .sorted(Comparator.comparingInt(TaskDefinition::minLevel).thenComparing(TaskDefinition::name))
-                .map(BulletinBoardTaskEntry::fromAvailable).toList();
+    private static List<BulletinBoardTaskEntry> createAvailableEntries(@NonNull DeliveryGroup group) {
+        return List.of();
     }
 
     private static List<BulletinBoardTaskEntry> createActiveEntries(DeliveryGroup group) {

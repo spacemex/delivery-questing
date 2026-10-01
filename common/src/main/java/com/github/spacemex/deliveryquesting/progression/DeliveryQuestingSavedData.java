@@ -789,6 +789,67 @@ public final class DeliveryQuestingSavedData extends SavedData {
         return true;
     }
 
+    public Optional<MailboxParcel> generateMailboxContract(DeliveryGroup group) {
+        Objects.requireNonNull(group, "group");
+
+        if (group.computerUnlocked()) {
+            return Optional.empty();
+        }
+
+        if (group.activeTasks().size() >= 3) {
+            return Optional.empty();
+        }
+
+        if (hasPhysicalContractInMailbox(group)) {
+            return Optional.empty();
+        }
+
+        List<TaskDefinition> possibleTasks = TaskManager.getTasks()
+                .stream()
+                .filter(task -> !task.forced()).filter(task ->
+                        TaskRuntimeManager.getAcceptanceFailure(group, task).isEmpty()).toList();
+
+        if (possibleTasks.isEmpty()) {
+            return Optional.empty();
+        }
+
+        TaskDefinition task = possibleTasks.get(ThreadLocalRandom.current().nextInt(possibleTasks.size()));
+        MailboxParcel envelope = MailboxParcel.createContract(task.contractor().name(), task.id());
+
+        group.addMailboxParcel(envelope);
+
+        setDirty();
+        return Optional.of(envelope);
+    }
+
+    public int generateMailboxContracts() {
+        int generated = 0;
+
+        for (DeliveryGroup group : groups.values()) {
+            if (generateMailboxContract(group).isPresent()) {
+                generated++;
+            }
+        }
+
+        return generated;
+    }
+
+    private boolean hasPhysicalContractInMailbox(DeliveryGroup group) {
+        for (MailboxParcel parcel : group.mailboxInbox()) {
+            if (parcel.isContractEnvelope()) {
+                return true;
+            }
+        }
+
+        for (MailboxParcel parcel : group.pendingMailbox()) {
+            if (parcel.isContractEnvelope()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public record PurchaseResult(boolean success, String message, long balance) {
     }
 }
