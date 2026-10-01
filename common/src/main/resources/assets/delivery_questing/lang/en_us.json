@@ -8,5 +8,9 @@
   "screen.delivery_questing.mailbox": "Mailbox",
   "tooltip.delivery_questing.sealed_parcel.sender": "From: %s",
   "tooltip.delivery_questing.sealed_parcel.items": "Contains %s item(s)",
-  "tooltip.delivery_questing.sealed_parcel.open": "Right-click to open"
+  "tooltip.delivery_questing.sealed_parcel.open": "Right-click to open",
+  "item.delivery_questing.envelope": "Envelope",
+  "item.delivery_questing.parcel": "Parcel",
+  "tooltip.delivery_questing.delivery_container.items": "Contains %s / %s item(s)",
+  "tooltip.delivery_questing.delivery_container.open": "Right-click to open"
 }

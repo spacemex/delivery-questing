@@ -1,6 +1,7 @@
 package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.item.DeliveryContainerItem;
 import com.github.spacemex.deliveryquesting.item.SealedParcelItem;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -17,6 +18,8 @@ public final class ModItems {
     public static final RegistrySupplier<BlockItem> MAILBOX;
     public static final RegistrySupplier<BlockItem> COMPUTER;
     public static final RegistrySupplier<SealedParcelItem> SEALED_PARCEL;
+    public static final RegistrySupplier<DeliveryContainerItem> ENVELOPE;
+    public static final RegistrySupplier<DeliveryContainerItem> PARCEL;
 
     public static void initialize() {
         ITEMS.register();
@@ -35,5 +38,9 @@ public final class ModItems {
                 .stacksTo(1).setId(key("sealed_parcel"))));
         COMPUTER = ITEMS.register("computer", () -> new BlockItem(ModBlocks.COMPUTER.get(),
                 new Item.Properties().useBlockDescriptionPrefix().setId(key("computer"))));
+        ENVELOPE = ITEMS.register("envelope", () -> new DeliveryContainerItem(
+                new Item.Properties().stacksTo(1).setId(key("envelope")), 1));
+        PARCEL = ITEMS.register("parcel", () -> new DeliveryContainerItem(
+                new Item.Properties().stacksTo(1).setId(key("parcel")), 16));
     }
 }

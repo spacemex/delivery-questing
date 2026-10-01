@@ -1,6 +1,7 @@
 package com.github.spacemex.deliveryquesting.block.entity;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.item.DeliveryContainerItem;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
 import com.github.spacemex.deliveryquesting.progression.TaskRuntimeManager;
@@ -86,17 +87,16 @@ public final class MailboxBlockEntity extends BlockEntity implements Container {
         List<ItemStack> outgoing = new ArrayList<>();
 
         for (int i = 0; i < items.size(); i++) {
-            ItemStack stack = items.get(i);
+            ItemStack containerStack = items.get(i);
 
-            if (!stack.isEmpty()) {
-                outgoing.add(stack.copy());
+            if (containerStack.getItem() instanceof DeliveryContainerItem containerItem) {
+                outgoing.addAll(containerItem.getContents(containerStack));
             }
 
             items.set(i, ItemStack.EMPTY);
         }
 
         setChanged();
-
         return outgoing;
     }
 
@@ -172,5 +172,10 @@ public final class MailboxBlockEntity extends BlockEntity implements Container {
     public void rebindToGroup(UUID groupId) {
         this.groupId = Objects.requireNonNull(groupId, "groupId");
         setChanged();
+    }
+
+    @Override
+    public boolean canPlaceItem(int slot, ItemStack stack) {
+        return stack.getItem() instanceof DeliveryContainerItem;
     }
 }

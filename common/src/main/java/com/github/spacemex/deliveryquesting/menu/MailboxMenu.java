@@ -1,6 +1,7 @@
 package com.github.spacemex.deliveryquesting.menu;
 
 import com.github.spacemex.deliveryquesting.block.entity.MailboxBlockEntity;
+import com.github.spacemex.deliveryquesting.item.DeliveryContainerItem;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
 import com.github.spacemex.deliveryquesting.registry.ModBlocks;
@@ -48,8 +49,15 @@ public final class MailboxMenu extends AbstractContainerMenu {
 
         outbox.startOpen(inventory.player);
 
-        for (int i = 0; i < MailboxBlockEntity.OUTBOX_SIZE; ++i) {
-            addSlot(new Slot(outbox, i, 196 + i * 18, 142));
+        for (int i = 0; i < MailboxBlockEntity.OUTBOX_SIZE; i++) {
+            addSlot(
+                    new Slot(outbox, i, 196 + i * 18, 142) {
+                        @Override
+                        public boolean mayPlace(ItemStack stack) {
+                            return stack.getItem() instanceof DeliveryContainerItem;
+                        }
+                    }
+            );
         }
 
         addStandardInventorySlots(inventory, 59, 174);
