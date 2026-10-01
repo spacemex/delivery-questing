@@ -2,6 +2,7 @@ package com.github.spacemex.deliveryquesting.menu;
 
 import com.github.spacemex.deliveryquesting.block.entity.ComputerBlockEntity;
 import com.github.spacemex.deliveryquesting.config.ConfigReader;
+import com.github.spacemex.deliveryquesting.job.JobManager;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
 import com.github.spacemex.deliveryquesting.progression.GroupEmail;
@@ -35,11 +36,12 @@ public final class ComputerMenu extends AbstractContainerMenu {
     private final List<ComputerMailEntry> mail;
     private final List<ComputerInboxEntry> inbox;
     private final List<ComputerOfferEntry> offers;
+    private final List<ComputerJobMailEntry> jobMail;
 
 
     public ComputerMenu(int containerId, Inventory inventory, BlockPos blockPos, String groupName, int level, long balance,
                         int activeTasks, int completedTasks, List<ComputerInboxEntry> inbox,
-                        List<ComputerMailEntry> mail, List<ComputerOfferEntry> offers) {
+                        List<ComputerMailEntry> mail, List<ComputerOfferEntry> offers, List<ComputerJobMailEntry> jobMail) {
         super(ModMenus.COMPUTER.get(), containerId);
 
         this.blockPos = blockPos;
@@ -51,6 +53,7 @@ public final class ComputerMenu extends AbstractContainerMenu {
         this.inbox = List.copyOf(inbox);
         this.mail = List.copyOf(mail);
         this.offers = List.copyOf(offers);
+        this.jobMail = List.copyOf(jobMail);
     }
 
     public static ComputerMenu fromNetwork(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
@@ -63,8 +66,9 @@ public final class ComputerMenu extends AbstractContainerMenu {
         List<ComputerInboxEntry> inbox = ComputerInboxEntry.readList(buffer);
         List<ComputerMailEntry> mail = ComputerMailEntry.readList(buffer);
         List<ComputerOfferEntry> offers = ComputerOfferEntry.readList(buffer);
+        List<ComputerJobMailEntry> jobMail = ComputerJobMailEntry.readList(buffer);
 
-        return new ComputerMenu(containerId, inventory, blockPos, groupName, level, balance, activeTasks, completedTasks, inbox, mail, offers);
+        return new ComputerMenu(containerId, inventory, blockPos, groupName, level, balance, activeTasks, completedTasks, inbox, mail, offers, jobMail);
     }
 
     public static void open(ServerPlayer player, BlockPos pos, ComputerBlockEntity computer) {
@@ -103,10 +107,11 @@ public final class ComputerMenu extends AbstractContainerMenu {
         List<ComputerInboxEntry> inbox = createInboxEntries(group);
         List<ComputerMailEntry> mail = createMailEntries(group);
         List<ComputerOfferEntry> offers = createOfferEntries(group);
+        List<ComputerJobMailEntry> jobMail = createJobMailEntries(group);
 
         SimpleMenuProvider provider = new SimpleMenuProvider((containerId, inventory, menuPlayer) ->
                 new ComputerMenu(containerId, inventory, pos, group.name(), group.wholeLevel(), group.balance(),
-                        group.activeTasks().size(), group.completedTasks().size(), inbox, mail, offers),
+                        group.activeTasks().size(), group.completedTasks().size(), inbox, mail, offers, jobMail),
 
                 Component.translatable("screen.delivery_questing.computer")
         );
@@ -121,8 +126,13 @@ public final class ComputerMenu extends AbstractContainerMenu {
                     ComputerInboxEntry.writeList(buffer, inbox);
                     ComputerMailEntry.writeList(buffer, mail);
                     ComputerOfferEntry.writeList(buffer, offers);
+                    ComputerJobMailEntry.writeList(buffer, jobMail);
                 }
         );
+    }
+
+    public List<ComputerJobMailEntry> jobMail() {
+        return jobMail;
     }
 
     public String groupName() {
@@ -205,6 +215,8 @@ public final class ComputerMenu extends AbstractContainerMenu {
                 case OFFER -> OfferManager.getOffer(email.referenceId()).ifPresent(offer -> result.add(
                         new ComputerInboxEntry(email.id(), email.type(), email.read(), email.referenceId(),
                                 "Now available: " + offer.item(), "Minazon")));
+                case JOB -> JobManager.getJob(email.referenceId()).ifPresent(job -> result.add(
+                        new ComputerInboxEntry(email.id(), email.type(), email.read(), email.referenceId(), job.name(), job.contractor().name())));
             }
         }
 
@@ -214,6 +226,26 @@ public final class ComputerMenu extends AbstractContainerMenu {
     private static List<ComputerOfferEntry> createOfferEntries(DeliveryGroup group) {
         return OfferManager.getOffers().stream().sorted(Comparator.comparingInt(OfferDefinition::minLevel)
                 .thenComparing(offer -> offer.id().toString())).map(offer -> ComputerOfferEntry.from(offer, group)).toList();
+    }
+
+    public boolean hasJobMail(UUID emailId) {
+        return jobMail.stream().anyMatch(entry -> entry.emailId().equals(emailId));
+    }
+
+    private static List<ComputerJobMailEntry> createJobMailEntries(DeliveryGroup group) {
+        List<ComputerJobMailEntry> result = new ArrayList<>();
+
+        for (GroupEmail email : group.emails()) {
+            if (email.type() != GroupEmail.Type.JOB) {
+                continue;
+            }
+
+            JobManager.getJob(email.referenceId()).ifPresent(job -> result.add(ComputerJobMailEntry.from(email, group, job)));
+        }
+
+        Collections.reverse(result);
+
+        return List.copyOf(result);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.github.spacemex.deliveryquesting.menu;
 
+import com.github.spacemex.deliveryquesting.job.JobDefinition;
 import com.github.spacemex.deliveryquesting.progression.TaskProgress;
 import com.github.spacemex.deliveryquesting.task.TaskDefinition;
 import net.minecraft.network.FriendlyByteBuf;
@@ -94,5 +95,13 @@ public record BulletinBoardTaskEntry(Identifier id, String name, String descript
         }
 
         return List.copyOf(tasks);
+    }
+
+    public static BulletinBoardTaskEntry fromJob(JobDefinition job) {
+        List<BulletinBoardRequirementEntry> requirements = job.requirements().stream().map(requirement ->
+                BulletinBoardRequirementEntry.from(requirement, 0L)).toList();
+
+        return new BulletinBoardTaskEntry(job.id(), job.name(), job.description(), job.contractor().name(), job.minLevel(),
+                job.rewards().experience(), job.rewards().money(), requirements);
     }
 }

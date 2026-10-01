@@ -1,10 +1,8 @@
 package com.github.spacemex.deliveryquesting.client.screen;
 
-import com.github.spacemex.deliveryquesting.menu.ComputerInboxEntry;
-import com.github.spacemex.deliveryquesting.menu.ComputerMailEntry;
-import com.github.spacemex.deliveryquesting.menu.ComputerMenu;
-import com.github.spacemex.deliveryquesting.menu.ComputerOfferEntry;
+import com.github.spacemex.deliveryquesting.menu.*;
 import com.github.spacemex.deliveryquesting.networking.packets.AcceptEmailContractPayload;
+import com.github.spacemex.deliveryquesting.networking.packets.AcceptEmailJobPayload;
 import com.github.spacemex.deliveryquesting.networking.packets.BuyOfferPayload;
 import com.github.spacemex.deliveryquesting.networking.packets.MarkEmailReadPayload;
 import dev.architectury.networking.NetworkManager;
@@ -31,6 +29,7 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         DESKTOP,
         MAIL_LIST,
         MAIL_DETAIL,
+        JOB_DETAIL,
         MINAZON
     }
 
@@ -52,6 +51,7 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             case DESKTOP -> buildDesktop();
             case MAIL_LIST -> buildMailList();
             case MAIL_DETAIL -> buildMailDetail();
+            case JOB_DETAIL -> buildJobDetail();
             case MINAZON -> buildMinazon();
         }
     }
@@ -208,6 +208,10 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
                 view = View.MINAZON;
                 minazonPage = findOfferPage(entry.referenceId());
             }
+            case JOB -> {
+                selectedMailId = entry.emailId();
+                view = View.JOB_DETAIL;
+            }
         }
 
         rebuildView();
@@ -247,10 +251,57 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             case DESKTOP -> extractDesktopLabels(graphics);
             case MAIL_LIST -> extractMailListLabels(graphics);
             case MAIL_DETAIL -> extractMailDetailLabels(graphics);
+            case JOB_DETAIL -> extractJobDetailLabels(graphics);
             case MINAZON -> extractMinazonLabels(graphics);
         }
     }
 
+    private void extractJobDetailLabels(GuiGraphicsExtractor graphics) {
+        ComputerJobMailEntry entry = getSelectedJobMail();
+
+        if (entry == null) {
+            return;
+        }
+
+        var job = entry.job();
+
+        graphics.text(font, Component.literal(job.name()), 14, 12, 0xFFFFFFFF, false);
+        graphics.text(font, Component.literal("Repeatable Job"), 200, 12, 0xFFFFC107, false);
+        graphics.text(font, Component.literal("From: " + job.contractor()), 14, 27, 0xFF80CBC4, false);
+
+        int y = 45;
+
+        for (String line : wrapText(job.description(), 48)) {
+            if (y > 82) {
+                break;
+            }
+
+            graphics.text(font, Component.literal(line), 14, y, 0xFFD7E1E5, false);
+
+            y += 11;
+        }
+
+        y = 91;
+
+        graphics.text(font, Component.literal("Requirements:"), 14, y, 0xFFFFFFFF, false);
+
+        y += 12;
+
+        int shown = 0;
+
+        for (var requirement : job.requirements()) {
+            if (shown >= 3) {
+                break;
+            }
+
+            graphics.text(font, Component.literal(requirement.required() + "x " + requirement.label()), 20, y, 0xFFD7E1E5, false);
+
+            y += 11;
+            shown++;
+        }
+
+        graphics.text(font, Component.literal("Rewards: +" + job.experienceReward() + " XP, +" + job.moneyReward() + " money"), 14, 139, 0xFF80CBC4, false);
+    }
 
     private void extractDesktopLabels(GuiGraphicsExtractor graphics) {
         graphics.text(font, title, 14, 12, 0xFFFFFFFF, false);
@@ -366,5 +417,35 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         }
 
         return 0;
+    }
+
+    private ComputerJobMailEntry getSelectedJobMail() {
+        if (selectedMailId == null) {
+            return null;
+        }
+        return menu.jobMail().stream().filter(entry -> entry.emailId().equals(selectedMailId)).findFirst().orElse(null);
+    }
+
+    private void buildJobDetail() {
+        ComputerJobMailEntry entry = getSelectedJobMail();
+
+        if (entry == null) {
+            view = View.MAIL_LIST;
+            rebuildView();
+            return;
+        }
+
+        this.addRenderableWidget(Button.builder(Component.literal("Back"), button -> {
+                    view = View.MAIL_LIST;
+                    rebuildView();
+                }
+        ).bounds(leftPos + 15, topPos + 153, 90, 22).build());
+
+        Button accept = this.addRenderableWidget(Button.builder(Component.literal(entry.canAccept() ? "Accept Job" : "Unavailable"), button -> {
+            button.active = false;
+            NetworkManager.sendToServer(new AcceptEmailJobPayload(entry.emailId()));
+        }).bounds(leftPos + 165, topPos + 153, 120, 22).build());
+
+        accept.active = entry.canAccept();
     }
 }

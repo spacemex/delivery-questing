@@ -32,6 +32,7 @@ public final class ProgressionManager {
 
             if (server.getTickCount() % CONTRACT_EMAIL_INTERVAL_TICKS == 0) {
                 data.generateContractEmails();
+                data.generateJobEmails();
             }
 
             long overworldTime = Math.floorMod(server.overworld().getOverworldClockTime(), 24000L);

@@ -216,6 +216,14 @@ public final class DeliveryGroup {
         return activeJobs.remove(instanceId) != null;
     }
 
+    public long unacceptedJobEmailCount() {
+        return emails.stream().filter(email -> email.type() == GroupEmail.Type.JOB).count();
+    }
+
+    public boolean hasJobEmail(Identifier jobId) {
+        return emails.stream().anyMatch(email -> email.type() == GroupEmail.Type.JOB && email.referenceId().equals(jobId));
+    }
+
     boolean deliverPendingDeliveries() {
         if (pendingDeliveries.isEmpty()) {
             return false;

@@ -2,6 +2,7 @@ package com.github.spacemex.deliveryquesting.progression;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.job.JobDefinition;
+import com.github.spacemex.deliveryquesting.job.JobManager;
 import com.github.spacemex.deliveryquesting.task.*;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -430,6 +431,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
             boolean valid = switch (email.type()) {
                 case CONTRACT -> TaskManager.contains(email.referenceId());
                 case OFFER -> OfferManager.contains(email.referenceId());
+                case JOB -> JobManager.contains(email.referenceId());
             };
 
             if (valid) {
@@ -446,6 +448,68 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         return removed;
+    }
+
+    public boolean removeEmail(UUID groupId, UUID emailId) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        if (!group.removeEmail(emailId)) {
+            return false;
+        }
+
+        setDirty();
+        return true;
+    }
+
+    public int generateJobEmails() {
+        int generated = 0;
+
+        for (DeliveryGroup group : groups.values()) {
+            if (generateJobEmail(group).isPresent()) {
+                generated++;
+            }
+        }
+
+        return generated;
+    }
+
+    public Optional<GroupEmail> generateJobEmail(DeliveryGroup group) {
+        Objects.requireNonNull(group, "group");
+
+        if (!group.computerUnlocked()) {
+            return Optional.empty();
+        }
+
+        validateEmails(group.id());
+
+        if (group.unacceptedJobEmailCount() >= 3L) {
+            return Optional.empty();
+        }
+
+        if (group.activeJobs().size() >= 3) {
+            return Optional.empty();
+        }
+
+        List<JobDefinition> possibleJobs = JobManager.getJobs().stream().filter(job ->
+                JobRuntimeManager.getAcceptanceFailure(group, job).isEmpty()).filter(job -> !group.hasJobEmail(job.id())).toList();
+
+        if (possibleJobs.isEmpty()) {
+            return Optional.empty();
+        }
+
+        JobDefinition job = possibleJobs.get(ThreadLocalRandom.current().nextInt(possibleJobs.size()));
+        GroupEmail email = GroupEmail.job(job);
+
+        if (!group.addEmail(email)) {
+            return Optional.empty();
+        }
+
+        setDirty();
+        return Optional.of(email);
     }
 
     public Optional<GroupEmail> generateContractEmail(DeliveryGroup group) {

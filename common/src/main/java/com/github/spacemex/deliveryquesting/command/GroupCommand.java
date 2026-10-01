@@ -205,6 +205,17 @@ public final class GroupCommand {
                                         )
                                         .then(
                                                 Commands.literal(
+                                                                "generatejobmail"
+                                                        )
+                                                        .requires(
+                                                                GroupCommand::canUseDebugCommands
+                                                        )
+                                                        .executes(
+                                                                GroupCommand::generateJobMail
+                                                        )
+                                        )
+                                        .then(
+                                                Commands.literal(
                                                                 "acceptjob"
                                                         )
                                                         .requires(
@@ -694,6 +705,31 @@ public final class GroupCommand {
         }
 
         source.sendSuccess(() -> Component.literal(result.message()), false);
+
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int generateJobMail(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(source.getServer());
+        Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(player.getUUID());
+
+        if (optionalGroup.isEmpty()) {
+            source.sendFailure(Component.literal("You are not currently in a delivery group."));
+            return 0;
+        }
+
+        DeliveryGroup group = optionalGroup.get();
+        Optional<GroupEmail> generated = data.generateJobEmail(group);
+
+        if (generated.isEmpty()) {
+            source.sendFailure(Component.literal("No repeatable job email could be generated."));
+
+            return 0;
+        }
+
+        source.sendSuccess(() -> Component.literal("Generated repeatable job email for " + generated.get().referenceId()), false);
 
         return Command.SINGLE_SUCCESS;
     }
