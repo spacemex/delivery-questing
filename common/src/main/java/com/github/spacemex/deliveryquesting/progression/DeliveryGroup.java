@@ -26,6 +26,9 @@ public final class DeliveryGroup {
                             TaskProgress.CODEC.listOf()
                                     .optionalFieldOf("active_tasks", List.of())
                                     .forGetter(group -> List.copyOf(group.activeTasks.values())),
+                            DeliveryJobProgress.CODEC.listOf()
+                                    .optionalFieldOf("active_jobs", List.of())
+                                    .forGetter(group -> List.copyOf(group.activeJobs.values())),
                             Identifier.CODEC.listOf()
                                     .optionalFieldOf("completed_tasks", List.of())
                                     .forGetter(group -> List.copyOf(group.completedTasks)),
@@ -64,9 +67,10 @@ public final class DeliveryGroup {
     private boolean computerRewardDelivered;
     private final List<GroupEmail> emails;
     private final List<MailboxParcel> pendingDeliveries;
+    private final Map<UUID, DeliveryJobProgress> activeJobs;
 
     private DeliveryGroup(UUID id, String name, Optional<UUID> owner, List<UUID> members, List<UUID> pendingInvitations,
-                          List<TaskProgress> activeTasks, List<Identifier> completedTasks, long experience, long balance,
+                          List<TaskProgress> activeTasks, List<DeliveryJobProgress> activeJobs, List<Identifier> completedTasks, long experience, long balance,
                           boolean computerUnlocked, boolean computerRewardDelivered, List<GroupEmail> emails,
                           List<MailboxParcel> mailboxInbox, List<MailboxParcel> pendingMailbox, List<MailboxParcel> pendingDeliveries) {
         this.id = Objects.requireNonNull(id, "id");
@@ -114,6 +118,22 @@ public final class DeliveryGroup {
             }
         }
 
+        this.activeJobs = new LinkedHashMap<>();
+
+        for (DeliveryJobProgress job : Objects.requireNonNull(activeJobs, "activeJobs")) {
+            DeliveryJobProgress existing = this.activeJobs.putIfAbsent(job.instanceId(), job);
+
+            if (existing != null) {
+                throw new IllegalArgumentException("Group '" + name + "' contains duplicate active job instance '" + job.instanceId() + "'");
+            }
+
+            long sameDefinition = this.activeJobs.values().stream().filter(active -> active.jobId().equals(job.jobId())).count();
+
+            if (sameDefinition > 1L) {
+                throw new IllegalArgumentException("Group '" + name + "' contains multiple active instances of job '" + job.jobId() + "'");
+            }
+        }
+
         this.completedTasks = new LinkedHashSet<>(Objects.requireNonNull(completedTasks, "completedTasks"));
 
         for (Identifier completed : this.completedTasks) {
@@ -149,10 +169,21 @@ public final class DeliveryGroup {
     static DeliveryGroup create(UUID id, String name, UUID owner) {
         return new DeliveryGroup(
                 id, name,
-                Optional.of(owner), List.of(owner), List.of(), List.of(), List.of(),
-                0L, 0L,
-                false, false,
+                Optional.of(owner), List.of(owner), List.of(), List.of(), List.of(), List.of(),
+                0L, 0L, false, false,
                 List.of(), List.of(), List.of(), List.of());
+    }
+
+    public Collection<DeliveryJobProgress> activeJobs() {
+        return Collections.unmodifiableCollection(activeJobs.values());
+    }
+
+    public Optional<DeliveryJobProgress> getActiveJob(UUID instanceId) {
+        return Optional.ofNullable(activeJobs.get(instanceId));
+    }
+
+    public boolean hasActiveJobDefinition(Identifier jobId) {
+        return activeJobs.values().stream().anyMatch(job -> job.jobId().equals(jobId));
     }
 
     public List<MailboxParcel> pendingDeliveries() {
@@ -163,9 +194,26 @@ public final class DeliveryGroup {
         return emails.stream().anyMatch(email -> email.type() == GroupEmail.Type.OFFER && email.referenceId().equals(offerId));
     }
 
+    Optional<DeliveryJobProgress> addActiveJob(
+            Identifier jobId) {
+        if (hasActiveJobDefinition(jobId)) {
+            return Optional.empty();
+        }
+
+        DeliveryJobProgress progress = new DeliveryJobProgress(jobId);
+
+        activeJobs.put(progress.instanceId(), progress);
+
+        return Optional.of(progress);
+    }
+
     void addPendingDelivery(MailboxParcel parcel) {
         Objects.requireNonNull(parcel, "parcel");
         pendingDeliveries.add(parcel);
+    }
+
+    boolean removeActiveJob(UUID instanceId) {
+        return activeJobs.remove(instanceId) != null;
     }
 
     boolean deliverPendingDeliveries() {

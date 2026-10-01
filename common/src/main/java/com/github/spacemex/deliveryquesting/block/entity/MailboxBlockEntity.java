@@ -78,8 +78,8 @@ public final class MailboxBlockEntity extends BlockEntity implements Container {
         List<ItemStack> outgoing = mailbox.drainOutbox();
         TaskRuntimeManager.MailboxSubmissionResult result = TaskRuntimeManager.submitMailboxItems(data, optionalGroup.get(), outgoing);
 
-        DeliveryQuesting.LOGGER.debug("Mailbox at {} submitted {} item(s), discarded {} item(s), and completed {} task(s)",
-                pos, result.submitted(), result.discarded(), result.completedTasks().size());
+        DeliveryQuesting.LOGGER.debug("Mailbox at {} submitted {} item(s), discarded {} item(s), completed {} task(s), and completed {} repeatable job(s)",
+                pos, result.submitted(), result.discarded(), result.completedTasks().size(), result.completedJobs().size());
     }
 
     private List<ItemStack> drainOutbox() {

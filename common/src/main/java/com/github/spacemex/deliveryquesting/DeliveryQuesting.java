@@ -5,6 +5,7 @@ import com.github.spacemex.deliveryquesting.command.GroupCommand;
 import com.github.spacemex.deliveryquesting.command.TaskCommand;
 import com.github.spacemex.deliveryquesting.config.CommonConfig;
 import com.github.spacemex.deliveryquesting.config.ConfigReader;
+import com.github.spacemex.deliveryquesting.job.JobManager;
 import com.github.spacemex.deliveryquesting.networking.*;
 import com.github.spacemex.deliveryquesting.progression.ProgressionManager;
 import com.github.spacemex.deliveryquesting.registry.ModRegistries;
@@ -38,6 +39,7 @@ public final class DeliveryQuesting {
 
 
         TaskManager.initialize();
+        JobManager.initialize();
         OfferManager.initialize();
         ProgressionManager.initialize();
 

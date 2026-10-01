@@ -1,8 +1,11 @@
 package com.github.spacemex.deliveryquesting.command;
 
+import com.github.spacemex.deliveryquesting.job.JobDefinition;
+import com.github.spacemex.deliveryquesting.job.JobManager;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
 import com.github.spacemex.deliveryquesting.progression.GroupEmail;
+import com.github.spacemex.deliveryquesting.progression.JobRuntimeManager;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -13,6 +16,7 @@ import dev.architectury.event.events.common.CommandRegistrationEvent;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
 
@@ -199,6 +203,23 @@ public final class GroupCommand {
                                                                 GroupCommand::generateMail
                                                         )
                                         )
+                                        .then(
+                                                Commands.literal(
+                                                                "acceptjob"
+                                                        )
+                                                        .requires(
+                                                                GroupCommand::canUseDebugCommands
+                                                        )
+                                                        .then(
+                                                                Commands.argument(
+                                                                                "id",
+                                                                                StringArgumentType.greedyString()
+                                                                        )
+                                                                        .executes(
+                                                                                GroupCommand::acceptJob
+                                                                        )
+                                                        )
+                                        )
                         )
         );
     }
@@ -252,6 +273,7 @@ public final class GroupCommand {
         source.sendSuccess(() -> Component.literal("Emails: " + group.emails().size()), false);
         source.sendSuccess(() -> Component.literal("Unread Emails: " + group.unreadEmailCount()), false);
         source.sendSuccess(() -> Component.literal("Pending Deliveries: " + group.pendingDeliveries().size()), false);
+        source.sendSuccess(() -> Component.literal("Active Jobs: " + group.activeJobs().size()), false);
 
         return Command.SINGLE_SUCCESS;
     }
@@ -631,6 +653,47 @@ public final class GroupCommand {
         }
 
         source.sendSuccess(() -> Component.literal("Generated contract email for " + generated.get().referenceId()), false);
+
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int acceptJob(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        String rawId = StringArgumentType.getString(context, "id").trim();
+        Identifier jobId;
+
+        try {
+            jobId = Identifier.parse(rawId);
+        } catch (RuntimeException exception) {
+            source.sendFailure(Component.literal("Invalid job ID: " + rawId));
+            return 0;
+        }
+
+        Optional<JobDefinition> optionalJob = JobManager.getJob(jobId);
+
+        if (optionalJob.isEmpty()) {
+            source.sendFailure(Component.literal("Unknown repeatable job '" + jobId + "'."));
+            return 0;
+        }
+
+        DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(source.getServer());
+
+        Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(player.getUUID());
+
+        if (optionalGroup.isEmpty()) {
+            source.sendFailure(Component.literal("You are not currently in a delivery group."));
+            return 0;
+        }
+
+        JobRuntimeManager.ActionResult result = JobRuntimeManager.acceptJob(data, optionalGroup.get(), optionalJob.get());
+
+        if (!result.success()) {
+            source.sendFailure(Component.literal(result.message()));
+            return 0;
+        }
+
+        source.sendSuccess(() -> Component.literal(result.message()), false);
 
         return Command.SINGLE_SUCCESS;
     }

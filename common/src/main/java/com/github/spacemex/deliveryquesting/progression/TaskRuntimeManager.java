@@ -1,5 +1,7 @@
 package com.github.spacemex.deliveryquesting.progression;
 
+import com.github.spacemex.deliveryquesting.job.JobDefinition;
+import com.github.spacemex.deliveryquesting.job.JobManager;
 import com.github.spacemex.deliveryquesting.task.ItemRequirement;
 import com.github.spacemex.deliveryquesting.task.TaskDefinition;
 import com.github.spacemex.deliveryquesting.task.TaskManager;
@@ -15,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public final class TaskRuntimeManager {
 
@@ -166,11 +169,7 @@ public final class TaskRuntimeManager {
 
                         long remaining = progress.getRemaining(requirement);
 
-                        if (remaining <= 0L) {
-                            continue;
-                        }
-
-                        if (!matches(stack, itemRequirement)) {
+                        if (remaining <= 0L || !matches(stack, itemRequirement)) {
                             continue;
                         }
 
@@ -190,6 +189,49 @@ public final class TaskRuntimeManager {
                 }
 
                 if (!inserted) {
+                    List<DeliveryJobProgress> activeJobs = new ArrayList<>(group.activeJobs());
+
+                    jobLoop:
+                    for (DeliveryJobProgress progress : activeJobs) {
+
+                        Optional<JobDefinition> optionalJob = JobManager.getJob(progress.jobId());
+
+                        if (optionalJob.isEmpty()) {
+                            continue;
+                        }
+
+                        JobDefinition job = optionalJob.get();
+
+                        for (TaskRequirement requirement : job.requirements()) {
+
+                            if (!(requirement instanceof ItemRequirement itemRequirement)) {
+                                continue;
+                            }
+
+                            long remaining = progress.getRemaining(requirement);
+
+                            if (remaining <= 0L || !matches(stack, itemRequirement)) {
+
+                                continue;
+                            }
+
+                            int amount = (int) Math.min(remaining, stack.getCount());
+                            long accepted = data.addJobProgress(group.id(), progress.instanceId(), requirement, amount);
+
+                            if (accepted <= 0L) {
+                                continue;
+                            }
+
+                            stack.shrink((int) accepted);
+                            submitted += accepted;
+                            inserted = true;
+
+                            break jobLoop;
+                        }
+                    }
+                }
+
+                if (!inserted) {
                     break;
                 }
             }
@@ -197,9 +239,8 @@ public final class TaskRuntimeManager {
 
         List<Identifier> completedTasks = new ArrayList<>();
 
-        List<TaskProgress> activeTasks = new ArrayList<>(group.activeTasks());
+        for (TaskProgress progress : new ArrayList<>(group.activeTasks())) {
 
-        for (TaskProgress progress : activeTasks) {
             Optional<TaskDefinition> optionalTask = TaskManager.getTask(progress.taskId());
 
             if (optionalTask.isEmpty()) {
@@ -217,7 +258,28 @@ public final class TaskRuntimeManager {
             }
         }
 
-        return new MailboxSubmissionResult(submitted, Math.max(0L, totalItems - submitted), List.copyOf(completedTasks));
+        List<UUID> completedJobs = new ArrayList<>();
+
+        for (DeliveryJobProgress progress : new ArrayList<>(group.activeJobs())) {
+
+            Optional<JobDefinition> optionalJob = JobManager.getJob(progress.jobId());
+
+            if (optionalJob.isEmpty()) {
+                continue;
+            }
+
+            JobDefinition job = optionalJob.get();
+
+            if (!progress.isComplete(job)) {
+                continue;
+            }
+
+            if (data.completeJob(group.id(), progress.instanceId(), job)) {
+                completedJobs.add(progress.instanceId());
+            }
+        }
+
+        return new MailboxSubmissionResult(submitted, Math.max(0L, totalItems - submitted), List.copyOf(completedTasks), List.copyOf(completedJobs));
     }
 
     @SuppressWarnings("deprecation")
@@ -237,6 +299,7 @@ public final class TaskRuntimeManager {
     public record SubmissionResult(boolean success, long submitted, boolean completed, String message) {
     }
 
-    public record MailboxSubmissionResult(long submitted, long discarded, List<Identifier> completedTasks) {
+    public record MailboxSubmissionResult(long submitted, long discarded, List<Identifier> completedTasks,
+                                          List<UUID> completedJobs) {
     }
 }

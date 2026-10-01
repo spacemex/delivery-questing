@@ -1,6 +1,7 @@
 package com.github.spacemex.deliveryquesting.progression;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.job.JobDefinition;
 import com.github.spacemex.deliveryquesting.task.*;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -571,6 +572,95 @@ public final class DeliveryQuestingSavedData extends SavedData {
         setDirty();
         return new PurchaseResult(true, "Purchased " + totalCount + "x " + offer.item() + " for " + offer.price()
                 + ". Delivery is scheduled for the next morning.", group.balance());
+    }
+
+    public Optional<UUID> acceptJob(UUID groupId, Identifier jobId) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return Optional.empty();
+        }
+
+        Optional<DeliveryJobProgress> progress = group.addActiveJob(jobId);
+
+        if (progress.isEmpty()) {
+            return Optional.empty();
+        }
+
+        setDirty();
+        return Optional.of(progress.get().instanceId());
+    }
+
+    public long addJobProgress(UUID groupId, UUID instanceId, TaskRequirement requirement, long amount) {
+        if (amount <= 0L) {
+            return 0L;
+        }
+
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return 0L;
+        }
+
+        Optional<DeliveryJobProgress> optionalProgress = group.getActiveJob(instanceId);
+
+        if (optionalProgress.isEmpty()) {
+            return 0L;
+        }
+
+        long accepted = optionalProgress.get().addProgress(requirement, amount);
+
+        if (accepted > 0L) {
+            setDirty();
+        }
+
+        return accepted;
+    }
+
+    public boolean completeJob(UUID groupId, UUID instanceId, JobDefinition job) {
+        DeliveryGroup group = groups.get(groupId);
+
+        if (group == null) {
+            return false;
+        }
+
+        Optional<DeliveryJobProgress> optionalProgress = group.getActiveJob(instanceId);
+
+        if (optionalProgress.isEmpty()) {
+            return false;
+        }
+
+        DeliveryJobProgress progress = optionalProgress.get();
+
+        if (!progress.jobId().equals(job.id())) {
+            return false;
+        }
+
+        if (!progress.isComplete(job)) {
+            return false;
+        }
+
+        if (!group.removeActiveJob(instanceId)) {
+            return false;
+        }
+
+        int previousLevel = group.wholeLevel();
+
+        group.addExperience(job.rewards().experience());
+
+        int currentLevel = group.wholeLevel();
+        ProgressionManager.processLevelChange(group, previousLevel, currentLevel);
+
+        group.addBalance(job.rewards().money());
+
+        if (!job.rewards().items().isEmpty()) {
+            MailboxParcel parcel = MailboxParcel.create(job.contractor().name(), job.rewards().items());
+
+            group.addMailboxParcel(parcel);
+        }
+
+        setDirty();
+        return true;
     }
 
     public int deliverPendingDeliveries() {
