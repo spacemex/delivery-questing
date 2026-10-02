@@ -19,6 +19,7 @@ import net.minecraft.world.level.saveddata.SavedDataType;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
+@SuppressWarnings("all")
 public final class DeliveryQuestingSavedData extends SavedData {
     public static final Codec<DeliveryQuestingSavedData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     DeliveryGroup.CODEC.listOf().optionalFieldOf("groups", List.of())
@@ -26,8 +27,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
                     UUIDUtil.CODEC.listOf().optionalFieldOf("starter_kits_delivered", List.of())
                             .forGetter(data -> List.copyOf(data.starterKitsDelivered)),
                     PhysicalContractReservation.CODEC.listOf().optionalFieldOf("outstanding_physical_contracts", List.of())
-                            .forGetter(data -> data.outstandingPhysicalContracts.entrySet().stream().map(entry ->
-                                    new PhysicalContractReservation(entry.getKey(), entry.getValue())).toList()))
+                            .forGetter(data -> List.copyOf(data.outstandingPhysicalContracts.values())))
             .apply(instance, DeliveryQuestingSavedData::new)
     );
     private static final SavedDataType<DeliveryQuestingSavedData> TYPE = new SavedDataType<>(
@@ -42,7 +42,8 @@ public final class DeliveryQuestingSavedData extends SavedData {
     private static final int STARTER_PARCELS = 4;
     private final Map<UUID, DeliveryGroup> groups = new LinkedHashMap<>();
     private final Set<UUID> starterKitsDelivered = new LinkedHashSet<>();
-    private final Map<UUID, Identifier> outstandingPhysicalContracts = new LinkedHashMap<>();
+    private final Map<UUID, PhysicalContractReservation> outstandingPhysicalContracts = new LinkedHashMap<>();
+    private static final long PHYSICAL_CONTRACT_REISSUE_TICKS = 24000L;
 
     private DeliveryQuestingSavedData() {
     }
@@ -68,7 +69,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
                 continue;
             }
 
-            Identifier existing = outstandingPhysicalContracts.putIfAbsent(reservation.groupId(), reservation.taskId());
+            PhysicalContractReservation existing = outstandingPhysicalContracts.putIfAbsent(reservation.groupId(), reservation);
 
             if (existing != null) {
                 throw new IllegalArgumentException("Group " + reservation.groupId() + " contains multiple outstanding physical contracts");
@@ -158,14 +159,13 @@ public final class DeliveryQuestingSavedData extends SavedData {
     }
 
     public Optional<Identifier> getOutstandingPhysicalContract(UUID groupId) {
-        return Optional.ofNullable(outstandingPhysicalContracts.get(groupId));
+        return Optional.ofNullable(outstandingPhysicalContracts.get(groupId)).map(PhysicalContractReservation::taskId);
     }
 
     public boolean clearOutstandingPhysicalContract(UUID groupId, Identifier taskId) {
-        Identifier outstanding = outstandingPhysicalContracts.get(groupId);
+        PhysicalContractReservation reservation = outstandingPhysicalContracts.get(groupId);
 
-        if (outstanding == null || !outstanding.equals(taskId)) {
-
+        if (reservation == null || !reservation.taskId().equals(taskId)) {
             return false;
         }
 
@@ -459,20 +459,22 @@ public final class DeliveryQuestingSavedData extends SavedData {
                 changed = true;
             }
 
-            Identifier physicalTask = outstandingPhysicalContracts.get(group.id());
+            PhysicalContractReservation reservation = outstandingPhysicalContracts.get(group.id());
 
-            if (physicalTask != null && (group.computerUnlocked() || !TaskManager.contains(physicalTask) || group.hasActiveTask(physicalTask)
-                    || group.hasCompletedTask(physicalTask))) {
-                outstandingPhysicalContracts.remove(group.id());
+            if (reservation != null) {
+                Identifier physicalTask = reservation.taskId();
 
-                changed = true;
+                if (group.computerUnlocked() || !TaskManager.contains(physicalTask) || group.hasActiveTask(physicalTask) || group.hasCompletedTask(physicalTask)) {
+                    outstandingPhysicalContracts.remove(group.id());
+                    changed = true;
+                }
             }
 
             if (!outstandingPhysicalContracts.containsKey(group.id())) {
                 Optional<Identifier> physicalContract = findPhysicalContractInMailbox(group);
 
                 if (physicalContract.isPresent()) {
-                    outstandingPhysicalContracts.put(group.id(), physicalContract.get());
+                    outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(), physicalContract.get(), -1L));
                     changed = true;
                 }
             }
@@ -842,7 +844,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         return true;
     }
 
-    public Optional<MailboxParcel> generateMailboxContract(DeliveryGroup group) {
+    public Optional<MailboxParcel> generateMailboxContract(DeliveryGroup group, long currentGameTime) {
         Objects.requireNonNull(group, "group");
 
         if (group.computerUnlocked()) {
@@ -853,14 +855,58 @@ public final class DeliveryQuestingSavedData extends SavedData {
             return Optional.empty();
         }
 
-        if (hasOutstandingPhysicalContract(group)) {
-            return Optional.empty();
+        PhysicalContractReservation reservation = outstandingPhysicalContracts.get(group.id());
+
+        if (reservation != null) {
+            Identifier taskId = reservation.taskId();
+
+            if (!TaskManager.contains(taskId) || group.hasActiveTask(taskId) || group.hasCompletedTask(taskId)) {
+                outstandingPhysicalContracts.remove(group.id());
+                setDirty();
+            } else {
+                if (mailboxContainsContract(group, taskId)) {
+                    return Optional.empty();
+                }
+
+                if (reservation.lastIssuedGameTime() < 0L) {
+                    outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(), taskId, currentGameTime));
+
+                    setDirty();
+                    return Optional.empty();
+                }
+
+                long elapsed = Math.max(0L, currentGameTime - reservation.lastIssuedGameTime());
+
+                if (elapsed < PHYSICAL_CONTRACT_REISSUE_TICKS) {
+                    return Optional.empty();
+                }
+
+                Optional<TaskDefinition> optionalTask = TaskManager.getTask(taskId);
+
+                if (optionalTask.isEmpty()) {
+                    outstandingPhysicalContracts.remove(group.id());
+                    setDirty();
+                    return Optional.empty();
+                }
+
+                TaskDefinition task = optionalTask.get();
+                MailboxParcel replacement = MailboxParcel.createContract(task.contractor().name(), task.id());
+
+                group.addMailboxParcel(replacement);
+
+                outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(), task.id(), currentGameTime));
+
+                setDirty();
+                DeliveryQuesting.LOGGER.info("Reissued physical contract {} to group '{}'", task.id(), group.name());
+
+                return Optional.of(replacement);
+            }
         }
 
         Optional<Identifier> existingContract = findPhysicalContractInMailbox(group);
 
         if (existingContract.isPresent()) {
-            outstandingPhysicalContracts.put(group.id(), existingContract.get());
+            outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(), existingContract.get(), currentGameTime));
 
             setDirty();
             return Optional.empty();
@@ -876,7 +922,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         TaskDefinition task = possibleTasks.get(ThreadLocalRandom.current().nextInt(possibleTasks.size()));
         MailboxParcel envelope = MailboxParcel.createContract(task.contractor().name(), task.id());
 
-        outstandingPhysicalContracts.put(group.id(), task.id());
+        outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(), task.id(), currentGameTime));
 
         group.addMailboxParcel(envelope);
 
@@ -884,16 +930,32 @@ public final class DeliveryQuestingSavedData extends SavedData {
         return Optional.of(envelope);
     }
 
-    public int generateMailboxContracts() {
+    public int generateMailboxContracts(long currentGameTime) {
         int generated = 0;
 
         for (DeliveryGroup group : groups.values()) {
-            if (generateMailboxContract(group).isPresent()) {
+            if (generateMailboxContract(group, currentGameTime).isPresent()) {
                 generated++;
             }
         }
 
         return generated;
+    }
+
+    private boolean mailboxContainsContract(DeliveryGroup group, Identifier taskId) {
+        for (MailboxParcel parcel : group.mailboxInbox()) {
+            if (parcel.contractTaskId().filter(taskId::equals).isPresent()) {
+                return true;
+            }
+        }
+
+        for (MailboxParcel parcel : group.pendingMailbox()) {
+            if (parcel.contractTaskId().filter(taskId::equals).isPresent()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private Optional<Identifier> findPhysicalContractInMailbox(DeliveryGroup group) {
@@ -922,22 +984,6 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         return Optional.empty();
-    }
-
-    private boolean hasOutstandingPhysicalContract(DeliveryGroup group) {
-        Identifier taskId = outstandingPhysicalContracts.get(group.id());
-
-        if (taskId == null) {
-            return false;
-        }
-
-        if (group.computerUnlocked() || !TaskManager.contains(taskId) || group.hasActiveTask(taskId) || group.hasCompletedTask(taskId)) {
-            outstandingPhysicalContracts.remove(group.id());
-            setDirty();
-            return false;
-        }
-
-        return true;
     }
 
     public record PurchaseResult(boolean success, String message, long balance) {

@@ -32,7 +32,7 @@ public final class ProgressionManager {
             DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(server);
 
             if (server.getTickCount() % MAILBOX_CONTRACT_INTERVAL_TICKS == 0) {
-                data.generateMailboxContracts();
+                data.generateMailboxContracts(server.overworld().getGameTime());
             }
 
             if (server.getTickCount() % CONTRACT_EMAIL_INTERVAL_TICKS == 0) {
