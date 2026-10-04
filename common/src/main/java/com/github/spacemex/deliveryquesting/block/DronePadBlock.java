@@ -4,6 +4,7 @@ import com.github.spacemex.deliveryquesting.block.entity.DronePadBlockEntity;
 import com.github.spacemex.deliveryquesting.menu.DronePadMenu;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
+import com.github.spacemex.deliveryquesting.registry.ModBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -18,6 +19,8 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
@@ -125,6 +128,12 @@ public final class DronePadBlock extends BaseEntityBlock {
         }
         DronePadMenu.open(serverPlayer, pos, pad);
         return InteractionResult.SUCCESS_SERVER;
+    }
+
+    @Override
+    public <T extends BlockEntity>
+    BlockEntityTicker<T> getTicker(@NonNull Level level, @NonNull BlockState state, @NonNull BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.DRONE_PAD.get(), DronePadBlockEntity::tick);
     }
 
     @Override

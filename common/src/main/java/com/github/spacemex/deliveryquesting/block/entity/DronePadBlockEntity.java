@@ -1,12 +1,16 @@
 package com.github.spacemex.deliveryquesting.block.entity;
 
+import com.github.spacemex.deliveryquesting.entity.DroneEntity;
 import com.github.spacemex.deliveryquesting.item.CardboardBoxItem;
 import com.github.spacemex.deliveryquesting.registry.ModBlockEntities;
+import com.github.spacemex.deliveryquesting.registry.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -26,6 +30,8 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
     private final NonNullList<ItemStack> items = NonNullList.withSize(PAYLOAD_SLOTS, ItemStack.EMPTY);
     @Nullable
     private UUID groupId;
+    @Nullable
+    private UUID droneId;
 
     public DronePadBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.DRONE_PAD.get(), pos, state);
@@ -45,9 +51,76 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
         return this.groupId.equals(groupId);
     }
 
+    public Optional<DroneEntity> getDrone() {
+        Level level = getLevel();
+
+        if (level == null || droneId == null) {
+            return Optional.empty();
+        }
+
+        Entity entity = level.getEntity(droneId);
+
+        if (entity instanceof DroneEntity drone) {
+            return Optional.of(drone);
+        }
+        return Optional.empty();
+    }
+
+    public Optional<UUID> droneId() {
+        return Optional.ofNullable(droneId);
+    }
+
+    public Optional<DroneEntity> getOrCreateDrone() {
+        Level level = getLevel();
+
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return Optional.empty();
+        }
+
+        Optional<DroneEntity> existing = getDrone();
+
+        if (existing.isPresent()) {
+            return existing;
+        }
+
+        if (!isSkyFree()) {
+            return Optional.empty();
+        }
+
+        DroneEntity drone = ModEntities.DRONE.get().create(serverLevel, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
+
+        if (drone == null) {
+            return Optional.empty();
+        }
+
+        drone.initialize(getBlockPos());
+
+        if (!serverLevel.addFreshEntity(drone)) {
+            return Optional.empty();
+        }
+
+        droneId = drone.getUUID();
+        setChanged();
+        return Optional.of(drone);
+    }
+
     public void rebindToGroup(UUID groupId) {
         this.groupId = Objects.requireNonNull(groupId, "groupId");
         setChanged();
+    }
+
+    public static void tick(Level level, BlockPos pos, BlockState state, DronePadBlockEntity pad) {
+        if (level.isClientSide()) {
+            return;
+        }
+
+        if (pad.groupId == null) {
+            return;
+        }
+
+        if (pad.getDrone().isEmpty() && pad.isSkyFree()) {
+            pad.getOrCreateDrone();
+        }
     }
 
     public boolean isSkyFree() {
@@ -75,6 +148,7 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
         super.saveAdditional(output);
         ContainerHelper.saveAllItems(output, items, true);
         output.storeNullable("group_id", UUIDUtil.CODEC, groupId);
+        output.storeNullable("drone_id", UUIDUtil.CODEC, droneId);
     }
 
     @Override
@@ -83,6 +157,7 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
         items.clear();
         ContainerHelper.loadAllItems(input, items);
         groupId = input.read("group_id", UUIDUtil.CODEC).orElse(null);
+        droneId = input.read("drone_id", UUIDUtil.CODEC).orElse(null);
     }
 
     @Override

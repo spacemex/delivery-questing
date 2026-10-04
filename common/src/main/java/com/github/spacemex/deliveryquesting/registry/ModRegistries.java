@@ -8,6 +8,8 @@ public final class ModRegistries {
         ModBlocks.initialize();
         ModBlockEntities.initialize();
 
+        ModEntities.initialize();
+
         ModItems.initialize();
         ModMenus.initialize();
         ModCreativeModeTabs.initialize();

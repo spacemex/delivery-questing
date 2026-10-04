@@ -1,18 +1,17 @@
 package com.github.spacemex.deliveryquesting.networking;
 
 import com.github.spacemex.deliveryquesting.block.entity.DronePadBlockEntity;
+import com.github.spacemex.deliveryquesting.entity.DroneEntity;
 import com.github.spacemex.deliveryquesting.item.CardboardBoxItem;
 import com.github.spacemex.deliveryquesting.menu.DronePadMenu;
 import com.github.spacemex.deliveryquesting.networking.packets.SubmitDroneDeliveryPayload;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
-import com.github.spacemex.deliveryquesting.progression.TaskRuntimeManager;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.List;
 import java.util.Optional;
 
 public final class DronePadNetworkHandler {
@@ -74,17 +73,34 @@ public final class DronePadNetworkHandler {
             return;
         }
 
-        List<ItemStack> contents = boxItem.getContents(boxStack);
-
-        if (contents.isEmpty()) {
+        if (boxItem.getContents(boxStack).isEmpty()) {
             player.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.empty_box"));
             return;
         }
 
-        TaskRuntimeManager.MailboxSubmissionResult result = TaskRuntimeManager.submitDeliveryItems(data, group, contents);
+        Optional<DroneEntity> optionalDrone = pad.getOrCreateDrone();
 
-        pad.setItem(0, ItemStack.EMPTY);
-        player.sendSystemMessage(Component.literal("Drone delivery sent: " + result.submitted() + " item(s) submitted, " + result.discarded() + " item(s) discarded."));
+        if (optionalDrone.isEmpty()) {
+            player.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.no_drone"));
+            return;
+        }
+
+        DroneEntity drone = optionalDrone.get();
+
+        if (!drone.isIdle()) {
+            player.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.busy"));
+            return;
+        }
+
+        ItemStack payloadStack = pad.removeItemNoUpdate(0);
+
+        if (!drone.launch(payloadStack)) {
+            pad.setItem(0, payloadStack);
+            player.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.busy"));
+            return;
+        }
+
+        player.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.launched"));
         player.closeContainer();
     }
 }
