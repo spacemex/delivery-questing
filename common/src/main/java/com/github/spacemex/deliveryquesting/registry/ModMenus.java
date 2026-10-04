@@ -6,6 +6,7 @@ import dev.architectury.registry.menu.MenuRegistry;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 
 public final class ModMenus {
@@ -16,18 +17,22 @@ public final class ModMenus {
     public static final RegistrySupplier<MenuType<ComputerMenu>> COMPUTER;
     public static final RegistrySupplier<MenuType<DeliveryContainerMenu>> DELIVERY_CONTAINER;
     public static final RegistrySupplier<MenuType<ContractMenu>> CONTRACT;
-    public static final RegistrySupplier<MenuType<CardboardBoxMenu>> CARDBOARD_BOX_TIER_1;
+    public static final RegistrySupplier<MenuType<CardboardBoxMenu>> CARDBOARD_BOX;
 
     public static void initialize() {
         MENUS.register();
     }
 
+    private static <T extends AbstractContainerMenu> RegistrySupplier<MenuType<T>> register(String name, MenuRegistry.ExtendedMenuTypeFactory<T> factory) {
+        return MENUS.register(name, () -> MenuRegistry.ofExtended(factory));
+    }
+
     static {
-        BULLETIN_BOARD = MENUS.register("bulletin_board", () -> MenuRegistry.ofExtended(BulletinBoardMenu::fromNetwork));
-        MAILBOX = MENUS.register("mailbox", () -> MenuRegistry.ofExtended(MailboxMenu::fromNetwork));
-        COMPUTER = MENUS.register("computer", () -> MenuRegistry.ofExtended(ComputerMenu::fromNetwork));
-        DELIVERY_CONTAINER = MENUS.register("delivery_container", () -> MenuRegistry.ofExtended(DeliveryContainerMenu::fromNetwork));
-        CONTRACT = MENUS.register("contract", () -> MenuRegistry.ofExtended(ContractMenu::fromNetwork));
-        CARDBOARD_BOX_TIER_1 = MENUS.register("cardboard_box_tier_1", () -> MenuRegistry.ofExtended(CardboardBoxMenu::fromNetwork));
+        BULLETIN_BOARD = register("bulletin_board", BulletinBoardMenu::fromNetwork);
+        MAILBOX = register("mailbox", MailboxMenu::fromNetwork);
+        COMPUTER = register("computer", ComputerMenu::fromNetwork);
+        DELIVERY_CONTAINER = register("delivery_container", DeliveryContainerMenu::fromNetwork);
+        CONTRACT = register("contract", ContractMenu::fromNetwork);
+        CARDBOARD_BOX = register("cardboard_box", CardboardBoxMenu::fromNetwork);
     }
 }

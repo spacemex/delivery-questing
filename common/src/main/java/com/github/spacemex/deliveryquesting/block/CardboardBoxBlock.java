@@ -1,8 +1,10 @@
 package com.github.spacemex.deliveryquesting.block;
 
 import com.github.spacemex.deliveryquesting.block.entity.CardboardBoxBlockEntity;
+import com.github.spacemex.deliveryquesting.item.CardboardBoxTier;
 import com.github.spacemex.deliveryquesting.menu.CardboardBoxMenu;
 import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -16,14 +18,23 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.NonNull;
 
 public final class CardboardBoxBlock extends BaseEntityBlock {
+    public static final MapCodec<CardboardBoxBlock> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            CardboardBoxTier.CODEC.fieldOf("tier")
+                    .forGetter(CardboardBoxBlock::tier), propertiesCodec()).apply(instance, CardboardBoxBlock::new));
+    private final CardboardBoxTier tier;
 
-    public CardboardBoxBlock(Properties properties) {
+    public CardboardBoxBlock(CardboardBoxTier tier, Properties properties) {
         super(properties);
+        this.tier = tier;
+    }
+
+    public CardboardBoxTier tier() {
+        return tier;
     }
 
     @Override
     protected @NonNull MapCodec<? extends BaseEntityBlock> codec() {
-        return simpleCodec(CardboardBoxBlock::new);
+        return CODEC;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.block.CardboardBoxBlock;
 import com.github.spacemex.deliveryquesting.item.*;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -9,6 +10,10 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 public final class ModItems {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.ITEM);
@@ -22,6 +27,12 @@ public final class ModItems {
     public static final RegistrySupplier<ContractItem> CONTRACT;
     public static final RegistrySupplier<SealedEnvelopeItem> SEALED_ENVELOPE;
     public static final RegistrySupplier<CardboardBoxItem> CARDBOARD_BOX_TIER_1;
+    public static final RegistrySupplier<CardboardBoxItem> CARDBOARD_BOX_TIER_2;
+    public static final RegistrySupplier<CardboardBoxItem> CARDBOARD_BOX_TIER_3;
+    public static final RegistrySupplier<CardboardBoxItem> CARDBOARD_BOX_TIER_4;
+    public static final RegistrySupplier<CardboardBoxItem> CARDBOARD_BOX_TIER_5;
+    public static final RegistrySupplier<CardboardBoxItem> CARDBOARD_BOX_TIER_6;
+    public static final RegistrySupplier<Item> CARDBOARD;
 
     public static void initialize() {
         ITEMS.register();
@@ -31,25 +42,47 @@ public final class ModItems {
         return ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, path));
     }
 
+    private static RegistrySupplier<CardboardBoxItem> register(CardboardBoxTier tier, RegistrySupplier<CardboardBoxBlock> block) {
+        String name = "cardboard_box_tier_" + tier.level();
+        return register(name, p -> {
+            p.stacksTo(1);
+            p.useBlockDescriptionPrefix();
+            return p;
+        }, p -> new CardboardBoxItem(block.get(), tier, p));
+    }
+
+    private static RegistrySupplier<BlockItem> register(String name, RegistrySupplier<? extends Block> block) {
+        return register(name, Item.Properties::useBlockDescriptionPrefix, p -> new BlockItem(block.get(), p));
+    }
+
+    private static RegistrySupplier<DeliveryContainerItem> register(String name, int capacity) {
+        return register(name, p -> p.stacksTo(1), p -> new DeliveryContainerItem(p, capacity));
+    }
+
+    private static <T extends Item> RegistrySupplier<T> register(String name, UnaryOperator<Item.Properties> properties, Function<Item.Properties, T> factory) {
+        return ITEMS.register(name, () -> factory.apply(properties.apply(new Item.Properties()).setId(key(name))));
+    }
+
+    private static <T extends Item> RegistrySupplier<T> register(String name, Function<Item.Properties, T> factory) {
+        return register(name, UnaryOperator.identity(), factory);
+    }
+
+
     static {
-        BULLETIN_BOARD = ITEMS.register("bulletin_board", () -> new BlockItem(ModBlocks.BULLETIN_BOARD.get(),
-                new Item.Properties().useBlockDescriptionPrefix().setId(key("bulletin_board"))));
-        MAILBOX = ITEMS.register("mailbox", () -> new BlockItem(ModBlocks.MAILBOX.get(),
-                new Item.Properties().useBlockDescriptionPrefix().setId(key("mailbox"))));
-        SEALED_PARCEL = ITEMS.register("sealed_parcel", () -> new SealedParcelItem(new Item.Properties()
-                .stacksTo(1).setId(key("sealed_parcel"))));
-        COMPUTER = ITEMS.register("computer", () -> new BlockItem(ModBlocks.COMPUTER.get(),
-                new Item.Properties().useBlockDescriptionPrefix().setId(key("computer"))));
-        ENVELOPE = ITEMS.register("envelope", () -> new DeliveryContainerItem(
-                new Item.Properties().stacksTo(1).setId(key("envelope")), 1));
-        PARCEL = ITEMS.register("parcel", () -> new DeliveryContainerItem(
-                new Item.Properties().stacksTo(1).setId(key("parcel")), 16));
-        CONTRACT = ITEMS.register("contract", () -> new ContractItem(
-                new Item.Properties().stacksTo(1).setId(key("contract"))));
-        SEALED_ENVELOPE = ITEMS.register("sealed_envelope", () -> new SealedEnvelopeItem(
-                new Item.Properties().stacksTo(1).setId(key("sealed_envelope"))));
-        CARDBOARD_BOX_TIER_1 = ITEMS.register("cardboard_box_tier_1", () -> new CardboardBoxItem(
-                ModBlocks.CARDBOARD_BOX_TIER_1.get(), new Item.Properties().stacksTo(1).useBlockDescriptionPrefix()
-                .setId(key("cardboard_box_tier_1"))));
+        BULLETIN_BOARD = register("bulletin_board", ModBlocks.BULLETIN_BOARD);
+        MAILBOX = register("mailbox", ModBlocks.MAILBOX);
+        SEALED_PARCEL = register("sealed_parcel", p -> p.stacksTo(1), SealedParcelItem::new);
+        COMPUTER = register("computer", ModBlocks.COMPUTER);
+        ENVELOPE = register("envelope", 1);
+        PARCEL = register("parcel", 16);
+        CONTRACT = register("contract", p -> p.stacksTo(1), ContractItem::new);
+        SEALED_ENVELOPE = register("sealed_envelope", p -> p.stacksTo(1), SealedEnvelopeItem::new);
+        CARDBOARD_BOX_TIER_1 = register(CardboardBoxTier.TIER_1, ModBlocks.CARDBOARD_BOX_TIER_1);
+        CARDBOARD_BOX_TIER_2 = register(CardboardBoxTier.TIER_2, ModBlocks.CARDBOARD_BOX_TIER_2);
+        CARDBOARD_BOX_TIER_3 = register(CardboardBoxTier.TIER_3, ModBlocks.CARDBOARD_BOX_TIER_3);
+        CARDBOARD_BOX_TIER_4 = register(CardboardBoxTier.TIER_4, ModBlocks.CARDBOARD_BOX_TIER_4);
+        CARDBOARD_BOX_TIER_5 = register(CardboardBoxTier.TIER_5, ModBlocks.CARDBOARD_BOX_TIER_5);
+        CARDBOARD_BOX_TIER_6 = register(CardboardBoxTier.TIER_6, ModBlocks.CARDBOARD_BOX_TIER_6);
+        CARDBOARD = register("cardboard", Item::new);
     }
 }

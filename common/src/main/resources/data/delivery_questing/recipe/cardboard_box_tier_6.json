@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "NCN",
+    "C C",
+    "NCN"
+  ],
+  "key": {
+    "N": "minecraft:netherite_ingot",
+    "C": "delivery_questing:cardboard"
+  },
+  "result": {
+    "id": "delivery_questing:cardboard_box_tier_2"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ECE",
+    "C C",
+    "ECE"
+  ],
+  "key": {
+    "E": "minecraft:emerald",
+    "C": "delivery_questing:cardboard"
+  },
+  "result": {
+    "id": "delivery_questing:cardboard_box_tier_4"
+  }
+}

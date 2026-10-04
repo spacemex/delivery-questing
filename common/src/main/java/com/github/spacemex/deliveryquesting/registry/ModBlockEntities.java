@@ -7,6 +7,8 @@ import com.github.spacemex.deliveryquesting.block.entity.MailboxBlockEntity;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
 public final class ModBlockEntities {
@@ -15,15 +17,26 @@ public final class ModBlockEntities {
 
     public static final RegistrySupplier<BlockEntityType<MailboxBlockEntity>> MAILBOX;
     public static final RegistrySupplier<BlockEntityType<ComputerBlockEntity>> COMPUTER;
-    public static final RegistrySupplier<BlockEntityType<CardboardBoxBlockEntity>> CARDBOARD_BOX_TIER_1;
+    public static final RegistrySupplier<BlockEntityType<CardboardBoxBlockEntity>> CARDBOARD_BOX;
 
     public static void initialize() {
         BLOCK_ENTITIES.register();
     }
 
+    private static <T extends BlockEntity> RegistrySupplier<BlockEntityType<T>> register(String name, BlockEntityTypeFactory.Factory<T> factory, Block... blocks) {
+        return BLOCK_ENTITIES.register(name, () -> BlockEntityTypeFactory.create(factory, blocks));
+    }
+
     static {
-        MAILBOX = BLOCK_ENTITIES.register("mailbox", () -> BlockEntityTypeFactory.create(MailboxBlockEntity::new, ModBlocks.MAILBOX.get()));
-        COMPUTER = BLOCK_ENTITIES.register("computer", () -> BlockEntityTypeFactory.create(ComputerBlockEntity::new, ModBlocks.COMPUTER.get()));
-        CARDBOARD_BOX_TIER_1 = BLOCK_ENTITIES.register("cardboard_box_tier_1", () -> BlockEntityTypeFactory.create(CardboardBoxBlockEntity::new, ModBlocks.CARDBOARD_BOX_TIER_1.get()));
+        MAILBOX = register("mailbox", MailboxBlockEntity::new, ModBlocks.MAILBOX.get());
+        COMPUTER = register("computer", ComputerBlockEntity::new, ModBlocks.COMPUTER.get());
+        CARDBOARD_BOX = register("cardboard_box", CardboardBoxBlockEntity::new,
+                ModBlocks.CARDBOARD_BOX_TIER_1.get(),
+                ModBlocks.CARDBOARD_BOX_TIER_2.get(),
+                ModBlocks.CARDBOARD_BOX_TIER_3.get(),
+                ModBlocks.CARDBOARD_BOX_TIER_4.get(),
+                ModBlocks.CARDBOARD_BOX_TIER_5.get(),
+                ModBlocks.CARDBOARD_BOX_TIER_6.get()
+        );
     }
 }

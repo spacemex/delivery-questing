@@ -1,6 +1,8 @@
 package com.github.spacemex.deliveryquesting.block.entity;
 
+import com.github.spacemex.deliveryquesting.block.CardboardBoxBlock;
 import com.github.spacemex.deliveryquesting.item.CardboardBoxItem;
+import com.github.spacemex.deliveryquesting.item.CardboardBoxTier;
 import com.github.spacemex.deliveryquesting.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
@@ -19,11 +21,22 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.NonNull;
 
 public final class CardboardBoxBlockEntity extends BlockEntity implements Container {
-    public static final int SLOT_COUNT = CardboardBoxItem.SLOT_COUNT;
-    private final NonNullList<ItemStack> items = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
+    private final CardboardBoxTier tier;
+    private final NonNullList<ItemStack> items;
 
     public CardboardBoxBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.CARDBOARD_BOX_TIER_1.get(), pos, state);
+        super(ModBlockEntities.CARDBOARD_BOX.get(), pos, state);
+
+        if (!(state.getBlock() instanceof CardboardBoxBlock box)) {
+            throw new IllegalArgumentException("CardboardBoxBlockEntity created for non-cardboard box block");
+        }
+
+        this.tier = box.tier();
+        this.items = NonNullList.withSize(tier.slots(), ItemStack.EMPTY);
+    }
+
+    public CardboardBoxTier tier() {
+        return tier;
     }
 
     @Override
@@ -60,7 +73,7 @@ public final class CardboardBoxBlockEntity extends BlockEntity implements Contai
 
     @Override
     public int getContainerSize() {
-        return SLOT_COUNT;
+        return tier.slots();
     }
 
     @Override
@@ -94,6 +107,7 @@ public final class CardboardBoxBlockEntity extends BlockEntity implements Contai
         if (!stack.isEmpty() && !CardboardBoxItem.canStore(stack)) {
             return;
         }
+
         stack.limitSize(getMaxStackSize(stack));
         items.set(slot, stack);
         setChanged();
@@ -119,6 +133,5 @@ public final class CardboardBoxBlockEntity extends BlockEntity implements Contai
 
     @Override
     public void preRemoveSideEffects(@NonNull BlockPos pos, @NonNull BlockState state) {
-
     }
 }

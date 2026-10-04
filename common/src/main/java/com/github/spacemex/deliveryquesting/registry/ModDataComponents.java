@@ -8,6 +8,8 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 
+import java.util.function.UnaryOperator;
+
 public final class ModDataComponents {
     public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENTS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.DATA_COMPONENT_TYPE);
 
@@ -18,9 +20,12 @@ public final class ModDataComponents {
         DATA_COMPONENTS.register();
     }
 
+    private static <T> RegistrySupplier<DataComponentType<T>> register(String name, UnaryOperator<DataComponentType.Builder<T>> builder) {
+        return DATA_COMPONENTS.register(name, () -> builder.apply(DataComponentType.builder()).build());
+    }
+
     static {
-        MAILBOX_PARCEL = DATA_COMPONENTS.register("mailbox_parcel", () -> DataComponentType.<MailboxParcel>builder().persistent(MailboxParcel.CODEC).build());
-        CONTRACT_TASK_ID = DATA_COMPONENTS.register("contract_task_id", () -> DataComponentType.<Identifier>builder().persistent(Identifier.CODEC)
-                .networkSynchronized(Identifier.STREAM_CODEC).build());
+        MAILBOX_PARCEL = register("mailbox_parcel", b -> b.persistent(MailboxParcel.CODEC));
+        CONTRACT_TASK_ID = register("contract_task_id", b -> b.persistent(Identifier.CODEC).networkSynchronized(Identifier.STREAM_CODEC));
     }
 }

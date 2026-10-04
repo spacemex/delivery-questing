@@ -22,5 +22,11 @@
   "tooltip.delivery_questing.sealed_envelope.open": "Right-click to open",
   "block.delivery_questing.cardboard_box_tier_1": "Cardboard Box Tier 1",
   "screen.delivery_questing.cardboard_box_tier_1": "Cardboard Box Tier 1",
+  "item.delivery_questing.cardboard": "Cardboard",
+  "block.delivery_questing.cardboard_box_tier_2": "Cardboard Box Tier 2",
+  "block.delivery_questing.cardboard_box_tier_3": "Cardboard Box Tier 3",
+  "block.delivery_questing.cardboard_box_tier_4": "Cardboard Box Tier 4",
+  "block.delivery_questing.cardboard_box_tier_5": "Cardboard Box Tier 5",
+  "block.delivery_questing.cardboard_box_tier_6": "Cardboard Box Tier 6",
   "tooltip.delivery_questing.cardboard_box.stacks": "Contains %s / %s stack(s)"
 }
