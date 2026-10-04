@@ -1,5 +1,7 @@
 package com.github.spacemex.deliveryquesting.client.screen;
 
+import com.github.spacemex.deliveryquesting.block.entity.DronePadBlockEntity;
+import com.github.spacemex.deliveryquesting.entity.DroneEntity;
 import com.github.spacemex.deliveryquesting.menu.DronePadMenu;
 import com.github.spacemex.deliveryquesting.networking.packets.SubmitDroneDeliveryPayload;
 import dev.architectury.networking.NetworkManager;
@@ -20,10 +22,10 @@ public final class DronePadScreen extends AbstractContainerScreen<DronePadMenu> 
     @Override
     protected void init() {
         super.init();
-        sendButton = addRenderableWidget(Button.builder(Component.literal("Send Delivery"), button -> {
+        sendButton = addRenderableWidget(Button.builder(Component.literal("Send"), button -> {
             button.active = false;
             NetworkManager.sendToServer(new SubmitDroneDeliveryPayload(menu.blockPos()));
-        }).bounds(leftPos + 50, topPos + 57, 76, 20).build());
+        }).bounds(leftPos + 100, topPos + 57, 65, 20).build());
         sendButton.active = menu.hasPayload();
     }
 
@@ -31,7 +33,7 @@ public final class DronePadScreen extends AbstractContainerScreen<DronePadMenu> 
     protected void containerTick() {
         super.containerTick();
         if (sendButton != null) {
-            sendButton.active = menu.hasPayload();
+            sendButton.active = menu.hasPayload() && menu.isDroneFullyCharged();
         }
     }
 
@@ -47,7 +49,11 @@ public final class DronePadScreen extends AbstractContainerScreen<DronePadMenu> 
     @Override
     protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         graphics.text(font, title, 8, 8, 0xFF202020, false);
-        graphics.text(font, Component.literal("Cardboard Box Payload"), 8, 22, 0xFF454545, false);
         graphics.text(font, playerInventoryTitle, 8, 72, 0xFF454545, false);
+        graphics.text(font, Component.literal("Pad: " + menu.padEnergy() + " / "
+                + DronePadBlockEntity.ENERGY_CAPACITY), 8, 10, 0xFF454545, false);
+        String droneEnergy = menu.droneEnergy() < 0 ? "Away" : menu.droneEnergy() + " / " + DroneEntity.ENERGY_CAPACITY;
+        graphics.text(font, Component.literal("Drone: " + droneEnergy), 96, 10, 0xFF454545, false);
+        graphics.text(font, Component.literal("Tier " + menu.droneTier()), 74, 72, 0xFF454545, false);
     }
 }

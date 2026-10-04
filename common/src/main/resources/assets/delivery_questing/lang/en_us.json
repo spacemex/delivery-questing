@@ -38,5 +38,13 @@
   "entity.delivery_questing.drone": "Delivery Drone",
   "message.delivery_questing.drone_pad.no_drone": "The Drone Pad could not deploy its drone.",
   "message.delivery_questing.drone_pad.busy": "The drone is currently making another delivery.",
-  "message.delivery_questing.drone_pad.launched": "The drone has departed with your delivery."
+  "message.delivery_questing.drone_pad.launched": "The drone has departed with your delivery.",
+  "item.delivery_questing.upgrade_base": "Upgrade Base",
+  "item.delivery_questing.upgrade_tier_1": "Upgrade Tier 1",
+  "item.delivery_questing.upgrade_tier_2": "Upgrade Tier 2",
+  "item.delivery_questing.upgrade_tier_3": "Upgrade Tier 3",
+  "item.delivery_questing.upgrade_tier_4": "Upgrade Tier 4",
+  "item.delivery_questing.upgrade_tier_5": "Upgrade Tier 5",
+  "item.delivery_questing.upgrade_tier_6": "Upgrade Tier 6",
+  "message.delivery_questing.drone_pad.charging": "The drone is still charging: %s / %s energy."
 }

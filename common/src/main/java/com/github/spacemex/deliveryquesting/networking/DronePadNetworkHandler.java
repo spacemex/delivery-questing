@@ -88,9 +88,14 @@ public final class DronePadNetworkHandler {
         DroneEntity drone = optionalDrone.get();
 
         if (!drone.isIdle()) {
+            if (!drone.isFullyCharged()) {
+                player.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.charging", drone.getEnergy(), DroneEntity.ENERGY_CAPACITY));
+                return;
+            }
             player.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.busy"));
             return;
         }
+
 
         ItemStack payloadStack = pad.removeItemNoUpdate(0);
 

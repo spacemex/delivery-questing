@@ -2,6 +2,7 @@ package com.github.spacemex.deliveryquesting.block.entity;
 
 import com.github.spacemex.deliveryquesting.entity.DroneEntity;
 import com.github.spacemex.deliveryquesting.item.CardboardBoxItem;
+import com.github.spacemex.deliveryquesting.item.UpgradeItem;
 import com.github.spacemex.deliveryquesting.registry.ModBlockEntities;
 import com.github.spacemex.deliveryquesting.registry.ModEntities;
 import net.minecraft.core.BlockPos;
@@ -12,6 +13,7 @@ import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -26,12 +28,40 @@ import java.util.Optional;
 import java.util.UUID;
 
 public final class DronePadBlockEntity extends BlockEntity implements Container {
-    public static final int PAYLOAD_SLOTS = 1;
-    private final NonNullList<ItemStack> items = NonNullList.withSize(PAYLOAD_SLOTS, ItemStack.EMPTY);
     @Nullable
     private UUID groupId;
     @Nullable
     private UUID droneId;
+    public static final int PAYLOAD_SLOT = 0;
+    public static final int UPGRADE_SLOT = 1;
+    public static final int SLOT_COUNT = 2;
+    public static final int ENERGY_CAPACITY = 16_000;
+    public static final int DRONE_CHARGE_RATE = 2;
+    private final NonNullList<ItemStack> items = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
+    private int energy;
+    private final ContainerData menuData = new ContainerData() {
+        @Override
+        public int get(int index) {
+            return switch (index) {
+                case 0 -> energy;
+                case 1 -> getDrone().filter(DroneEntity::isIdle).map(DroneEntity::getEnergy).orElse(-1);
+                case 2 -> getDrone().filter(DroneEntity::isIdle).map(DroneEntity::getTier).orElse(getUpgradeLevel());
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int index, int value) {
+            if (index == 0) {
+                setEnergy(value);
+            }
+        }
+
+        @Override
+        public int getCount() {
+            return 3;
+        }
+    };
 
     public DronePadBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.DRONE_PAD.get(), pos, state);
@@ -49,6 +79,79 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
             return true;
         }
         return this.groupId.equals(groupId);
+    }
+
+    public ContainerData menuData() {
+        return menuData;
+    }
+
+    public int getEnergy() {
+        return energy;
+    }
+
+    public int getMaxEnergy() {
+        return ENERGY_CAPACITY;
+    }
+
+    public void setEnergy(int energy) {
+        this.energy = Math.max(0, Math.min(ENERGY_CAPACITY, energy));
+        setChanged();
+    }
+
+    public int receiveEnergy(int amount, boolean simulate) {
+        if (amount <= 0) {
+            return 0;
+        }
+
+        int accepted = Math.min(amount, ENERGY_CAPACITY - energy);
+
+        if (!simulate && accepted > 0) {
+            energy += accepted;
+            setChanged();
+        }
+        return accepted;
+    }
+
+    private int useEnergy(int amount) {
+        if (amount <= 0) {
+            return 0;
+        }
+
+        int used = Math.min(energy, amount);
+
+        if (used > 0) {
+            energy -= used;
+            setChanged();
+        }
+        return used;
+    }
+
+    public int getUpgradeLevel() {
+        ItemStack stack = items.get(UPGRADE_SLOT);
+
+        if (stack.getItem() instanceof UpgradeItem upgrade) {
+            return upgrade.tier().level();
+        }
+        return 0;
+    }
+
+    public boolean installUpgrade(ItemStack source, @Nullable Player player) {
+        if (!(source.getItem() instanceof UpgradeItem)) {
+            return false;
+        }
+
+        if (!items.get(UPGRADE_SLOT).isEmpty()) {
+            return false;
+        }
+
+        items.set(UPGRADE_SLOT, source.copyWithCount(1));
+
+        if (player == null || !player.isCreative()) {
+            source.shrink(1);
+        }
+
+        setChanged();
+        return true;
     }
 
     public Optional<DroneEntity> getDrone() {
@@ -118,8 +221,38 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
             return;
         }
 
-        if (pad.getDrone().isEmpty() && pad.isSkyFree()) {
-            pad.getOrCreateDrone();
+        Optional<DroneEntity> optionalDrone = pad.getDrone();
+
+        if (optionalDrone.isEmpty()) {
+            if (pad.isSkyFree()) {
+                pad.getOrCreateDrone();
+            }
+            return;
+        }
+
+        DroneEntity drone = optionalDrone.get();
+
+        if (!drone.isIdle()) {
+            return;
+        }
+
+        int tier = pad.getUpgradeLevel();
+
+        if (drone.getTier() != tier) {
+            drone.setTier(tier);
+        }
+
+        int missing = DroneEntity.ENERGY_CAPACITY - drone.getEnergy();
+
+        if (missing <= 0 || pad.energy <= 0) {
+            return;
+        }
+
+        int requested = Math.min(DRONE_CHARGE_RATE, missing);
+        int transferred = pad.useEnergy(requested);
+
+        if (transferred > 0) {
+            drone.addEnergy(transferred);
         }
     }
 
@@ -149,6 +282,7 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
         ContainerHelper.saveAllItems(output, items, true);
         output.storeNullable("group_id", UUIDUtil.CODEC, groupId);
         output.storeNullable("drone_id", UUIDUtil.CODEC, droneId);
+        output.putInt("energy", energy);
     }
 
     @Override
@@ -158,11 +292,12 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
         ContainerHelper.loadAllItems(input, items);
         groupId = input.read("group_id", UUIDUtil.CODEC).orElse(null);
         droneId = input.read("drone_id", UUIDUtil.CODEC).orElse(null);
+        energy = Math.max(0, Math.min(ENERGY_CAPACITY, input.getIntOr("energy", 0)));
     }
 
     @Override
     public int getContainerSize() {
-        return PAYLOAD_SLOTS;
+        return SLOT_COUNT;
     }
 
     @Override
@@ -193,8 +328,14 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
 
     @Override
     public void setItem(int slot, ItemStack stack) {
-        if (!stack.isEmpty() && !(stack.getItem() instanceof CardboardBoxItem)) {
-            return;
+        if (!stack.isEmpty()) {
+            if (slot == PAYLOAD_SLOT && !(stack.getItem() instanceof CardboardBoxItem)) {
+                return;
+            }
+
+            if (slot == UPGRADE_SLOT && !(stack.getItem() instanceof UpgradeItem)) {
+                return;
+            }
         }
         stack.limitSize(1);
         items.set(slot, stack);
@@ -202,8 +343,12 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
     }
 
     @Override
-    public boolean canPlaceItem(int slot, ItemStack stack) {
-        return stack.getItem() instanceof CardboardBoxItem;
+    public boolean canPlaceItem(int slot, @NonNull ItemStack stack) {
+        return switch (slot) {
+            case PAYLOAD_SLOT -> stack.getItem() instanceof CardboardBoxItem;
+            case UPGRADE_SLOT -> stack.getItem() instanceof UpgradeItem;
+            default -> false;
+        };
     }
 
     @Override

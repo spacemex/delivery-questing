@@ -33,7 +33,14 @@ public final class ModItems {
     public static final RegistrySupplier<CardboardBoxItem> CARDBOARD_BOX_TIER_5;
     public static final RegistrySupplier<CardboardBoxItem> CARDBOARD_BOX_TIER_6;
     public static final RegistrySupplier<Item> CARDBOARD;
+    public static final RegistrySupplier<Item> UPGRADE_BASE;
     public static final RegistrySupplier<BlockItem> DRONE_PAD;
+    public static final RegistrySupplier<UpgradeItem> UPGRADE_TIER_1;
+    public static final RegistrySupplier<UpgradeItem> UPGRADE_TIER_2;
+    public static final RegistrySupplier<UpgradeItem> UPGRADE_TIER_3;
+    public static final RegistrySupplier<UpgradeItem> UPGRADE_TIER_4;
+    public static final RegistrySupplier<UpgradeItem> UPGRADE_TIER_5;
+    public static final RegistrySupplier<UpgradeItem> UPGRADE_TIER_6;
 
     public static void initialize() {
         ITEMS.register();
@@ -50,6 +57,11 @@ public final class ModItems {
             p.useBlockDescriptionPrefix();
             return p;
         }, p -> new CardboardBoxItem(block.get(), tier, p));
+    }
+
+    private static RegistrySupplier<UpgradeItem> register(UpgradeTier tier) {
+        String name = "upgrade_tier_" + tier.level();
+        return register(name, p -> new UpgradeItem(tier, p));
     }
 
     private static RegistrySupplier<BlockItem> register(String name, RegistrySupplier<? extends Block> block) {
@@ -86,5 +98,12 @@ public final class ModItems {
         CARDBOARD_BOX_TIER_6 = register(CardboardBoxTier.TIER_6, ModBlocks.CARDBOARD_BOX_TIER_6);
         CARDBOARD = register("cardboard", Item::new);
         DRONE_PAD = register("drone_pad", ModBlocks.DRONE_PAD);
+        UPGRADE_BASE = register("upgrade_base", Item::new);
+        UPGRADE_TIER_1 = register(UpgradeTier.TIER_1);
+        UPGRADE_TIER_2 = register(UpgradeTier.TIER_2);
+        UPGRADE_TIER_3 = register(UpgradeTier.TIER_3);
+        UPGRADE_TIER_4 = register(UpgradeTier.TIER_4);
+        UPGRADE_TIER_5 = register(UpgradeTier.TIER_5);
+        UPGRADE_TIER_6 = register(UpgradeTier.TIER_6);
     }
 }
