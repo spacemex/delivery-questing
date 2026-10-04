@@ -1,10 +1,7 @@
 package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
-import com.github.spacemex.deliveryquesting.item.ContractItem;
-import com.github.spacemex.deliveryquesting.item.DeliveryContainerItem;
-import com.github.spacemex.deliveryquesting.item.SealedEnvelopeItem;
-import com.github.spacemex.deliveryquesting.item.SealedParcelItem;
+import com.github.spacemex.deliveryquesting.item.*;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
@@ -24,6 +21,7 @@ public final class ModItems {
     public static final RegistrySupplier<DeliveryContainerItem> PARCEL;
     public static final RegistrySupplier<ContractItem> CONTRACT;
     public static final RegistrySupplier<SealedEnvelopeItem> SEALED_ENVELOPE;
+    public static final RegistrySupplier<CardboardBoxItem> CARDBOARD_BOX_TIER_1;
 
     public static void initialize() {
         ITEMS.register();
@@ -50,5 +48,8 @@ public final class ModItems {
                 new Item.Properties().stacksTo(1).setId(key("contract"))));
         SEALED_ENVELOPE = ITEMS.register("sealed_envelope", () -> new SealedEnvelopeItem(
                 new Item.Properties().stacksTo(1).setId(key("sealed_envelope"))));
+        CARDBOARD_BOX_TIER_1 = ITEMS.register("cardboard_box_tier_1", () -> new CardboardBoxItem(
+                ModBlocks.CARDBOARD_BOX_TIER_1.get(), new Item.Properties().stacksTo(1).useBlockDescriptionPrefix()
+                .setId(key("cardboard_box_tier_1"))));
     }
 }

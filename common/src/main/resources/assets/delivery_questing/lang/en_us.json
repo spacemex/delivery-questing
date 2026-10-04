@@ -19,5 +19,8 @@
   "tooltip.delivery_questing.contract.inspect": "Right-click to inspect",
   "tooltip.delivery_questing.sealed_envelope.sender": "From: %s",
   "tooltip.delivery_questing.sealed_envelope.contract": "Contains a delivery contract",
-  "tooltip.delivery_questing.sealed_envelope.open": "Right-click to open"
+  "tooltip.delivery_questing.sealed_envelope.open": "Right-click to open",
+  "block.delivery_questing.cardboard_box_tier_1": "Cardboard Box Tier 1",
+  "screen.delivery_questing.cardboard_box_tier_1": "Cardboard Box Tier 1",
+  "tooltip.delivery_questing.cardboard_box.stacks": "Contains %s / %s stack(s)"
 }
