@@ -1,0 +1,10 @@
+{
+  "parent": "delivery_questing:block/barrel",
+  "textures": {
+    "0": "delivery_questing:block/barrel_side_tier_3",
+    "1": "delivery_questing:block/barrel_front_tier_3",
+    "2": "delivery_questing:block/barrel_top",
+    "3": "delivery_questing:block/barrel_lid",
+    "particle": "delivery_questing:block/barrel_lid"
+  }
+}

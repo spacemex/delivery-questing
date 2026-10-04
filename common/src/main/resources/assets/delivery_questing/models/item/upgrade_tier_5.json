@@ -1,0 +1,6 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "delivery_questing:item/upgrade_tier_5"
+}
+}

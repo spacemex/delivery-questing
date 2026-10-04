@@ -1,0 +1,7 @@
+{
+	"parent": "delivery_questing:block/computer",
+	"textures": {
+		"0": "delivery_questing:block/computer_off",
+		"particle": "delivery_questing:block/computer_off"
+	}
+}

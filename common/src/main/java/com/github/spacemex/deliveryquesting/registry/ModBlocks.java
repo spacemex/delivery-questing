@@ -38,7 +38,7 @@ public final class ModBlocks {
     }
 
     private static RegistrySupplier<CardboardBoxBlock> register(CardboardBoxTier tier) {
-        String name = "cardboard_box_tier" + tier.level();
+        String name = "cardboard_box_tier_" + tier.level();
         return register(name, BlockBehaviour.Properties.ofFullCopy(Blocks.BROWN_WOOL), p -> {
             p.strength(0.5f);
             return p;
@@ -50,15 +50,15 @@ public final class ModBlocks {
     }
 
     static {
-        BULLETIN_BOARD = register("bulletin_board", BlockBehaviour.Properties.ofFullCopy(Blocks.OAK_PLANKS), p -> p.strength(2.f, 3.f), BulletinBoardBlock::new);
-        MAILBOX = register("mailbox", BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK), p -> p.strength(2.f, 6.f), MailboxBlock::new);
-        COMPUTER = register("computer", BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK), p -> p.strength(1.5f, 3.f), ComputerBlock::new);
+        BULLETIN_BOARD = register("bulletin_board", BlockBehaviour.Properties.ofFullCopy(Blocks.OAK_PLANKS), p -> p.strength(2.f, 3.f).noOcclusion(), BulletinBoardBlock::new);
+        MAILBOX = register("mailbox", BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK), p -> p.strength(2.f, 6.f).noOcclusion(), MailboxBlock::new);
+        COMPUTER = register("computer", BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK), p -> p.strength(1.5f, 3.f).noOcclusion(), ComputerBlock::new);
         CARDBOARD_BOX_TIER_1 = register(CardboardBoxTier.TIER_1);
         CARDBOARD_BOX_TIER_2 = register(CardboardBoxTier.TIER_2);
         CARDBOARD_BOX_TIER_3 = register(CardboardBoxTier.TIER_3);
         CARDBOARD_BOX_TIER_4 = register(CardboardBoxTier.TIER_4);
         CARDBOARD_BOX_TIER_5 = register(CardboardBoxTier.TIER_5);
         CARDBOARD_BOX_TIER_6 = register(CardboardBoxTier.TIER_6);
-        DRONE_PAD = register("drone_pad", BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK), p -> p.strength(1.5f, 6.f), DronePadBlock::new);
+        DRONE_PAD = register("drone_pad", BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK), p -> p.strength(1.5f, 6.f).noOcclusion(), DronePadBlock::new);
     }
 }

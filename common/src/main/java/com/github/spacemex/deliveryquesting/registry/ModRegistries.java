@@ -10,5 +10,6 @@ public final class ModRegistries {
 
         ModItems.initialize();
         ModMenus.initialize();
+        ModCreativeModeTabs.initialize();
     }
 }

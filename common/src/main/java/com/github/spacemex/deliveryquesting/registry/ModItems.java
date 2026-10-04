@@ -61,7 +61,7 @@ public final class ModItems {
     }
 
     private static <T extends Item> RegistrySupplier<T> register(String name, UnaryOperator<Item.Properties> properties, Function<Item.Properties, T> factory) {
-        return ITEMS.register(name, () -> factory.apply(properties.apply(new Item.Properties()).setId(key(name))));
+        return ITEMS.register(name, () -> factory.apply(properties.apply(new Item.Properties()).arch$tab(ModCreativeModeTabs.DELIVERY_TAB).setId(key(name))));
     }
 
     private static <T extends Item> RegistrySupplier<T> register(String name, Function<Item.Properties, T> factory) {

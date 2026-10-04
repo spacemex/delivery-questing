@@ -1,6 +1,3 @@
 {
-  "model": {
-    "type": "minecraft:model",
-    "model": "delivery_questing:block/drone_pad"
-  }
+  "parent": "delivery_questing:block/drone_pad"
 }

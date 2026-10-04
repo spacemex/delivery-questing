@@ -1,6 +1,12 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/cube",
   "textures": {
-    "all": "minecraft:block/brown_wool"
+    "particle": "delivery_questing:block/cardboard_box_bottom_tier_6",
+    "down": "delivery_questing:block/cardboard_box_bottom_tier_6",
+    "up": "delivery_questing:block/cardboard_box_top_tier_6",
+    "north": "delivery_questing:block/cardboard_box_front_tier_6",
+    "east": "delivery_questing:block/cardboard_box_side_tier_6",
+    "south": "delivery_questing:block/cardboard_box_front_tier_6",
+    "west": "delivery_questing:block/cardboard_box_side_tier_6"
   }
 }

@@ -1,7 +1,8 @@
 {
-  "variants": {
-    "": {
-      "model": "delivery_questing:block/drone_pad"
+    "variants": {
+        "facing=north": { "model": "delivery_questing:block/drone_pad" },
+        "facing=south": { "model": "delivery_questing:block/drone_pad", "y": 180 },
+        "facing=west": { "model": "delivery_questing:block/drone_pad", "y": 270 },
+        "facing=east": { "model": "delivery_questing:block/drone_pad", "y": 90 }
     }
-  }
 }

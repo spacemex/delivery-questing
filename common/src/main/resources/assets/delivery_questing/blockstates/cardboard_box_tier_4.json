@@ -1,7 +1,8 @@
 {
-  "variants": {
-    "": {
-      "model": "delivery_questing:block/cardboard_box_tier_4"
+    "variants": {
+        "facing=north": { "model": "delivery_questing:block/cardboard_box_tier_4" },
+        "facing=south": { "model": "delivery_questing:block/cardboard_box_tier_4", "y": 180 },
+        "facing=west": { "model": "delivery_questing:block/cardboard_box_tier_4", "y": 270 },
+        "facing=east": { "model": "delivery_questing:block/cardboard_box_tier_4", "y": 90 }
     }
-  }
 }

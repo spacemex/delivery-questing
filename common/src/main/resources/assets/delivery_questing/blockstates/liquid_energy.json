@@ -1,0 +1,5 @@
+{
+    "variants": {
+        "": { "model": "delivery_questing:block/liquid_energy" }
+    }
+}
