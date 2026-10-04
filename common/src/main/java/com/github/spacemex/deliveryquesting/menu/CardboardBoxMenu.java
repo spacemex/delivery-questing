@@ -99,7 +99,7 @@ public final class CardboardBoxMenu extends AbstractContainerMenu {
     }
 
     public int imageHeight() {
-        return 114 + tier.rows() * 18;
+        return 130 + tier.rows() * 18;
     }
 
     @Override
