@@ -33,6 +33,7 @@ public final class ModItems {
     public static final RegistrySupplier<CardboardBoxItem> CARDBOARD_BOX_TIER_5;
     public static final RegistrySupplier<CardboardBoxItem> CARDBOARD_BOX_TIER_6;
     public static final RegistrySupplier<Item> CARDBOARD;
+    public static final RegistrySupplier<BlockItem> DRONE_PAD;
 
     public static void initialize() {
         ITEMS.register();
@@ -84,5 +85,6 @@ public final class ModItems {
         CARDBOARD_BOX_TIER_5 = register(CardboardBoxTier.TIER_5, ModBlocks.CARDBOARD_BOX_TIER_5);
         CARDBOARD_BOX_TIER_6 = register(CardboardBoxTier.TIER_6, ModBlocks.CARDBOARD_BOX_TIER_6);
         CARDBOARD = register("cardboard", Item::new);
+        DRONE_PAD = register("drone_pad", ModBlocks.DRONE_PAD);
     }
 }

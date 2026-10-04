@@ -28,5 +28,11 @@
   "block.delivery_questing.cardboard_box_tier_4": "Cardboard Box Tier 4",
   "block.delivery_questing.cardboard_box_tier_5": "Cardboard Box Tier 5",
   "block.delivery_questing.cardboard_box_tier_6": "Cardboard Box Tier 6",
-  "tooltip.delivery_questing.cardboard_box.stacks": "Contains %s / %s stack(s)"
+  "tooltip.delivery_questing.cardboard_box.stacks": "Contains %s / %s stack(s)",
+  "block.delivery_questing.drone_pad": "Drone Pad",
+  "screen.delivery_questing.drone_pad": "Drone Pad",
+  "message.delivery_questing.drone_pad.no_group": "You must be in a delivery group to use this Drone Pad.",
+  "message.delivery_questing.drone_pad.wrong_group": "This Drone Pad belongs to another delivery group.",
+  "message.delivery_questing.drone_pad.no_sky": "The Drone Pad requires direct access to the sky.",
+  "message.delivery_questing.drone_pad.empty_box": "The Cardboard Box is empty."
 }

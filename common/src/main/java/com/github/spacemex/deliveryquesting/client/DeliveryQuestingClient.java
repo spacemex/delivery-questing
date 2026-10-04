@@ -20,5 +20,6 @@ public final class DeliveryQuestingClient {
         MenuScreenRegistry.registerScreenFactory(ModMenus.DELIVERY_CONTAINER.get(), DeliveryContainerScreen::new);
         MenuScreenRegistry.registerScreenFactory(ModMenus.CONTRACT.get(), ContractScreen::new);
         MenuScreenRegistry.registerScreenFactory(ModMenus.CARDBOARD_BOX.get(), CardboardBoxScreen::new);
+        MenuScreenRegistry.registerScreenFactory(ModMenus.DRONE_PAD.get(), DronePadScreen::new);
     }
 }

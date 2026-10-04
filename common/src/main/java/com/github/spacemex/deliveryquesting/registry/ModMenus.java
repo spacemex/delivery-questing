@@ -18,6 +18,7 @@ public final class ModMenus {
     public static final RegistrySupplier<MenuType<DeliveryContainerMenu>> DELIVERY_CONTAINER;
     public static final RegistrySupplier<MenuType<ContractMenu>> CONTRACT;
     public static final RegistrySupplier<MenuType<CardboardBoxMenu>> CARDBOARD_BOX;
+    public static final RegistrySupplier<MenuType<DronePadMenu>> DRONE_PAD;
 
     public static void initialize() {
         MENUS.register();
@@ -34,5 +35,6 @@ public final class ModMenus {
         DELIVERY_CONTAINER = register("delivery_container", DeliveryContainerMenu::fromNetwork);
         CONTRACT = register("contract", ContractMenu::fromNetwork);
         CARDBOARD_BOX = register("cardboard_box", CardboardBoxMenu::fromNetwork);
+        DRONE_PAD = register("drone_pad", DronePadMenu::fromNetwork);
     }
 }

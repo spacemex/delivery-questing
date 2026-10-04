@@ -1,10 +1,7 @@
 package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
-import com.github.spacemex.deliveryquesting.block.BulletinBoardBlock;
-import com.github.spacemex.deliveryquesting.block.CardboardBoxBlock;
-import com.github.spacemex.deliveryquesting.block.ComputerBlock;
-import com.github.spacemex.deliveryquesting.block.MailboxBlock;
+import com.github.spacemex.deliveryquesting.block.*;
 import com.github.spacemex.deliveryquesting.item.CardboardBoxTier;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -30,6 +27,7 @@ public final class ModBlocks {
     public static final RegistrySupplier<CardboardBoxBlock> CARDBOARD_BOX_TIER_4;
     public static final RegistrySupplier<CardboardBoxBlock> CARDBOARD_BOX_TIER_5;
     public static final RegistrySupplier<CardboardBoxBlock> CARDBOARD_BOX_TIER_6;
+    public static final RegistrySupplier<DronePadBlock> DRONE_PAD;
 
     public static void initialize() {
         BLOCKS.register();
@@ -61,5 +59,6 @@ public final class ModBlocks {
         CARDBOARD_BOX_TIER_4 = register(CardboardBoxTier.TIER_4);
         CARDBOARD_BOX_TIER_5 = register(CardboardBoxTier.TIER_5);
         CARDBOARD_BOX_TIER_6 = register(CardboardBoxTier.TIER_6);
+        DRONE_PAD = register("drone_pad", BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK), p -> p.strength(1.5f, 6.f), DronePadBlock::new);
     }
 }

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IR ",
+    "ID ",
+    "III"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "R": "minecraft:redstone",
+    "D": "minecraft:diamond"
+  },
+  "result": {
+    "id": "delivery_questing:drone_pad"
+  }
+}

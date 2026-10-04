@@ -43,6 +43,10 @@ public final class TaskRuntimeManager {
         return Optional.empty();
     }
 
+    public static MailboxSubmissionResult submitDeliveryItems(DeliveryQuestingSavedData data, DeliveryGroup group, List<ItemStack> outgoing) {
+        return submitMailboxItems(data, group, outgoing);
+    }
+
     public static ActionResult acceptTask(DeliveryQuestingSavedData data, DeliveryGroup group, TaskDefinition task) {
         Optional<String> failure = getAcceptanceFailure(group, task);
 
