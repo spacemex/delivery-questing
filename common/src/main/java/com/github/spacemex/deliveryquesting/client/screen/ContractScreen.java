@@ -1,9 +1,12 @@
 package com.github.spacemex.deliveryquesting.client.screen;
 
+import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.menu.ContractMenu;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import org.jspecify.annotations.NonNull;
 
@@ -11,61 +14,58 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class ContractScreen extends AbstractContainerScreen<ContractMenu> {
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/contract.png");
 
     public ContractScreen(ContractMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title, 280, 210);
+        super(menu, inventory, title, 176, 222);
     }
 
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-
-        graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xFFE5DDC8);
-        graphics.outline(leftPos, topPos, imageWidth, imageHeight, 0xFF554D40);
-        graphics.outline(leftPos + 8, topPos + 8, imageWidth - 16, imageHeight - 16, 0xFF8A7E69);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, 256);
     }
 
     @Override
     protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         var task = menu.task();
 
-        graphics.centeredText(font, Component.literal(task.name()), imageWidth / 2, 14, 0xFF2E2923);
-        graphics.text(font, Component.literal("From: " + task.contractor()), 14, 33, 0xFF51493D, false);
-        graphics.text(font, Component.literal("Minimum Level: " + task.minLevel()), 14, 46, 0xFF51493D, false);
+        graphics.text(font, Component.literal(task.contractor()), 8, 84, 0xFF404040, false);
+        graphics.text(font, Component.literal("Min. level " + task.minLevel()), 8, 95, 0xFF404040, false);
+        graphics.text(font, Component.literal("+" + task.experienceReward() + " XP"), 8, 106, 0xFF404040, false);
+        graphics.text(font, Component.literal("Requirements"), 65, 10, 0xFF202020, false);
 
-        int y = 65;
+        int requirementY = 24;
+        int shown = Math.min(task.requirements().size(), 6);
 
-        for (String line : wrapText(task.description(), 55)) {
-            if (y > 105) {
+        for (int i = 0; i < shown; i++) {
+            var requirement = task.requirements().get(i);
+
+            graphics.text(font, Component.literal(requirement.required() + "x " + requirement.label()),
+                    65, requirementY, 0xFF404040, false);
+
+            requirementY += 11;
+        }
+
+        drawCentered(graphics, Component.literal(task.name()), 114, 0xFF000000);
+
+        int y = 130;
+
+        for (String line : wrapText(task.description(), 48)) {
+            if (y > 175) {
                 break;
             }
 
-            graphics.text(font, Component.literal(line), 14, y, 0xFF39332B, false);
+            graphics.text(font, Component.literal(line), 8, y, 0xFF404040, false);
 
-            y += 11;
+            y += 10;
         }
 
-        y = 118;
+        graphics.text(font, Component.literal("Rewards: +" + task.experienceReward() + " XP, +"
+                + task.moneyReward() + " money"), 8, 187, 0xFF404040, false);
+        Component instruction = Component.literal("Use on a Bulletin Board to accept");
 
-        graphics.text(font, Component.literal("Requirements:"), 14, y, 0xFF2E2923, false);
-
-        y += 13;
-
-        int shown = 0;
-
-        for (var requirement : task.requirements()) {
-            if (shown >= 3) {
-                break;
-            }
-
-            graphics.text(font, Component.literal(requirement.required() + "x " + requirement.label()), 22, y, 0xFF39332B, false);
-
-            y += 11;
-            shown++;
-        }
-
-        graphics.text(font, Component.literal("Rewards: +" + task.experienceReward() + " XP, +" + task.moneyReward() + " money"), 14, 168, 0xFF51493D, false);
-        graphics.centeredText(font, Component.literal("Use this Contract on a Bulletin Board to accept it."), imageWidth / 2, 190, 0xFF746957);
+        graphics.text(font, instruction, (imageWidth - font.width(instruction)) / 2, 205, 0xFF665E52, false);
     }
 
     private static List<String> wrapText(String text, int maxCharacters) {
@@ -93,5 +93,9 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
         }
 
         return lines;
+    }
+
+    private void drawCentered(GuiGraphicsExtractor graphics, Component text, int y, int color) {
+        graphics.text(font, text, (imageWidth - font.width(text)) / 2, y, color, false);
     }
 }

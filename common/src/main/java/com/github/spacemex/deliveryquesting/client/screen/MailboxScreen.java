@@ -4,7 +4,6 @@ import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.menu.MailboxMenu;
 import com.github.spacemex.deliveryquesting.menu.entry.MailboxParcelEntry;
 import com.github.spacemex.deliveryquesting.networking.packets.CollectParcelPayload;
-import com.github.spacemex.deliveryquesting.registry.ModItems;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -13,13 +12,10 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 public final class MailboxScreen extends AbstractContainerScreen<MailboxMenu> {
     private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/mailbox.png");
-    private static final int INBOX_X = 8;
-    private static final int INBOX_Y = 46;
 
     public MailboxScreen(MailboxMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, 176, 159);
@@ -28,14 +24,7 @@ public final class MailboxScreen extends AbstractContainerScreen<MailboxMenu> {
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-
         graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, 256);
-
-        for (int i = 0; i < menu.parcels().size(); i++) {
-            MailboxParcelEntry parcel = menu.parcels().get(i);
-            ItemStack icon = new ItemStack(parcel.contractEnvelope() ? ModItems.SEALED_ENVELOPE.get() : ModItems.SEALED_PARCEL.get());
-            graphics.item(icon, leftPos + INBOX_X + i * 18, topPos + INBOX_Y);
-        }
     }
 
     @Override
@@ -54,28 +43,6 @@ public final class MailboxScreen extends AbstractContainerScreen<MailboxMenu> {
 
         graphics.text(font, outbox, 132 - font.width(outbox) / 2, 35, 0xFF404040, false);
         graphics.text(font, playerInventoryTitle, 8, imageHeight - 93, 0xFF404040, false);
-    }
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (event.button() == 0) {
-            double relativeX = event.x() - leftPos;
-            double relativeY = event.y() - topPos;
-
-            if (relativeY >= INBOX_Y && relativeY < INBOX_Y + 16) {
-                for (int i = 0; i < menu.parcels().size(); i++) {
-                    int x = INBOX_X + i * 18;
-
-                    if (relativeX >= x && relativeX < x + 16) {
-                        MailboxParcelEntry parcel = menu.parcels().get(i);
-                        NetworkManager.sendToServer(new CollectParcelPayload(parcel.id()));
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return super.mouseClicked(event, doubleClick);
     }
 
     private long getNextEmptying() {

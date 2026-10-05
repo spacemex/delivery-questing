@@ -1,200 +1,115 @@
 package com.github.spacemex.deliveryquesting.client.screen;
 
+import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.menu.BulletinBoardMenu;
 import com.github.spacemex.deliveryquesting.menu.entry.BulletinBoardRequirementEntry;
 import com.github.spacemex.deliveryquesting.menu.entry.BulletinBoardTaskEntry;
-import com.github.spacemex.deliveryquesting.networking.packets.AcceptTaskPayload;
-import dev.architectury.networking.NetworkManager;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import org.jspecify.annotations.NonNull;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
 public final class BulletinBoardScreen extends AbstractContainerScreen<BulletinBoardMenu> {
-    private static final int ROWS_PER_PAGE = 4;
-    private final List<Button> actionButtons = new ArrayList<>();
-    private Button availableTab;
-    private Button activeTab;
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/bulletin_board.png");
     private Button previousButton;
     private Button nextButton;
-    private View view = View.AVAILABLE;
     private int page;
 
     public BulletinBoardScreen(BulletinBoardMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title, 320, 220);
+        super(menu, inventory, title, 176, 167);
     }
 
     @Override
     protected void init() {
         super.init();
 
-        actionButtons.clear();
+        previousButton = addRenderableWidget(Button.builder(Component.literal("<"), button -> previousPage())
+                .bounds(leftPos + 6, topPos + 140, 26, 20).build());
 
-        availableTab = this.addRenderableWidget(Button.builder(Component.literal("Available"), button -> setView(View.AVAILABLE))
-                .bounds(leftPos + 12, topPos + 24, 85, 20).build());
+        nextButton = addRenderableWidget(Button.builder(Component.literal(">"), button -> nextPage())
+                .bounds(leftPos + 144, topPos + 140, 26, 20).build());
 
-        activeTab = this.addRenderableWidget(Button.builder(Component.literal("Active"), button -> setView(View.ACTIVE))
-                .bounds(leftPos + 102, topPos + 24, 85, 20).build());
-
-        for (int row = 0; row < ROWS_PER_PAGE; row++) {
-            final int rowIndex = row;
-            Button button = Button.builder(Component.literal("Accept"), pressed -> handleRow(rowIndex))
-                    .bounds(leftPos + 238, topPos + 53 + row * 34, 68, 20).build();
-
-            actionButtons.add(this.addRenderableWidget(button));
-        }
-
-        previousButton = this.addRenderableWidget(Button.builder(Component.literal("<"), button -> {
-                    if (page > 0) {
-                        page--;
-                        refreshButtons();
-                    }
-                }
-        ).bounds(leftPos + 110, topPos + 188, 35, 20).build());
-
-        nextButton = this.addRenderableWidget(Button.builder(Component.literal(">"), button -> {
-            if (page < getPageCount() - 1) {
-                page++;
-                refreshButtons();
-            }
-        }).bounds(leftPos + 175, topPos + 188, 35, 20).build());
-
-        refreshButtons();
-    }
-
-    private void setView(View newView) {
-        if (view == newView) {
-            return;
-        }
-
-        view = newView;
-        page = 0;
-
-        refreshButtons();
-    }
-
-    private void handleRow(int row) {
-        if (view != View.AVAILABLE) {
-            return;
-        }
-
-        int index = page * ROWS_PER_PAGE + row;
-
-        List<BulletinBoardTaskEntry> tasks = currentTasks();
-
-        if (index < 0 || index >= tasks.size()) {
-            return;
-        }
-
-        BulletinBoardTaskEntry entry = tasks.get(index);
-        disableActionButtons();
-        NetworkManager.sendToServer(new AcceptTaskPayload(entry.id()));
-    }
-
-    private void disableActionButtons() {
-        for (Button button : actionButtons) {
-            button.active = false;
-        }
-    }
-
-    private void refreshButtons() {
-        List<BulletinBoardTaskEntry> tasks = currentTasks();
-        int start = page * ROWS_PER_PAGE;
-
-        for (int row = 0; row < ROWS_PER_PAGE; row++) {
-            int index = start + row;
-            Button button = actionButtons.get(row);
-            boolean visible = view == View.AVAILABLE && index < tasks.size();
-
-            button.setMessage(Component.literal("Accept"));
-            button.visible = visible;
-            button.active = visible;
-        }
-
-        availableTab.active = view != View.AVAILABLE;
-        activeTab.active = view != View.ACTIVE;
-        previousButton.active = page > 0;
-        nextButton.active = page < getPageCount() - 1;
-    }
-
-    private List<BulletinBoardTaskEntry> currentTasks() {
-        return switch (view) {
-            case AVAILABLE -> menu.availableTasks();
-
-            case ACTIVE -> menu.activeTasks();
-        };
-    }
-
-    private int getPageCount() {
-        return Math.max(1, (currentTasks().size() + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE);
+        updateButtons();
     }
 
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
 
-        graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xFFE2C99A);
-        graphics.outline(leftPos, topPos, imageWidth, imageHeight, 0xFF5C3D23);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight,
+                256, 256);
+
+        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos + 7, topPos + 25,
+                0, 223, 162, 5, 256, 256);
+
+        double level = menu.groupLevel();
+        double progress = level - Math.floor(level);
+
+        int progressWidth = (int) (162D * progress);
+
+        if (progressWidth > 0) {
+            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos + 7, topPos + 25, 0, 228, progressWidth, 5, 256, 256);
+        }
     }
 
     @Override
-    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        graphics.text(font, title, 12, 9, 0xFF3B2818, false);
+    protected void extractLabels(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        drawCentered(graphics, Component.literal("Experience"), 8, 0xFF404040);
+        drawLevel(graphics);
 
-        List<BulletinBoardTaskEntry> tasks = currentTasks();
+        List<BulletinBoardTaskEntry> tasks = menu.activeTasks();
 
         if (tasks.isEmpty()) {
-            String message = view == View.AVAILABLE ? "There are no contracts currently available." : "Your group has no active contracts.";
-
-            graphics.text(font, Component.literal(message), 12, 63, 0xFF5C3D23, false);
-
-            drawPageNumber(graphics);
+            drawCentered(graphics, Component.literal("No active contracts"), 65, 0xFF404040);
             return;
         }
 
-        int start = page * ROWS_PER_PAGE;
+        BulletinBoardTaskEntry task = tasks.get(page);
 
-        for (int row = 0; row < ROWS_PER_PAGE; row++) {
+        drawCentered(graphics, Component.literal(task.name()), 40, 0xFF202020);
+        drawCentered(graphics, Component.literal(task.contractor()), 52, 0xFF606060);
 
-            int index = start + row;
+        int y = 68;
 
-            if (index >= tasks.size()) {
-                break;
-            }
+        int shown = Math.min(task.requirements().size(), 4);
 
-            BulletinBoardTaskEntry task = tasks.get(index);
+        for (int i = 0; i < shown; i++) {
+            BulletinBoardRequirementEntry requirement = task.requirements().get(i);
+            String text = requirement.current() + " / " + requirement.required() + "  " + requirement.label();
 
-            int y = 55 + row * 34;
-
-            graphics.text(font, Component.literal(task.name()), 12, y, 0xFF332214, false);
-
-            if (view == View.AVAILABLE) {
-                drawAvailableTask(graphics, task, y);
-            } else {
-                drawActiveTask(graphics, task, y);
-            }
+            graphics.text(font, Component.literal(text), 14, y, requirement.complete() ? 0xFF3F7D38 : 0xFF404040, false);
+            y += 11;
         }
 
-        drawPageNumber(graphics);
+        graphics.text(font, Component.literal("+" + task.experienceReward() + " XP"), 14, 118, 0xFF404040, false);
+        graphics.text(font, Component.literal("+" + task.moneyReward() + " money"), 95, 118, 0xFF404040, false);
+
+        if (tasks.size() > 1) {
+            drawCentered(graphics, Component.literal("Page " + (page + 1) + " / " + tasks.size()), 146, 0xFF404040);
+        }
     }
 
-    private void drawAvailableTask(GuiGraphicsExtractor graphics, BulletinBoardTaskEntry task, int y) {
-        graphics.text(font, Component.literal(task.contractor() + " | Level " + task.minLevel()),
-                12, y + 10, 0xFF674A32, false);
-        graphics.text(font, Component.literal(task.experienceReward() + " XP | " + task.moneyReward() + " money"),
-                12, y + 20, 0xFF674A32, false);
+    private void drawCentered(GuiGraphicsExtractor graphics, Component text, int y, int color) {
+        graphics.text(font, text, (imageWidth - font.width(text)) / 2, y, color, false);
     }
 
-    private void drawActiveTask(GuiGraphicsExtractor graphics, BulletinBoardTaskEntry task, int y) {
-        graphics.text(font, Component.literal(progressText(task)), 12, y + 10, 0xFF674A32, false);
-        graphics.text(font, Component.literal(task.experienceReward() + " XP | " + task.moneyReward() + " money"),
-                12, y + 20, 0xFF674A32, false);
+    private void drawLevel(GuiGraphicsExtractor graphics) {
+        Component text = Component.literal(String.valueOf((int) Math.floor(menu.groupLevel())));
+
+        int x = (imageWidth - font.width(text)) / 2;
+
+        graphics.text(font, text, x + 1, 20, 0xFF000000, false);
+        graphics.text(font, text, x - 1, 20, 0xFF000000, false);
+        graphics.text(font, text, x, 21, 0xFF000000, false);
+        graphics.text(font, text, x, 19, 0xFF000000, false);
+        graphics.text(font, text, x, 20, 0xFFFFFFFF, false);
     }
 
     private String progressText(BulletinBoardTaskEntry task) {
@@ -220,12 +135,34 @@ public final class BulletinBoardScreen extends AbstractContainerScreen<BulletinB
         return joiner.toString();
     }
 
-    private void drawPageNumber(GuiGraphicsExtractor graphics) {
-        graphics.centeredText(font, Component.literal("Page " + (page + 1) + " / " + getPageCount()), imageWidth / 2, 194, 0xFF3B2818);
+    private void previousPage() {
+        int size = menu.activeTasks().size();
+        if (size <= 0) {
+            return;
+        }
+        page = Math.floorMod(page - 1, size);
+        updateButtons();
     }
 
-    private enum View {
-        AVAILABLE,
-        ACTIVE
+    private void nextPage() {
+        int size = menu.activeTasks().size();
+        if (size <= 0) {
+            return;
+        }
+        page = Math.floorMod(page + 1, size);
+        updateButtons();
     }
+
+    private void updateButtons() {
+        int size = menu.activeTasks().size();
+        if (size <= 0) {
+            page = 0;
+        } else if (page >= size) {
+            page = size - 1;
+        }
+        boolean visible = size > 1;
+        previousButton.visible = visible;
+        nextButton.visible = visible;
+    }
+
 }

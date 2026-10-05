@@ -27,21 +27,23 @@ public final class BulletinBoardMenu extends AbstractContainerMenu {
     private final BlockPos blockPos;
     private final List<BulletinBoardTaskEntry> availableTasks;
     private final List<BulletinBoardTaskEntry> activeTasks;
+    private final double groupLevel;
 
-    public BulletinBoardMenu(int containerId, Inventory inventory, BlockPos blockPos, List<BulletinBoardTaskEntry> availableTasks, List<BulletinBoardTaskEntry> activeTasks) {
+    public BulletinBoardMenu(int containerId, Inventory inventory, BlockPos blockPos, double groupLevel, List<BulletinBoardTaskEntry> availableTasks, List<BulletinBoardTaskEntry> activeTasks) {
         super(ModMenus.BULLETIN_BOARD.get(), containerId);
 
         this.blockPos = blockPos;
+        this.groupLevel = groupLevel;
         this.availableTasks = List.copyOf(availableTasks);
         this.activeTasks = List.copyOf(activeTasks);
     }
 
     public static BulletinBoardMenu fromNetwork(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
         BlockPos blockPos = buffer.readBlockPos();
+        double groupLevel = buffer.readDouble();
         List<BulletinBoardTaskEntry> availableTasks = BulletinBoardTaskEntry.readList(buffer);
         List<BulletinBoardTaskEntry> activeTasks = BulletinBoardTaskEntry.readList(buffer);
-
-        return new BulletinBoardMenu(containerId, inventory, blockPos, availableTasks, activeTasks);
+        return new BulletinBoardMenu(containerId, inventory, blockPos, groupLevel, availableTasks, activeTasks);
     }
 
     public static void open(ServerPlayer player, BlockPos pos) {
@@ -56,15 +58,23 @@ public final class BulletinBoardMenu extends AbstractContainerMenu {
         DeliveryGroup group = optionalGroup.get();
         List<BulletinBoardTaskEntry> availableEntries = createAvailableEntries(group);
         List<BulletinBoardTaskEntry> activeEntries = createActiveEntries(group);
+
+        double groupLevel = group.level();
+
         SimpleMenuProvider provider = new SimpleMenuProvider((containerId, inventory, menuPlayer) ->
-                new BulletinBoardMenu(containerId, inventory, pos, availableEntries, activeEntries),
+                new BulletinBoardMenu(containerId, inventory, pos, groupLevel, availableEntries, activeEntries),
                 Component.translatable("screen.delivery_questing.bulletin_board"));
 
         MenuRegistry.openExtendedMenu(player, provider, buffer -> {
             buffer.writeBlockPos(pos);
+            buffer.writeDouble(groupLevel);
             BulletinBoardTaskEntry.writeList(buffer, availableEntries);
             BulletinBoardTaskEntry.writeList(buffer, activeEntries);
         });
+    }
+
+    public double groupLevel() {
+        return groupLevel;
     }
 
     private static List<BulletinBoardTaskEntry> createAvailableEntries(@NonNull DeliveryGroup group) {
