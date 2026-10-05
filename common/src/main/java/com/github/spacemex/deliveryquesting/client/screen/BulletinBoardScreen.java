@@ -1,8 +1,8 @@
 package com.github.spacemex.deliveryquesting.client.screen;
 
 import com.github.spacemex.deliveryquesting.menu.BulletinBoardMenu;
-import com.github.spacemex.deliveryquesting.menu.BulletinBoardRequirementEntry;
-import com.github.spacemex.deliveryquesting.menu.BulletinBoardTaskEntry;
+import com.github.spacemex.deliveryquesting.menu.entry.BulletinBoardRequirementEntry;
+import com.github.spacemex.deliveryquesting.menu.entry.BulletinBoardTaskEntry;
 import com.github.spacemex.deliveryquesting.networking.packets.AcceptTaskPayload;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

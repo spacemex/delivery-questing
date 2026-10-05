@@ -1,6 +1,10 @@
 package com.github.spacemex.deliveryquesting.client.screen;
 
 import com.github.spacemex.deliveryquesting.menu.*;
+import com.github.spacemex.deliveryquesting.menu.entry.ComputerInboxEntry;
+import com.github.spacemex.deliveryquesting.menu.entry.ComputerJobMailEntry;
+import com.github.spacemex.deliveryquesting.menu.entry.ComputerMailEntry;
+import com.github.spacemex.deliveryquesting.menu.entry.ComputerOfferEntry;
 import com.github.spacemex.deliveryquesting.networking.packets.AcceptEmailContractPayload;
 import com.github.spacemex.deliveryquesting.networking.packets.AcceptEmailJobPayload;
 import com.github.spacemex.deliveryquesting.networking.packets.BuyOfferPayload;

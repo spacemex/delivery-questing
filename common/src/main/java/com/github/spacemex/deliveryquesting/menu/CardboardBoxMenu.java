@@ -87,19 +87,23 @@ public final class CardboardBoxMenu extends AbstractContainerMenu {
     }
 
     public int boxSlotStartX() {
-        return 8 + (9 - tier.columns()) * 9;
+        return switch (tier) {
+            case TIER_1 -> 80;
+            case TIER_2 -> 52;
+            default -> 8;
+        };
     }
 
     public int boxSlotStartY() {
-        return 18;
+        return 20;
     }
 
     public int playerInventoryY() {
-        return 48 + tier.rows() * 18;
+        return 33 + tier.rows() * 18;
     }
 
     public int imageHeight() {
-        return 130 + tier.rows() * 18;
+        return 115 + tier.rows() * 18;
     }
 
     @Override

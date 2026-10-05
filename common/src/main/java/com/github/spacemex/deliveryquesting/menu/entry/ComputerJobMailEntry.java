@@ -1,4 +1,4 @@
-package com.github.spacemex.deliveryquesting.menu;
+package com.github.spacemex.deliveryquesting.menu.entry;
 
 import com.github.spacemex.deliveryquesting.job.JobDefinition;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;

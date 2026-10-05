@@ -1,11 +1,10 @@
 package com.github.spacemex.deliveryquesting.menu;
 
+import com.github.spacemex.deliveryquesting.menu.entry.BulletinBoardTaskEntry;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
-import com.github.spacemex.deliveryquesting.progression.TaskRuntimeManager;
 import com.github.spacemex.deliveryquesting.registry.ModBlocks;
 import com.github.spacemex.deliveryquesting.registry.ModMenus;
-import com.github.spacemex.deliveryquesting.task.TaskDefinition;
 import com.github.spacemex.deliveryquesting.task.TaskManager;
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;

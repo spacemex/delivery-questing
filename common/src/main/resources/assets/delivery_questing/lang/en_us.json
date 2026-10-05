@@ -35,7 +35,7 @@
   "message.delivery_questing.drone_pad.wrong_group": "This Drone Pad belongs to another delivery group.",
   "message.delivery_questing.drone_pad.no_sky": "The Drone Pad requires direct access to the sky.",
   "message.delivery_questing.drone_pad.empty_box": "The Cardboard Box is empty.",
-  "entity.delivery_questing.drone": "Delivery Drone",
+  "entity.delivery_questing.drone": "Drone",
   "message.delivery_questing.drone_pad.no_drone": "The Drone Pad could not deploy its drone.",
   "message.delivery_questing.drone_pad.busy": "The drone is currently making another delivery.",
   "message.delivery_questing.drone_pad.launched": "The drone has departed with your delivery.",

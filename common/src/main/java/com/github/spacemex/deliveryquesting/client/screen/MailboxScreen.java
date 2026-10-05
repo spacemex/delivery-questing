@@ -1,7 +1,7 @@
 package com.github.spacemex.deliveryquesting.client.screen;
 
 import com.github.spacemex.deliveryquesting.menu.MailboxMenu;
-import com.github.spacemex.deliveryquesting.menu.MailboxParcelEntry;
+import com.github.spacemex.deliveryquesting.menu.entry.MailboxParcelEntry;
 import com.github.spacemex.deliveryquesting.networking.packets.CollectParcelPayload;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

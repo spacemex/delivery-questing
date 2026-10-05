@@ -2,6 +2,7 @@ package com.github.spacemex.deliveryquesting.menu;
 
 import com.github.spacemex.deliveryquesting.block.entity.MailboxBlockEntity;
 import com.github.spacemex.deliveryquesting.item.DeliveryContainerItem;
+import com.github.spacemex.deliveryquesting.menu.entry.MailboxParcelEntry;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
 import com.github.spacemex.deliveryquesting.registry.ModBlocks;

@@ -1,4 +1,4 @@
-package com.github.spacemex.deliveryquesting.menu;
+package com.github.spacemex.deliveryquesting.menu.entry;
 
 import com.github.spacemex.deliveryquesting.task.ItemRequirement;
 import com.github.spacemex.deliveryquesting.task.TaskRequirement;

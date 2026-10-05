@@ -1,5 +1,6 @@
 package com.github.spacemex.deliveryquesting.menu;
 
+import com.github.spacemex.deliveryquesting.menu.entry.BulletinBoardTaskEntry;
 import com.github.spacemex.deliveryquesting.registry.ModMenus;
 import com.github.spacemex.deliveryquesting.task.TaskManager;
 import dev.architectury.registry.menu.MenuRegistry;

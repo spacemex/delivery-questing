@@ -39,7 +39,7 @@ public final class DeliveryContainerMenu extends AbstractContainerMenu {
         container.startOpen(inventory.player);
 
         addSlot(
-                new Slot(container, 0, 80, 35) {
+                new Slot(container, 0, 80, 20) {
                     @Override
                     public boolean mayPlace(ItemStack stack) {
                         return stack.getItem().canFitInsideContainerItems();
@@ -51,7 +51,7 @@ public final class DeliveryContainerMenu extends AbstractContainerMenu {
                     }
                 });
 
-        addStandardInventorySlots(inventory, 8, 84);
+        addStandardInventorySlots(inventory, 8, 51);
     }
 
     public static DeliveryContainerMenu fromNetwork(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
