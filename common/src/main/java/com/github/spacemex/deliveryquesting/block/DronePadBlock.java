@@ -33,6 +33,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 public final class DronePadBlock extends BaseEntityBlock {
     public static final EnumProperty<Direction> FACING;
@@ -113,13 +114,19 @@ public final class DronePadBlock extends BaseEntityBlock {
         }
 
         DeliveryGroup group = optionalGroup.get();
-        if (pad.groupId().isEmpty()) {
+        Optional<UUID> boundGroup = pad.groupId();
+        if (boundGroup.isEmpty()) {
             pad.bindToGroup(group.id());
-        }
+        } else if (!boundGroup.get().equals(group.id())) {
 
-        if (!pad.groupId().filter(group.id()::equals).isPresent()) {
-            serverPlayer.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.wrong_group"));
-            return InteractionResult.SUCCESS_SERVER;
+            if (data.getGroup(boundGroup.get()).isPresent()) {
+
+                serverPlayer.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.wrong_group"));
+                return InteractionResult.SUCCESS_SERVER;
+            }
+
+            pad.rebindToGroup(group.id());
+            serverPlayer.sendSystemMessage(Component.literal("Reclaimed abandoned Drone Pad for '" + group.name() + "'."));
         }
 
         if (!pad.isSkyFree()) {

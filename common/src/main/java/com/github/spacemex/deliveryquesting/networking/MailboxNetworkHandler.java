@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public final class MailboxNetworkHandler {
     private static boolean initialized;
@@ -29,17 +30,17 @@ public final class MailboxNetworkHandler {
                 return;
             }
 
-            context.queue(() -> collectParcel(player, payload));
+            context.queue(() -> collectParcel(player, payload.parcelId()));
         });
     }
 
-    private static void collectParcel(ServerPlayer player, CollectParcelPayload payload) {
+    public static boolean collectParcel(ServerPlayer player, UUID parcelId) {
         if (!(player.containerMenu instanceof MailboxMenu menu)) {
-            return;
+            return false;
         }
 
-        if (!menu.hasParcel(payload.parcelId())) {
-            return;
+        if (!menu.hasParcel(parcelId)) {
+            return false;
         }
 
         DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(player.level().getServer());
@@ -47,29 +48,24 @@ public final class MailboxNetworkHandler {
 
         if (optionalGroup.isEmpty()) {
             player.sendSystemMessage(Component.literal("You are not currently in a delivery group."));
-            player.closeContainer();
-            return;
+            return false;
         }
 
         DeliveryGroup group = optionalGroup.get();
-        Optional<MailboxParcel> optionalParcel = data.collectMailboxParcel(group.id(), payload.parcelId());
+        Optional<MailboxParcel> optionalParcel = data.collectMailboxParcel(group.id(), parcelId);
 
         if (optionalParcel.isEmpty()) {
             player.sendSystemMessage(Component.literal("That parcel is no longer in the mailbox."));
-            player.closeContainer();
-            return;
+            return false;
         }
 
         MailboxParcel parcel = optionalParcel.get();
         ItemStack stack;
-        String type;
 
         if (parcel.isContractEnvelope()) {
             stack = SealedEnvelopeItem.create(parcel);
-            type = "envelope";
         } else {
             stack = SealedParcelItem.create(parcel);
-            type = "parcel";
         }
 
         player.getInventory().add(stack);
@@ -77,8 +73,6 @@ public final class MailboxNetworkHandler {
         if (!stack.isEmpty()) {
             player.drop(stack, false, false);
         }
-
-        player.sendSystemMessage(Component.literal("Collected " + type + " from " + parcel.sender() + "."));
-        player.closeContainer();
+        return true;
     }
 }

@@ -1,101 +1,101 @@
 package com.github.spacemex.deliveryquesting.client.screen;
 
+import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.menu.MailboxMenu;
 import com.github.spacemex.deliveryquesting.menu.entry.MailboxParcelEntry;
 import com.github.spacemex.deliveryquesting.networking.packets.CollectParcelPayload;
+import com.github.spacemex.deliveryquesting.registry.ModItems;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public final class MailboxScreen extends AbstractContainerScreen<MailboxMenu> {
-    private static final int MAX_ROWS = 4;
-    private final List<Button> collectButtons = new ArrayList<>();
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/mailbox.png");
+    private static final int INBOX_X = 8;
+    private static final int INBOX_Y = 46;
 
     public MailboxScreen(MailboxMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title, 280, 252);
-    }
-
-    @Override
-    protected void init() {
-        super.init();
-
-        collectButtons.clear();
-
-        for (int row = 0; row < MAX_ROWS; row++) {
-            final int rowIndex = row;
-
-            Button button = Button.builder(Component.literal("Collect"), pressed -> collect(rowIndex))
-                    .bounds(leftPos + 195, topPos + 38 + row * 29, 70, 20).build();
-
-            collectButtons.add(this.addRenderableWidget(button));
-        }
-
-        refreshButtons();
-    }
-
-    private void collect(int row) {
-        if (row < 0 || row >= menu.parcels().size()) {
-            return;
-        }
-
-        MailboxParcelEntry entry = menu.parcels().get(row);
-
-        for (Button button : collectButtons) {
-            button.active = false;
-        }
-
-        NetworkManager.sendToServer(new CollectParcelPayload(entry.id()));
-    }
-
-    private void refreshButtons() {
-        for (int row = 0; row < MAX_ROWS; row++) {
-            collectButtons.get(row).active = row < menu.parcels().size();
-        }
+        super(menu, inventory, title, 176, 159);
     }
 
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
 
-        graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xFFD7D7D7);
-        graphics.outline(leftPos, topPos, imageWidth, imageHeight, 0xFF454545);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, 256);
 
-        for (int i = 0; i < 4; i++) {
-            int x = leftPos + 196 + i * 18;
-            int y = topPos + 142;
-
-            graphics.fill(x - 1, y - 1, x + 17, y + 17, 0xFFAAAAAA);
-            graphics.outline(x - 1, y - 1, 18, 18, 0xFF555555);
+        for (int i = 0; i < menu.parcels().size(); i++) {
+            MailboxParcelEntry parcel = menu.parcels().get(i);
+            ItemStack icon = new ItemStack(parcel.contractEnvelope() ? ModItems.SEALED_ENVELOPE.get() : ModItems.SEALED_PARCEL.get());
+            graphics.item(icon, leftPos + INBOX_X + i * 18, topPos + INBOX_Y);
         }
     }
 
     @Override
     protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        graphics.text(font, title, 12, 10, 0xFF222222, false);
-        graphics.text(font, Component.literal("Inbox"), 12, 25, 0xFF555555, false);
+        graphics.text(font, title, (imageWidth - font.width(title)) / 2, 6, 0xFF404040, false);
 
-        if (menu.parcels().isEmpty()) {
-            graphics.text(font, Component.literal("No mail."), 12, 48, 0xFF777777, false);
-            return;
+        Component nextEmptying =
+                getNextEmptyingText();
+
+        graphics.text(font, nextEmptying, (imageWidth - font.width(nextEmptying)) / 2, 20, 0xFF404040, false);
+        Component inbox = Component.literal("Inbox");
+
+        graphics.text(font, inbox, 42 - font.width(inbox) / 2, 35, 0xFF404040, false);
+
+        Component outbox = Component.literal("Outbox");
+
+        graphics.text(font, outbox, 132 - font.width(outbox) / 2, 35, 0xFF404040, false);
+        graphics.text(font, playerInventoryTitle, 8, imageHeight - 93, 0xFF404040, false);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (event.button() == 0) {
+            double relativeX = event.x() - leftPos;
+            double relativeY = event.y() - topPos;
+
+            if (relativeY >= INBOX_Y && relativeY < INBOX_Y + 16) {
+                for (int i = 0; i < menu.parcels().size(); i++) {
+                    int x = INBOX_X + i * 18;
+
+                    if (relativeX >= x && relativeX < x + 16) {
+                        MailboxParcelEntry parcel = menu.parcels().get(i);
+                        NetworkManager.sendToServer(new CollectParcelPayload(parcel.id()));
+                        return true;
+                    }
+                }
+            }
         }
 
-        for (int row = 0; row < menu.parcels().size(); row++) {
-            MailboxParcelEntry parcel = menu.parcels().get(row);
-            int y = 42 + row * 29;
+        return super.mouseClicked(event, doubleClick);
+    }
 
-            graphics.text(font, Component.literal("From: " + parcel.sender()), 12, y, 0xFF222222, false);
-            graphics.text(font, Component.literal(parcel.itemCount() + " item(s)"), 12, y + 11, 0xFF666666, false);
+    private long getNextEmptying() {
+        if (minecraft.level == null) {
+            return 0L;
         }
 
-        graphics.text(font, Component.literal("Outbox"), 196, 130, 0xFF555555, false);
-        graphics.text(font, Component.literal("Collected each Minecraft morning"), 12, 145, 0xFF777777, false);
-        graphics.text(font, playerInventoryTitle, 59, 163, 0xFF555555, false);
+        long time = Math.floorMod(minecraft.level.getOverworldClockTime(), 24000L);
+        if (time <= 20L) {
+            time += 24000L;
+        }
+
+        return 24020L - time;
+    }
+
+    private Component getNextEmptyingText() {
+        long remaining = getNextEmptying();
+        long hours = remaining / 1000L;
+        int minutes = (int) ((remaining % 1000L) * 0.06F);
+
+        return Component.literal(String.format("Next emptying in %02d:%02d", hours, minutes));
     }
 }

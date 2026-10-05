@@ -18,7 +18,7 @@ import org.jspecify.annotations.NonNull;
 public final class DronePadScreen extends AbstractContainerScreen<DronePadMenu> {
     private Button sendButton;
     private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/drone_pad.png");
-    private static final Identifier UPGRADE_SLOT_TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/item/container/upgrade_slot.png");
+    private static final Identifier UPGRADE_SLOT_TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/item/upgrade_slot.png");
     private static final int BAR_WIDTH = 16;
     private static final int BAR_HEIGHT = 53;
 
@@ -59,6 +59,11 @@ public final class DronePadScreen extends AbstractContainerScreen<DronePadMenu> 
 
         if (menu.droneEnergy() >= 0) {
             drawEnergyBar(graphics, leftPos + 133, topPos + 17, menu.droneEnergy(), DroneEntity.ENERGY_CAPACITY);
+        }
+
+        if (!menu.getSlot(DronePadBlockEntity.UPGRADE_SLOT).hasItem()) {
+            graphics.blit(RenderPipelines.GUI_TEXTURED, UPGRADE_SLOT_TEXTURE, leftPos + 80, topPos + 59,
+                    0, 0, 16, 16, 16, 16);
         }
     }
 

@@ -7,11 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public record MailboxParcelEntry(UUID id, String sender, long itemCount) {
+public record MailboxParcelEntry(UUID id, String sender, long itemCount, boolean contractEnvelope) {
     private static final int MAX_ENTRIES = 4;
 
     public static MailboxParcelEntry from(MailboxParcel parcel) {
-        return new MailboxParcelEntry(parcel.id(), parcel.sender(), parcel.itemCount());
+        return new MailboxParcelEntry(parcel.id(), parcel.sender(), parcel.itemCount(), parcel.isContractEnvelope());
     }
 
     public void write(FriendlyByteBuf buffer) {
@@ -19,14 +19,15 @@ public record MailboxParcelEntry(UUID id, String sender, long itemCount) {
         buffer.writeLong(id.getLeastSignificantBits());
         buffer.writeUtf(sender, 256);
         buffer.writeLong(itemCount);
+        buffer.writeBoolean(contractEnvelope);
     }
 
     public static MailboxParcelEntry read(FriendlyByteBuf buffer) {
         UUID id = new UUID(buffer.readLong(), buffer.readLong());
         String sender = buffer.readUtf(256);
         long itemCount = buffer.readLong();
-
-        return new MailboxParcelEntry(id, sender, itemCount);
+        boolean contractEnvelope = buffer.readBoolean();
+        return new MailboxParcelEntry(id, sender, itemCount, contractEnvelope);
     }
 
     public static void writeList(FriendlyByteBuf buffer, List<MailboxParcelEntry> entries) {
