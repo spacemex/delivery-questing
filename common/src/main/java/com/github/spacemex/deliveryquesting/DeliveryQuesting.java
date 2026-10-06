@@ -30,6 +30,7 @@ public final class DeliveryQuesting {
     private static final Path MOD_DIR = Platform.getConfigFolder().resolve("DeliveryQuesting");
     private static final Path CONFIG_FILE = MOD_DIR.resolve("config.yml");
     private static final Path TASKS_DIR = MOD_DIR.resolve("tasks");
+    private static final Path SKINS_DIR = MOD_DIR.resolve("skins");
     private static final Path JOBS_DIR = MOD_DIR.resolve("jobs");
 
     public static void initialize() {
@@ -75,6 +76,10 @@ public final class DeliveryQuesting {
             if (JOBS_DIR.toFile().mkdirs()) {
                 generateExampleJobs();
             }
+        }
+
+        if (!SKINS_DIR.toFile().exists()) {
+            SKINS_DIR.toFile().mkdirs();
         }
     }
 

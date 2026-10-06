@@ -1,16 +1,20 @@
 package com.github.spacemex.deliveryquesting.client.screen;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.client.ContractorSkinManager;
 import com.github.spacemex.deliveryquesting.client.widget.TaskRequirementWidget;
 import com.github.spacemex.deliveryquesting.menu.ContractMenu;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.model.player.PlayerModel;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Inventory;
+import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
@@ -25,6 +29,8 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
     private static final int DESCRIPTION_LINE_HEIGHT = 6;
     private List<FormattedCharSequence> descriptionLines = List.of();
     private int descriptionScroll;
+    private PlayerModel contractorModel;
+    private @Nullable Identifier contractorSkin;
 
     public ContractScreen(ContractMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, 176, 222);
@@ -37,6 +43,8 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
         descriptionLines = font.split(Component.literal(menu.task().description()),
                 Math.round((imageWidth - DESCRIPTION_LEFT * 2) / DESCRIPTION_SCALE));
         descriptionScroll = 0;
+        contractorModel = new PlayerModel(minecraft.getEntityModels().bakeLayer(ModelLayers.PLAYER), false);
+        contractorSkin = ContractorSkinManager.getTexture(menu.task().skin());
     }
 
     @Override
@@ -48,6 +56,8 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
     @Override
     protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         var task = menu.task();
+
+        drawContractor(graphics);
 
         graphics.pose().pushMatrix();
         graphics.pose().scale(0.7f, 0.7f);
@@ -120,6 +130,34 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
 
         graphics.fill(trackX, trackY, trackX + 2, trackY + trackHeight, 0x44333333);
         graphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbHeight, 0xFF777777);
+    }
+
+    private void drawContractor(GuiGraphicsExtractor graphics) {
+        if (contractorSkin == null || contractorModel == null) {
+            return;
+        }
+
+//        int x0 = 8;
+//        int y0 = 6;
+//        int x1 = 54;
+//        int y1 = 80;
+//
+//        float scale = 0.90F * (y1 - y0) / 2.125F;
+
+        int x0 = 160;
+        int y0 = 25;
+        int x1 = 205;
+        int y1 = 129 - 32;
+
+        float scale = 0.90F * (y1 - y0) / 2.125F;
+
+        graphics.skin(
+                contractorModel,
+                contractorSkin,
+                scale,
+                -5.0F,
+                30.0F,
+                -1.0625F, x0, y0, x1, y1);
     }
 
     @Override
