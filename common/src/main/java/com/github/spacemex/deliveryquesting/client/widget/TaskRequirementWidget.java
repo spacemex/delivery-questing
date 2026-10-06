@@ -85,7 +85,7 @@ public final class TaskRequirementWidget {
 
             if (isInside(mouseX, mouseY, x + 8, rowY, 16, 16)) {
                 if (!stack.isEmpty()) {
-                    graphics.setTooltipForNextFrame(font, stack, mouseX, mouseY);
+                    graphics.setTooltipForNextFrame(font, stack, mouseX - x, mouseY - y);
                 }
             }
             rowY += 18;
@@ -174,6 +174,11 @@ public final class TaskRequirementWidget {
     }
 
     public boolean mouseClicked(double mouseX, double mouseY) {
+        if (onInfoClick != null && isInfoHovered(mouseX, mouseY)) {
+            onInfoClick.run();
+            return true;
+        }
+
         if (hasPrevious() && isPreviousHovered(mouseX, mouseY)) {
             page = Math.max(0, page - 1);
             return true;
@@ -183,6 +188,7 @@ public final class TaskRequirementWidget {
             page = Math.min(getPageCount() - 1, page + 1);
             return true;
         }
+
         return false;
     }
 

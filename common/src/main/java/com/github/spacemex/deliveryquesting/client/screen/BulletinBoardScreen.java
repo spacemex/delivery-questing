@@ -3,7 +3,6 @@ package com.github.spacemex.deliveryquesting.client.screen;
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.client.widget.TaskRequirementWidget;
 import com.github.spacemex.deliveryquesting.menu.BulletinBoardMenu;
-import com.github.spacemex.deliveryquesting.menu.entry.BulletinBoardRequirementEntry;
 import com.github.spacemex.deliveryquesting.menu.entry.BulletinBoardTaskEntry;
 import com.github.spacemex.deliveryquesting.networking.packets.ShowTaskPayload;
 import dev.architectury.networking.NetworkManager;
@@ -18,7 +17,6 @@ import net.minecraft.world.entity.player.Inventory;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
-import java.util.StringJoiner;
 
 public final class BulletinBoardScreen extends AbstractContainerScreen<BulletinBoardMenu> {
     private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/bulletin_board.png");
@@ -98,29 +96,6 @@ public final class BulletinBoardScreen extends AbstractContainerScreen<BulletinB
         graphics.text(font, text, x, 21, 0xFF000000, false);
         graphics.text(font, text, x, 19, 0xFF000000, false);
         graphics.text(font, text, x, 20, 0xFFFFFFFF, false);
-    }
-
-    private String progressText(BulletinBoardTaskEntry task) {
-        if (task.requirements().isEmpty()) {
-            return "No requirements";
-        }
-
-        StringJoiner joiner = new StringJoiner(" | ");
-        int shown = Math.min(2, task.requirements().size());
-
-        for (int i = 0; i < shown; i++) {
-            BulletinBoardRequirementEntry requirement = task.requirements().get(i);
-
-            joiner.add(requirement.label() + " " + requirement.current() + "/" + requirement.required());
-        }
-
-        int hidden = task.requirements().size() - shown;
-
-        if (hidden > 0) {
-            joiner.add("+" + hidden + " more");
-        }
-
-        return joiner.toString();
     }
 
     private void previousPage() {
