@@ -10,9 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public record BulletinBoardTaskEntry(Identifier id, String name, String description, String contractor, int minLevel,
-                                     int experienceReward, long moneyReward,
-                                     List<BulletinBoardRequirementEntry> requirements) {
+public record BulletinBoardTaskEntry(Identifier id, String name, String description, String contractor,
+                                     String profession, String skin, int minLevel, int experienceReward,
+                                     long moneyReward, List<BulletinBoardRequirementEntry> requirements) {
     private static final int MAX_TASKS = 1024;
 
     public BulletinBoardTaskEntry {
@@ -21,6 +21,8 @@ public record BulletinBoardTaskEntry(Identifier id, String name, String descript
         Objects.requireNonNull(description, "description");
         Objects.requireNonNull(contractor, "contractor");
         Objects.requireNonNull(requirements, "requirements");
+        Objects.requireNonNull(profession, "profession");
+        Objects.requireNonNull(skin, "skin");
 
         requirements = List.copyOf(requirements);
     }
@@ -35,13 +37,12 @@ public record BulletinBoardTaskEntry(Identifier id, String name, String descript
     public static BulletinBoardTaskEntry fromActive(TaskDefinition task, TaskProgress progress) {
         List<BulletinBoardRequirementEntry> requirements = task.requirements().stream()
                 .map(requirement -> BulletinBoardRequirementEntry.from(requirement, progress.getProgress(requirement))).toList();
-
         return create(task, requirements);
     }
 
     private static BulletinBoardTaskEntry create(TaskDefinition task, List<BulletinBoardRequirementEntry> requirements) {
-        return new BulletinBoardTaskEntry(task.id(), task.name(), task.description(), task.contractor().name(), task.minLevel(),
-                task.rewards().experience(), task.rewards().money(), requirements);
+        return new BulletinBoardTaskEntry(task.id(), task.name(), task.description(), task.contractor().name(), task.contractor().profession(),
+                task.contractor().skin(), task.minLevel(), task.rewards().experience(), task.rewards().money(), requirements);
     }
 
     public void write(FriendlyByteBuf buffer) {
@@ -49,6 +50,8 @@ public record BulletinBoardTaskEntry(Identifier id, String name, String descript
         buffer.writeUtf(name, 256);
         buffer.writeUtf(description, 2048);
         buffer.writeUtf(contractor, 256);
+        buffer.writeUtf(profession, 256);
+        buffer.writeUtf(skin, 512);
         buffer.writeVarInt(minLevel);
         buffer.writeVarInt(experienceReward);
         buffer.writeLong(moneyReward);
@@ -61,12 +64,13 @@ public record BulletinBoardTaskEntry(Identifier id, String name, String descript
         String name = buffer.readUtf(256);
         String description = buffer.readUtf(2048);
         String contractor = buffer.readUtf(256);
+        String profession = buffer.readUtf(256);
+        String skin = buffer.readUtf(512);
         int minLevel = buffer.readVarInt();
         int experienceReward = buffer.readVarInt();
         long moneyReward = buffer.readLong();
         List<BulletinBoardRequirementEntry> requirements = BulletinBoardRequirementEntry.readList(buffer);
-
-        return new BulletinBoardTaskEntry(id, name, description, contractor, minLevel, experienceReward, moneyReward, requirements);
+        return new BulletinBoardTaskEntry(id, name, description, contractor, profession, skin, minLevel, experienceReward, moneyReward, requirements);
     }
 
     public static void writeList(FriendlyByteBuf buffer, List<BulletinBoardTaskEntry> tasks) {
@@ -100,8 +104,7 @@ public record BulletinBoardTaskEntry(Identifier id, String name, String descript
     public static BulletinBoardTaskEntry fromJob(JobDefinition job) {
         List<BulletinBoardRequirementEntry> requirements = job.requirements().stream().map(requirement ->
                 BulletinBoardRequirementEntry.from(requirement, 0L)).toList();
-
-        return new BulletinBoardTaskEntry(job.id(), job.name(), job.description(), job.contractor().name(), job.minLevel(),
-                job.rewards().experience(), job.rewards().money(), requirements);
+        return new BulletinBoardTaskEntry(job.id(), job.name(), job.description(), job.contractor().name(), job.contractor().profession(),
+                job.contractor().skin(), job.minLevel(), job.rewards().experience(), job.rewards().money(), requirements);
     }
 }

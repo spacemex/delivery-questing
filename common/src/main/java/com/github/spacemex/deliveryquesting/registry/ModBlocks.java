@@ -2,7 +2,7 @@ package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.block.*;
-import com.github.spacemex.deliveryquesting.item.CardboardBoxTier;
+import com.github.spacemex.deliveryquesting.item.tier.CardboardBoxTier;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;

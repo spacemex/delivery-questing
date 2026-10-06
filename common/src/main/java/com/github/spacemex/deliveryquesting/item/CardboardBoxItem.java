@@ -1,5 +1,6 @@
 package com.github.spacemex.deliveryquesting.item;
 
+import com.github.spacemex.deliveryquesting.item.tier.CardboardBoxTier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;

@@ -3,7 +3,7 @@ package com.github.spacemex.deliveryquesting.menu;
 import com.github.spacemex.deliveryquesting.block.CardboardBoxBlock;
 import com.github.spacemex.deliveryquesting.block.entity.CardboardBoxBlockEntity;
 import com.github.spacemex.deliveryquesting.item.CardboardBoxItem;
-import com.github.spacemex.deliveryquesting.item.CardboardBoxTier;
+import com.github.spacemex.deliveryquesting.item.tier.CardboardBoxTier;
 import com.github.spacemex.deliveryquesting.registry.ModMenus;
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;

@@ -87,21 +87,22 @@ public final class SealedParcelItem extends Item {
     @SuppressWarnings("deprecation")
     @Override
     @Deprecated
-    public void appendHoverText(@NonNull ItemStack itemStack, @NonNull TooltipContext context, @NonNull TooltipDisplay display,
-                                @NonNull Consumer<Component> builder, @NonNull TooltipFlag tooltipFlag) {
-        super.appendHoverText(itemStack, context, display, builder, tooltipFlag);
+    public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context, @NonNull TooltipDisplay display, @NonNull Consumer<Component> builder, @NonNull TooltipFlag flag) {
+        super.appendHoverText(stack, context, display, builder, flag);
 
-        MailboxParcel parcel = itemStack.get(ModDataComponents.MAILBOX_PARCEL.get());
+        MailboxParcel parcel = stack.get(ModDataComponents.MAILBOX_PARCEL.get());
 
         if (parcel == null) {
             return;
         }
 
-        builder.accept(Component.translatable("tooltip.delivery_questing.sealed_parcel.sender", parcel.sender())
+        Component sender = Component.literal(parcel.sender()).withStyle(ChatFormatting.DARK_BLUE);
+
+        builder.accept(Component.translatable("tooltip.delivery_questing.by", sender)
                 .withStyle(ChatFormatting.GRAY));
-        builder.accept(Component.translatable("tooltip.delivery_questing.sealed_parcel.items", parcel.itemCount())
+        builder.accept(Component.translatable("tooltip.delivery_questing.sealed_envelope.open")
                 .withStyle(ChatFormatting.GRAY));
-        builder.accept(Component.translatable("tooltip.delivery_questing.sealed_parcel.open")
-                .withStyle(ChatFormatting.DARK_GRAY));
+        builder.accept(Component.translatable("tooltip.delivery_questing.item_count", parcel.itemCount())
+                .withStyle(ChatFormatting.GRAY));
     }
 }

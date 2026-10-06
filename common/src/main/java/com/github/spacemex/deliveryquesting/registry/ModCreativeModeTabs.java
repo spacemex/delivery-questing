@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 
-public class ModCreativeModeTabs {
+public final class ModCreativeModeTabs {
     public static DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.CREATIVE_MODE_TAB);
 
     public static RegistrySupplier<CreativeModeTab> DELIVERY_TAB;

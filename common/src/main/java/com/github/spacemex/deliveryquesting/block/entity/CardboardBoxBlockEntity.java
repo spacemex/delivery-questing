@@ -2,7 +2,7 @@ package com.github.spacemex.deliveryquesting.block.entity;
 
 import com.github.spacemex.deliveryquesting.block.CardboardBoxBlock;
 import com.github.spacemex.deliveryquesting.item.CardboardBoxItem;
-import com.github.spacemex.deliveryquesting.item.CardboardBoxTier;
+import com.github.spacemex.deliveryquesting.item.tier.CardboardBoxTier;
 import com.github.spacemex.deliveryquesting.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;

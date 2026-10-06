@@ -8,7 +8,6 @@
   "screen.delivery_questing.mailbox": "Mailbox",
   "tooltip.delivery_questing.sealed_parcel.sender": "From: %s",
   "tooltip.delivery_questing.sealed_parcel.items": "Contains %s item(s)",
-  "tooltip.delivery_questing.sealed_parcel.open": "Right-click to open",
   "item.delivery_questing.envelope": "Envelope",
   "item.delivery_questing.parcel": "Parcel",
   "tooltip.delivery_questing.delivery_container.items": "Contains %s / %s item(s)",
@@ -19,7 +18,6 @@
   "tooltip.delivery_questing.contract.inspect": "Right-click to inspect",
   "tooltip.delivery_questing.sealed_envelope.sender": "From: %s",
   "tooltip.delivery_questing.sealed_envelope.contract": "Contains a delivery contract",
-  "tooltip.delivery_questing.sealed_envelope.open": "Right-click to open",
   "block.delivery_questing.cardboard_box_tier_1": "Cardboard Box Tier 1",
   "screen.delivery_questing.cardboard_box_tier_1": "Cardboard Box Tier 1",
   "item.delivery_questing.cardboard": "Cardboard",
@@ -46,5 +44,9 @@
   "item.delivery_questing.upgrade_tier_4": "Upgrade Tier 4",
   "item.delivery_questing.upgrade_tier_5": "Upgrade Tier 5",
   "item.delivery_questing.upgrade_tier_6": "Upgrade Tier 6",
-  "message.delivery_questing.drone_pad.charging": "The drone is still charging: %s / %s energy."
+  "message.delivery_questing.drone_pad.charging": "The drone is still charging: %s / %s energy.",
+  "tooltip.delivery_questing.by": "By %s",
+  "tooltip.delivery_questing.item_count": "%s item(s)",
+  "tooltip.delivery_questing.sealed_parcel.open": "Right click to open",
+  "tooltip.delivery_questing.sealed_envelope.open": "Right click to open"
 }

@@ -3,57 +3,68 @@ package com.github.spacemex.deliveryquesting.menu.entry;
 import com.github.spacemex.deliveryquesting.task.ItemRequirement;
 import com.github.spacemex.deliveryquesting.task.TaskRequirement;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public record BulletinBoardRequirementEntry(String label, long current, long required) {
+public record BulletinBoardRequirementEntry(ItemRequirement.TargetType targetType, Identifier target, long current,
+                                            long required) {
     private static final int MAX_REQUIREMENTS = 128;
 
     public BulletinBoardRequirementEntry {
-        Objects.requireNonNull(label, "label");
-
-        if (label.isBlank()) {
-            throw new IllegalArgumentException("Requirement label cannot be blank");
-        }
+        Objects.requireNonNull(targetType, "targetType");
+        Objects.requireNonNull(target, "target");
 
         if (current < 0L) {
             throw new IllegalArgumentException("Requirement progress cannot be negative");
         }
 
-        if (required < 0L) {
+        if (required <= 0L) {
             throw new IllegalArgumentException("Requirement amount must be greater than 0");
         }
     }
 
     public static BulletinBoardRequirementEntry from(TaskRequirement requirement, long current) {
-        String label;
-
-        if (requirement instanceof ItemRequirement itemRequirement) {
-            label = switch (itemRequirement.targetType()) {
-                case ITEM -> itemRequirement.target().toString();
-                case TAG -> "#" + itemRequirement.target().toString();
-            };
-        } else {
-            label = requirement.progressKey();
+        if (!(requirement instanceof ItemRequirement itemRequirement)) {
+            throw new IllegalArgumentException("Unsupported requirement type: " + requirement.getClass().getName());
         }
 
-        return new BulletinBoardRequirementEntry(label, current, requirement.amount());
+        return new BulletinBoardRequirementEntry(itemRequirement.targetType(), itemRequirement.target(), current, itemRequirement.amount());
     }
 
     public boolean complete() {
         return current >= required;
     }
 
+    public boolean isItem() {
+        return targetType == ItemRequirement.TargetType.ITEM;
+    }
+
+    public boolean isTag() {
+        return targetType == ItemRequirement.TargetType.TAG;
+    }
+
+    public String label() {
+        return isTag() ? "#" + target : target.toString();
+    }
+
     public void write(FriendlyByteBuf buffer) {
-        buffer.writeUtf(label, 512);
+        buffer.writeEnum(targetType);
+        buffer.writeUtf(target.toString(), 256);
         buffer.writeLong(current);
         buffer.writeLong(required);
     }
 
     public static BulletinBoardRequirementEntry read(FriendlyByteBuf buffer) {
-        return new BulletinBoardRequirementEntry(buffer.readUtf(512), buffer.readLong(), buffer.readLong());
+        ItemRequirement.TargetType targetType = buffer.readEnum(ItemRequirement.TargetType.class);
+
+        Identifier target = Identifier.parse(buffer.readUtf(256));
+        long current = buffer.readLong();
+        long required = buffer.readLong();
+
+        return new BulletinBoardRequirementEntry(targetType, target, current, required);
     }
 
     public static void writeList(FriendlyByteBuf buffer, List<BulletinBoardRequirementEntry> requirements) {

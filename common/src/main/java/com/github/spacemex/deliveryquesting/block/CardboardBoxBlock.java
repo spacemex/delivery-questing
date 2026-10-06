@@ -1,7 +1,7 @@
 package com.github.spacemex.deliveryquesting.block;
 
 import com.github.spacemex.deliveryquesting.block.entity.CardboardBoxBlockEntity;
-import com.github.spacemex.deliveryquesting.item.CardboardBoxTier;
+import com.github.spacemex.deliveryquesting.item.tier.CardboardBoxTier;
 import com.github.spacemex.deliveryquesting.menu.CardboardBoxMenu;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

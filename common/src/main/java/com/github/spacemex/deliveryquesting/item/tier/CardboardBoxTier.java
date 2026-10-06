@@ -1,4 +1,4 @@
-package com.github.spacemex.deliveryquesting.item;
+package com.github.spacemex.deliveryquesting.item.tier;
 
 import com.mojang.serialization.Codec;
 
