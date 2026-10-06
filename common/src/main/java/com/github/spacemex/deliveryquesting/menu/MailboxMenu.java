@@ -10,7 +10,9 @@ import com.github.spacemex.deliveryquesting.registry.ModBlocks;
 import com.github.spacemex.deliveryquesting.registry.ModItems;
 import com.github.spacemex.deliveryquesting.registry.ModMenus;
 import dev.architectury.registry.menu.MenuRegistry;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,6 +25,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemLore;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
@@ -200,12 +203,32 @@ public final class MailboxMenu extends AbstractContainerMenu {
 
         for (int i = 0; i < Math.min(parcels.size(), 4); i++) {
             MailboxParcelEntry parcel = parcels.get(i);
-
-            ItemStack displayStack = new ItemStack(parcel.contractEnvelope() ? ModItems.SEALED_ENVELOPE.get() : ModItems.SEALED_PARCEL.get());
-            inbox.setItem(i, displayStack);
+            inbox.setItem(i, createInboxDisplayStack(parcel));
         }
-
         return inbox;
+    }
+
+    private static ItemStack createInboxDisplayStack(MailboxParcelEntry parcel) {
+        ItemStack stack = new ItemStack(parcel.contractEnvelope() ? ModItems.SEALED_ENVELOPE.get()
+                : ModItems.SEALED_PARCEL.get());
+
+        Component sender = Component.literal(parcel.sender())
+                .withStyle(style -> style.withColor(ChatFormatting.DARK_BLUE).withItalic(false));
+
+        Component by = Component.translatable("tooltip.delivery_questing.by", sender)
+                .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false));
+
+        String openKey = parcel.contractEnvelope() ? "tooltip.delivery_questing.sealed_envelope.open"
+                : "tooltip.delivery_questing.sealed_parcel.open";
+
+        Component open = Component.translatable(openKey)
+                .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false));
+        Component count = Component.translatable("tooltip.delivery_questing.item_count", parcel.itemCount())
+                .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false));
+
+        stack.set(DataComponents.LORE, new ItemLore(List.of(by, open, count)));
+
+        return stack;
     }
 
     @Override

@@ -3,9 +3,9 @@ package com.github.spacemex.deliveryquesting.client.screen;
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.client.widget.TaskRequirementWidget;
 import com.github.spacemex.deliveryquesting.menu.ContractMenu;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -79,5 +79,14 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
 
     private void drawCentered(GuiGraphicsExtractor graphics, Component text, int y, int color) {
         graphics.text(font, text, (imageWidth - font.width(text)) / 2, y, color, false);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (event.button() == 0 && requirementWidget != null && requirementWidget.mouseClicked(event.x() - leftPos, event.y() - topPos)) {
+            return true;
+        }
+
+        return super.mouseClicked(event, doubleClick);
     }
 }

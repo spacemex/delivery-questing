@@ -1,12 +1,16 @@
 package com.github.spacemex.deliveryquesting.client.screen;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.client.widget.TaskRequirementWidget;
 import com.github.spacemex.deliveryquesting.menu.BulletinBoardMenu;
 import com.github.spacemex.deliveryquesting.menu.entry.BulletinBoardRequirementEntry;
 import com.github.spacemex.deliveryquesting.menu.entry.BulletinBoardTaskEntry;
+import com.github.spacemex.deliveryquesting.networking.packets.ShowTaskPayload;
+import dev.architectury.networking.NetworkManager;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -21,6 +25,7 @@ public final class BulletinBoardScreen extends AbstractContainerScreen<BulletinB
     private Button previousButton;
     private Button nextButton;
     private int page;
+    private TaskRequirementWidget requirementWidget;
 
     public BulletinBoardScreen(BulletinBoardMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, 176, 167);
@@ -37,6 +42,7 @@ public final class BulletinBoardScreen extends AbstractContainerScreen<BulletinB
                 .bounds(leftPos + 144, topPos + 140, 26, 20).build());
 
         updateButtons();
+        updateTaskWidget();
     }
 
     @Override
@@ -71,29 +77,11 @@ public final class BulletinBoardScreen extends AbstractContainerScreen<BulletinB
             return;
         }
 
-        BulletinBoardTaskEntry task = tasks.get(page);
-
-        drawCentered(graphics, Component.literal(task.name()), 40, 0xFF202020);
-        drawCentered(graphics, Component.literal(task.contractor()), 52, 0xFF606060);
-
-        int y = 68;
-
-        int shown = Math.min(task.requirements().size(), 4);
-
-        for (int i = 0; i < shown; i++) {
-            BulletinBoardRequirementEntry requirement = task.requirements().get(i);
-            String text = requirement.current() + " / " + requirement.required() + "  " + requirement.label();
-
-            graphics.text(font, Component.literal(text), 14, y, requirement.complete() ? 0xFF3F7D38 : 0xFF404040, false);
-            y += 11;
+        if (requirementWidget != null) {
+            requirementWidget.extract(graphics, mouseX - leftPos, mouseY - topPos);
         }
 
-        graphics.text(font, Component.literal("+" + task.experienceReward() + " XP"), 14, 118, 0xFF404040, false);
-        graphics.text(font, Component.literal("+" + task.moneyReward() + " money"), 95, 118, 0xFF404040, false);
-
-        if (tasks.size() > 1) {
-            drawCentered(graphics, Component.literal("Page " + (page + 1) + " / " + tasks.size()), 146, 0xFF404040);
-        }
+        drawCentered(graphics, Component.literal("Page " + (page + 1) + " of " + tasks.size()), 145, 0xFF404040);
     }
 
     private void drawCentered(GuiGraphicsExtractor graphics, Component text, int y, int color) {
@@ -137,20 +125,28 @@ public final class BulletinBoardScreen extends AbstractContainerScreen<BulletinB
 
     private void previousPage() {
         int size = menu.activeTasks().size();
+
         if (size <= 0) {
             return;
         }
+
         page = Math.floorMod(page - 1, size);
+
         updateButtons();
+        updateTaskWidget();
     }
 
     private void nextPage() {
         int size = menu.activeTasks().size();
+
         if (size <= 0) {
             return;
         }
+
         page = Math.floorMod(page + 1, size);
+
         updateButtons();
+        updateTaskWidget();
     }
 
     private void updateButtons() {
@@ -165,4 +161,26 @@ public final class BulletinBoardScreen extends AbstractContainerScreen<BulletinB
         nextButton.visible = visible;
     }
 
+    private void updateTaskWidget() {
+        List<BulletinBoardTaskEntry> tasks = menu.activeTasks();
+
+        if (tasks.isEmpty()) {
+            requirementWidget = null;
+            return;
+        }
+
+        BulletinBoardTaskEntry task = tasks.get(page);
+
+        requirementWidget = new TaskRequirementWidget(35, 35, task.requirements(), true,
+                () -> NetworkManager.sendToServer(new ShowTaskPayload(task.id())));
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (event.button() == 0 && requirementWidget != null && requirementWidget.mouseClicked(event.x() - leftPos, event.y() - topPos)) {
+            return true;
+        }
+
+        return super.mouseClicked(event, doubleClick);
+    }
 }

@@ -1,7 +1,9 @@
 package com.github.spacemex.deliveryquesting.networking;
 
 import com.github.spacemex.deliveryquesting.menu.BulletinBoardMenu;
+import com.github.spacemex.deliveryquesting.menu.ContractMenu;
 import com.github.spacemex.deliveryquesting.networking.packets.AcceptTaskPayload;
+import com.github.spacemex.deliveryquesting.networking.packets.ShowTaskPayload;
 import com.github.spacemex.deliveryquesting.networking.packets.SubmitTaskPayload;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
@@ -26,6 +28,7 @@ public final class TaskInteractionNetworkHandler {
 
         registerAcceptTask();
         registerSubmitTask();
+        registerShowTask();
     }
 
     private static void registerAcceptTask() {
@@ -119,5 +122,30 @@ public final class TaskInteractionNetworkHandler {
             }
         }
         serverPlayer.closeContainer();
+    }
+
+    private static void registerShowTask() {
+        NetworkManager.registerReceiver(NetworkManager.Side.C2S, ShowTaskPayload.TYPE, ShowTaskPayload.CODEC, (payload, context) -> {
+            if (!(context.getPlayer() instanceof ServerPlayer serverPlayer)) {
+                return;
+            }
+            context.queue(() -> handleShowTask(serverPlayer, payload));
+        });
+    }
+
+    private static void handleShowTask(ServerPlayer player, ShowTaskPayload payload) {
+        if (!(player.containerMenu instanceof BulletinBoardMenu menu)) {
+            return;
+        }
+
+        if (!menu.hasActiveTask(payload.taskId())) {
+            return;
+        }
+
+        if (!TaskManager.contains(payload.taskId())) {
+            return;
+        }
+
+        ContractMenu.open(player, payload.taskId());
     }
 }

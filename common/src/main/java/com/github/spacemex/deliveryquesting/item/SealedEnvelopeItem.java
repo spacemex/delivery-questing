@@ -86,7 +86,7 @@ public final class SealedEnvelopeItem extends Item {
             return;
         }
 
-        builder.accept(Component.translatable("tooltip.delivery_questing.sealed_envelope.sender", parcel.sender()).withStyle(ChatFormatting.GRAY));
+        builder.accept(Component.translatable("tooltip.delivery_questing.sealed_envelope.sender", parcel.sender()).withStyle(ChatFormatting.DARK_BLUE));
         builder.accept(Component.translatable("tooltip.delivery_questing.sealed_envelope.contract").withStyle(ChatFormatting.GRAY));
         builder.accept(Component.translatable("tooltip.delivery_questing.sealed_envelope.open").withStyle(ChatFormatting.DARK_GRAY));
     }

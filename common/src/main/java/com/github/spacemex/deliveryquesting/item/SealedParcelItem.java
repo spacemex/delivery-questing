@@ -99,8 +99,8 @@ public final class SealedParcelItem extends Item {
         Component sender = Component.literal(parcel.sender()).withStyle(ChatFormatting.DARK_BLUE);
 
         builder.accept(Component.translatable("tooltip.delivery_questing.by", sender)
-                .withStyle(ChatFormatting.GRAY));
-        builder.accept(Component.translatable("tooltip.delivery_questing.sealed_envelope.open")
+                .withStyle(ChatFormatting.DARK_BLUE));
+        builder.accept(Component.translatable("tooltip.delivery_questing.sealed_parcel.open")
                 .withStyle(ChatFormatting.GRAY));
         builder.accept(Component.translatable("tooltip.delivery_questing.item_count", parcel.itemCount())
                 .withStyle(ChatFormatting.GRAY));

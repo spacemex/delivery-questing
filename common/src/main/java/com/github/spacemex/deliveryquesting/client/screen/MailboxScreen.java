@@ -2,12 +2,8 @@ package com.github.spacemex.deliveryquesting.client.screen;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.menu.MailboxMenu;
-import com.github.spacemex.deliveryquesting.menu.entry.MailboxParcelEntry;
-import com.github.spacemex.deliveryquesting.networking.packets.CollectParcelPayload;
-import dev.architectury.networking.NetworkManager;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;

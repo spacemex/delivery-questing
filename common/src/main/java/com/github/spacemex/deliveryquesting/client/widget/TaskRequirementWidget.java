@@ -18,6 +18,7 @@ import net.minecraft.util.Util;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,20 +35,27 @@ public final class TaskRequirementWidget {
     private final List<BulletinBoardRequirementEntry> requirements;
     private final boolean showProgress;
     private int page;
+    @Nullable
+    private final Runnable onInfoClick;
 
-    public TaskRequirementWidget(int x, int y, List<BulletinBoardRequirementEntry> requirements, boolean showProgress) {
+    public TaskRequirementWidget(int x, int y, List<BulletinBoardRequirementEntry> requirements, boolean showProgress, @Nullable Runnable onInfoClick) {
         this.x = x;
         this.y = y;
         this.requirements = List.copyOf(requirements);
         this.showProgress = showProgress;
+        this.onInfoClick = onInfoClick;
         minecraft = Minecraft.getInstance();
         font = minecraft.font;
     }
 
+    public TaskRequirementWidget(int x, int y, List<BulletinBoardRequirementEntry> requirements, boolean showProgress) {
+        this(x, y, requirements, showProgress, null);
+    }
+
     public void extract(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, 0, 0, WIDTH, HEIGHT, 256, 256);
-
         drawTitle(graphics);
+        drawInfoButton(graphics, mouseX, mouseY);
         drawRequirements(graphics, mouseX, mouseY);
         drawPageButtons(graphics, mouseX, mouseY);
     }
@@ -154,6 +162,17 @@ public final class TaskRequirementWidget {
         }
     }
 
+    private void drawInfoButton(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        if (onInfoClick == null) {
+            return;
+        }
+
+        boolean hovered = isInfoHovered(mouseX, mouseY);
+
+        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x + WIDTH - 13, y + 2, hovered ? 142
+                : 153, 0, 11, 11, 256, 256);
+    }
+
     public boolean mouseClicked(double mouseX, double mouseY) {
         if (hasPrevious() && isPreviousHovered(mouseX, mouseY)) {
             page = Math.max(0, page - 1);
@@ -204,5 +223,9 @@ public final class TaskRequirementWidget {
             return String.format("%.1f M", amount / 1_000_000F);
         }
         return String.format("%.1f B", amount / 1_000_000_000F);
+    }
+
+    private boolean isInfoHovered(double mouseX, double mouseY) {
+        return isInside(mouseX, mouseY, x + WIDTH - 13, y + 2, 11, 11);
     }
 }
