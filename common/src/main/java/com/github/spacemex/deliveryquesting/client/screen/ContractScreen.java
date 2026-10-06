@@ -137,13 +137,6 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
             return;
         }
 
-//        int x0 = 8;
-//        int y0 = 6;
-//        int x1 = 54;
-//        int y1 = 80;
-//
-//        float scale = 0.90F * (y1 - y0) / 2.125F;
-
         int x0 = 160;
         int y0 = 25;
         int x1 = 205;
