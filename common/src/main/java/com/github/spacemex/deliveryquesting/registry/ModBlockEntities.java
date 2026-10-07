@@ -12,11 +12,15 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
+import java.util.Arrays;
+
 public final class ModBlockEntities {
 
-    private ModBlockEntities() {}
+    private ModBlockEntities() {
+    }
 
-    private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.BLOCK_ENTITY_TYPE);
+    private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
+            DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.BLOCK_ENTITY_TYPE);
 
     public static final RegistrySupplier<BlockEntityType<MailboxBlockEntity>> MAILBOX;
     public static final RegistrySupplier<BlockEntityType<ComputerBlockEntity>> COMPUTER;
@@ -27,21 +31,27 @@ public final class ModBlockEntities {
         BLOCK_ENTITIES.register();
     }
 
-    private static <T extends BlockEntity> RegistrySupplier<BlockEntityType<T>> register(String name, BlockEntityTypeFactory.Factory<T> factory, Block... blocks) {
-        return BLOCK_ENTITIES.register(name, () -> BlockEntityTypeFactory.create(factory, blocks));
+    @SafeVarargs
+    private static <T extends BlockEntity>
+    RegistrySupplier<BlockEntityType<T>> register(String name, BlockEntityTypeFactory.Factory<T> factory,
+                                                  RegistrySupplier<? extends Block>... blocks) {
+        return BLOCK_ENTITIES.register(name, () -> {
+            Block[] resolvedBlocks = Arrays.stream(blocks).map(RegistrySupplier::get).toArray(Block[]::new);
+
+            return BlockEntityTypeFactory.create(factory, resolvedBlocks);
+        });
     }
 
     static {
-        MAILBOX = register("mailbox", MailboxBlockEntity::new, ModBlocks.MAILBOX.get());
-        COMPUTER = register("computer", ComputerBlockEntity::new, ModBlocks.COMPUTER.get());
+        MAILBOX = register("mailbox", MailboxBlockEntity::new, ModBlocks.MAILBOX);
+        COMPUTER = register("computer", ComputerBlockEntity::new, ModBlocks.COMPUTER);
         CARDBOARD_BOX = register("cardboard_box", CardboardBoxBlockEntity::new,
-                ModBlocks.CARDBOARD_BOX_TIER_1.get(),
-                ModBlocks.CARDBOARD_BOX_TIER_2.get(),
-                ModBlocks.CARDBOARD_BOX_TIER_3.get(),
-                ModBlocks.CARDBOARD_BOX_TIER_4.get(),
-                ModBlocks.CARDBOARD_BOX_TIER_5.get(),
-                ModBlocks.CARDBOARD_BOX_TIER_6.get()
-        );
-        DRONE_PAD = register("drone_pad", DronePadBlockEntity::new, ModBlocks.DRONE_PAD.get());
+                ModBlocks.CARDBOARD_BOX_TIER_1,
+                ModBlocks.CARDBOARD_BOX_TIER_2,
+                ModBlocks.CARDBOARD_BOX_TIER_3,
+                ModBlocks.CARDBOARD_BOX_TIER_4,
+                ModBlocks.CARDBOARD_BOX_TIER_5,
+                ModBlocks.CARDBOARD_BOX_TIER_6);
+        DRONE_PAD = register("drone_pad", DronePadBlockEntity::new, ModBlocks.DRONE_PAD);
     }
 }
