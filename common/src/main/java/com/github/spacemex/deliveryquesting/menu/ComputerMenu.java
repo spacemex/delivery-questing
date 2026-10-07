@@ -17,6 +17,7 @@ import com.github.spacemex.deliveryquesting.task.manager.OfferManager;
 import com.github.spacemex.deliveryquesting.task.manager.TaskManager;
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -25,7 +26,9 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.jspecify.annotations.NonNull;
 
 import java.util.*;
@@ -263,7 +266,7 @@ public final class ComputerMenu extends AbstractContainerMenu {
                                 task.name(), task.contractor().name())));
                 case OFFER -> OfferManager.getOffer(email.referenceId()).ifPresent(offer -> result.add(
                         new ComputerInboxEntry(email.id(), email.type(), email.read(), email.referenceId(),
-                                "Now available: " + offer.item(), "Minazon")));
+                                "Now available: " + getItemDisplayName(offer.item()), "Minazon")));
                 case JOB -> JobManager.getJob(email.referenceId()).ifPresent(job -> result.add(
                         new ComputerInboxEntry(email.id(), email.type(), email.read(), email.referenceId(), job.name(),
                                 job.contractor().name())));
@@ -316,5 +319,16 @@ public final class ComputerMenu extends AbstractContainerMenu {
         double z = blockPos.getZ() + 0.5D;
 
         return player.distanceToSqr(x, y, z) <= 64.0D;
+    }
+
+
+    private static String getItemDisplayName(Identifier itemId) {
+        Item item = BuiltInRegistries.ITEM.getValue(itemId);
+
+        if (item == null || item == Items.AIR) {
+            return itemId.toString();
+        }
+
+        return new ItemStack(item).getHoverName().getString();
     }
 }
