@@ -15,6 +15,7 @@ public record TaskRewards(int experience, long money, List<ItemReward> items) {
         }
 
         Objects.requireNonNull(items, "items");
+        
         items = List.copyOf(items);
     }
 
