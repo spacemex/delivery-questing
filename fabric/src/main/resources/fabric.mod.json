@@ -26,5 +26,8 @@
     "java": ">=25",
     "architectury": ">=20.0.2",
     "fabric-api": "*"
+  },
+  "suggests": {
+    "team_reborn_energy": ">=5.0.0"
   }
 }

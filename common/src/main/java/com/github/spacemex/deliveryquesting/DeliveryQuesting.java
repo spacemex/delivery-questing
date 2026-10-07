@@ -22,11 +22,11 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+
 // TODO: Move Scripting Dir Creation To Its Own Class
 public final class DeliveryQuesting {
     public static final String MOD_ID = "delivery_questing";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-
     private static final Path MOD_DIR = Platform.getConfigFolder().resolve("DeliveryQuesting");
     private static final Path CONFIG_FILE = MOD_DIR.resolve("config.yml");
     private static final Path TASKS_DIR = MOD_DIR.resolve("tasks");

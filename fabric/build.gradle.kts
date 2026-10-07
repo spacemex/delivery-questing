@@ -6,6 +6,7 @@ val fabricLoaderVersion = providers.gradleProperty("fabric_loader_version").get(
 val fabricApiVersion = providers.gradleProperty("fabric_api_version").get()
 
 val architecturyApiVersion = providers.gradleProperty("architectury_api_version").get()
+val energyApiVersion = providers.gradleProperty("energy_api_version").get()
 
 architectury {
     platformSetupLoomIde()
@@ -34,6 +35,7 @@ fabricApi {
 
 repositories {
     mavenCentral()
+    maven(url = uri("https://maven.fabricmc.net/"))
     maven(url = uri("https://jitpack.io/"))
 }
 
@@ -68,6 +70,18 @@ dependencies {
     implementation("net.fabricmc:fabric-loader:$fabricLoaderVersion")
     implementation("net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
     implementation("dev.architectury:architectury-fabric:$architecturyApiVersion")
+
+    compileOnly(
+        "teamreborn:energy:$energyApiVersion"
+    ) {
+        isTransitive = false
+    }
+
+    runtimeOnly(
+        "teamreborn:energy:$energyApiVersion"
+    ) {
+        isTransitive = false
+    }
 
     "common"(project(":common")) {
         isTransitive = false
