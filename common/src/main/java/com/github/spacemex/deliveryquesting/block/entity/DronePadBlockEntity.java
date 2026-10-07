@@ -227,6 +227,7 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
             if (pad.isSkyFree()) {
                 pad.getOrCreateDrone();
             }
+
             return;
         }
 
@@ -242,17 +243,31 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
             drone.setTier(tier);
         }
 
-        int missing = DroneEntity.ENERGY_CAPACITY - drone.getEnergy();
+        if (drone.getPayload().isEmpty()) {
+            ItemStack waitingPayload = pad.getItem(PAYLOAD_SLOT);
 
-        if (missing <= 0 || pad.energy <= 0) {
-            return;
+            if (!waitingPayload.isEmpty() && waitingPayload.getItem() instanceof CardboardBoxItem) {
+                ItemStack payload = pad.removeItemNoUpdate(PAYLOAD_SLOT);
+
+                if (!drone.loadPayload(payload)) {
+                    pad.setItem(PAYLOAD_SLOT, payload);
+                }
+            }
         }
 
-        int requested = Math.min(DRONE_CHARGE_RATE, missing);
-        int transferred = pad.useEnergy(requested);
+        int missing = DroneEntity.ENERGY_CAPACITY - drone.getEnergy();
 
-        if (transferred > 0) {
-            drone.addEnergy(transferred);
+        if (missing > 0 && pad.energy > 0) {
+            int requested = Math.min(DRONE_CHARGE_RATE, missing);
+            int transferred = pad.useEnergy(requested);
+
+            if (transferred > 0) {
+                drone.addEnergy(transferred);
+            }
+        }
+
+        if (!drone.getPayload().isEmpty() && drone.isFullyCharged()) {
+            drone.launch();
         }
     }
 

@@ -48,7 +48,7 @@ public final class DeliveryQuesting {
         TaskInteractionNetworkHandler.initialize();
         MailboxNetworkHandler.initialize();
         ComputerNetworkHandler.initialize();
-        DronePadNetworkHandler.initialize();
+       // DronePadNetworkHandler.initialize();
 
 
         TaskManager.initialize();

@@ -79,7 +79,7 @@ public final class DroneEntity extends Entity {
 
         setPayload(ItemStack.EMPTY);
 
-        setEnergy(0);
+        setEnergy(ENERGY_CAPACITY);
 
         setTier(0);
 
@@ -158,12 +158,8 @@ public final class DroneEntity extends Entity {
         getEntityData().set(DATA_PAYLOAD, stack.copy());
     }
 
-    public boolean launch(ItemStack payload) {
+    public boolean loadPayload(ItemStack payload) {
         if (!isIdle()) {
-            return false;
-        }
-
-        if (!isFullyCharged()) {
             return false;
         }
 
@@ -176,6 +172,22 @@ public final class DroneEntity extends Entity {
         }
 
         setPayload(payload);
+
+        return true;
+    }
+
+    public boolean launch() {
+        if (!isIdle()) {
+            return false;
+        }
+
+        if (!isFullyCharged()) {
+            return false;
+        }
+
+        if (getPayload().isEmpty()) {
+            return false;
+        }
 
         setFlightState(FlightState.DEPARTING);
 

@@ -4,10 +4,7 @@ import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.block.entity.DronePadBlockEntity;
 import com.github.spacemex.deliveryquesting.entity.DroneEntity;
 import com.github.spacemex.deliveryquesting.menu.DronePadMenu;
-import com.github.spacemex.deliveryquesting.networking.packets.SubmitDroneDeliveryPayload;
-import dev.architectury.networking.NetworkManager;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
@@ -16,8 +13,6 @@ import net.minecraft.world.entity.player.Inventory;
 import org.jspecify.annotations.NonNull;
 
 public final class DronePadScreen extends AbstractContainerScreen<DronePadMenu> {
-
-    private Button sendButton;
 
     private static final Identifier TEXTURE =
             Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/drone_pad.png");
@@ -29,27 +24,6 @@ public final class DronePadScreen extends AbstractContainerScreen<DronePadMenu> 
 
     public DronePadScreen(DronePadMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, 176, 166);
-    }
-
-    @Override
-    protected void init() {
-        super.init();
-
-        sendButton = addRenderableWidget(Button.builder(Component.literal("Send"), button -> {
-            button.active = false;
-
-            NetworkManager.sendToServer(new SubmitDroneDeliveryPayload(menu.blockPos()));
-        }).bounds(leftPos + 110, topPos + 59, 50, 20).build());
-
-        sendButton.active = menu.hasPayload();
-    }
-
-    @Override
-    protected void containerTick() {
-        super.containerTick();
-        if (sendButton != null) {
-            sendButton.active = menu.hasPayload() && menu.isDroneFullyCharged();
-        }
     }
 
     @Override
