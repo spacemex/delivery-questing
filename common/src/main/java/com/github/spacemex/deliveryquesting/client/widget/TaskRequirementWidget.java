@@ -25,8 +25,9 @@ import java.util.Optional;
 
 public final class TaskRequirementWidget {
 
-    private static final Identifier TEXTURE =
+    private static final Identifier DEFAULT_TEXTURE =
             Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/task.png");
+    private final Identifier texture;
 
     private static final int WIDTH = 106;
     private static final int HEIGHT = 104;
@@ -48,8 +49,22 @@ public final class TaskRequirementWidget {
     @Nullable
     private final Runnable onInfoClick;
 
+    public TaskRequirementWidget(int x, int y, List<BulletinBoardRequirementEntry> requirements, boolean showProgress) {
+        this(x, y, requirements, showProgress, null, DEFAULT_TEXTURE);
+    }
+
     public TaskRequirementWidget(int x, int y, List<BulletinBoardRequirementEntry> requirements, boolean showProgress,
                                  @Nullable Runnable onInfoClick) {
+        this(x, y, requirements, showProgress, onInfoClick, DEFAULT_TEXTURE);
+    }
+
+    public TaskRequirementWidget(int x, int y, List<BulletinBoardRequirementEntry> requirements, boolean showProgress,
+                                 Identifier texture) {
+        this(x, y, requirements, showProgress, null, texture);
+    }
+
+    public TaskRequirementWidget(int x, int y, List<BulletinBoardRequirementEntry> requirements, boolean showProgress,
+                                 @Nullable Runnable onInfoClick, Identifier texture) {
         this.x = x;
 
         this.y = y;
@@ -60,18 +75,16 @@ public final class TaskRequirementWidget {
 
         this.onInfoClick = onInfoClick;
 
+        this.texture = texture;
+
         minecraft = Minecraft.getInstance();
 
         font = minecraft.font;
     }
 
-    public TaskRequirementWidget(int x, int y, List<BulletinBoardRequirementEntry> requirements, boolean showProgress) {
-        this(x, y, requirements, showProgress, null);
-    }
-
     public void extract(GuiGraphicsExtractor graphics, int localMouseX, int localMouseY,
                         int screenMouseX, int screenMouseY) {
-        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, 0, 0,
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, 0, 0,
                 WIDTH, HEIGHT, 256, 256);
 
         drawTitle(graphics);
@@ -175,14 +188,14 @@ public final class TaskRequirementWidget {
         if (hasPrevious()) {
             boolean hovered = isPreviousHovered(mouseX, mouseY);
 
-            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x + 10, y + HEIGHT - 15, hovered ? 124
+            graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + 10, y + HEIGHT - 15, hovered ? 124
                     : 106, 11, 18, 11, 256, 256);
         }
 
         if (hasNext()) {
             boolean hovered = isNextHovered(mouseX, mouseY);
 
-            graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x + WIDTH - 35, y + HEIGHT - 15, hovered ? 124
+            graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + WIDTH - 35, y + HEIGHT - 15, hovered ? 124
                     : 106, 0, 18, 11, 256, 256);
         }
     }
@@ -194,7 +207,7 @@ public final class TaskRequirementWidget {
 
         boolean hovered = isInfoHovered(mouseX, mouseY);
 
-        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x + WIDTH - 13, y + 2, hovered ? 142
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + WIDTH - 13, y + 2, hovered ? 142
                 : 153, 0, 11, 11, 256, 256);
     }
 

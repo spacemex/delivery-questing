@@ -2,11 +2,9 @@ package com.github.spacemex.deliveryquesting.client.screen;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.client.ContractorSkinManager;
+import com.github.spacemex.deliveryquesting.client.widget.TaskRequirementWidget;
 import com.github.spacemex.deliveryquesting.menu.ComputerMenu;
-import com.github.spacemex.deliveryquesting.menu.entry.ComputerInboxEntry;
-import com.github.spacemex.deliveryquesting.menu.entry.ComputerJobMailEntry;
-import com.github.spacemex.deliveryquesting.menu.entry.ComputerMailEntry;
-import com.github.spacemex.deliveryquesting.menu.entry.ComputerOfferEntry;
+import com.github.spacemex.deliveryquesting.menu.entry.*;
 import com.github.spacemex.deliveryquesting.networking.packets.AcceptEmailContractPayload;
 import com.github.spacemex.deliveryquesting.networking.packets.AcceptEmailJobPayload;
 import com.github.spacemex.deliveryquesting.networking.packets.BuyOfferPayload;
@@ -16,6 +14,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.model.player.PlayerModel;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -31,8 +31,6 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
     private int mailOffset;
 
     private View view = View.DESKTOP;
-
-    private int mailPage;
 
     private final Set<UUID> readThisSession = new HashSet<>();
 
@@ -70,6 +68,20 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
     private static final int MAIL_CLOSE_X = 244;
     private static final int MAIL_CLOSE_Y = 3;
 
+    private static final Identifier COMPUTER_CONTRACT_TEXTURE =
+            Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/computer/contract.png");
+    private static final Identifier COMPUTER_TASK_TEXTURE =
+            Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/computer_task.png");
+
+    private static final int COMPUTER_DETAIL_CLOSE_X = 244;
+    private static final int COMPUTER_DETAIL_CLOSE_Y = 3;
+
+    private TaskRequirementWidget computerTaskWidget;
+
+    private PlayerModel computerContractorModel;
+
+    private Identifier computerContractorSkin;
+
     private enum View {
         DESKTOP,
         MAIL_LIST,
@@ -86,11 +98,18 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
     protected void init() {
         super.init();
 
+        computerContractorModel = new PlayerModel(minecraft.getEntityModels().bakeLayer(ModelLayers.PLAYER),
+                false);
+
         rebuildView();
     }
 
     private void rebuildView() {
         clearWidgets();
+
+        computerTaskWidget = null;
+
+        computerContractorSkin = null;
 
         switch (view) {
             case DESKTOP -> buildDesktop();
@@ -118,18 +137,16 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             return;
         }
 
-        this.addRenderableWidget(Button.builder(Component.literal("Back"), button -> {
-            view = View.MAIL_LIST;
+        BulletinBoardTaskEntry task = entry.task();
 
-            rebuildView();
-        }).bounds(leftPos + 15, topPos + 153, 90, 22).build());
+        prepareComputerTask(task);
 
-        Button accept = this.addRenderableWidget(Button.builder(Component.literal(entry.canAccept()
-                ? "Accept Contract" : "Already Handled"), button -> {
+        Button accept = addRenderableWidget(Button.builder(Component.literal(entry.canAccept() ?
+                "Accept" : "Already Handled"), button -> {
             button.active = false;
 
             NetworkManager.sendToServer(new AcceptEmailContractPayload(entry.emailId()));
-        }).bounds(leftPos + 131, topPos + 153, 110, 22).build());
+        }).bounds(leftPos + 67, topPos + 70, 68, 20).build());
 
         accept.active = entry.canAccept();
     }
@@ -239,10 +256,6 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         return menu.inbox().stream().filter(entry -> !isRead(entry)).count();
     }
 
-    private int getMailPageCount() {
-        return Math.max(1, (menu.inbox().size() + MAILS_PER_PAGE - 1) / MAILS_PER_PAGE);
-    }
-
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
@@ -259,6 +272,12 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
 
         if (view == View.MAIL_LIST) {
             drawMailBackground(graphics, mouseX - leftPos, mouseY - topPos);
+
+            return;
+        }
+
+        if (view == View.MAIL_DETAIL || view == View.JOB_DETAIL) {
+            drawComputerTaskBackground(graphics, mouseX - leftPos, mouseY - topPos);
 
             return;
         }
@@ -342,6 +361,22 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
                     return true;
                 }
             }
+
+            if (view == View.MAIL_DETAIL || view == View.JOB_DETAIL) {
+                if (isInside(mouseX, mouseY, COMPUTER_DETAIL_CLOSE_X, COMPUTER_DETAIL_CLOSE_Y, 9, 9)) {
+                    view = View.MAIL_LIST;
+
+                    selectedMailId = null;
+
+                    rebuildView();
+
+                    return true;
+                }
+
+                if (computerTaskWidget != null && computerTaskWidget.mouseClicked(mouseX, mouseY)) {
+                    return true;
+                }
+            }
         }
 
         return super.mouseClicked(event, doubleClick);
@@ -382,50 +417,7 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             return;
         }
 
-        var job = entry.job();
-
-        graphics.text(font, Component.literal(job.name()), 14, 12, 0xFFFFFFFF, false);
-
-        graphics.text(font, Component.literal("Repeatable Job"), 200, 12, 0xFFFFC107, false);
-
-        graphics.text(font, Component.literal("From: " + job.contractor()), 14, 27,
-                0xFF80CBC4, false);
-
-        int y = 45;
-
-        for (String line : wrapText(job.description(), 48)) {
-            if (y > 82) {
-                break;
-            }
-
-            graphics.text(font, Component.literal(line), 14, y, 0xFFD7E1E5, false);
-
-            y += 11;
-        }
-
-        y = 91;
-
-        graphics.text(font, Component.literal("Requirements:"), 14, y, 0xFFFFFFFF, false);
-
-        y += 12;
-
-        int shown = 0;
-
-        for (var requirement : job.requirements()) {
-            if (shown >= 3) {
-                break;
-            }
-
-            graphics.text(font, Component.literal(requirement.required() + "x " + requirement.label()),
-                    20, y, 0xFFD7E1E5, false);
-
-            y += 11;
-
-            shown++;
-        }
-
-        graphics.text(font, Component.literal("Rewards: +" + job.experienceReward() + " XP, +"
-                + job.moneyReward() + " money"), 14, 139, 0xFF80CBC4, false);
+        drawComputerTaskDetail(graphics, entry.job(), true);
     }
 
     private void extractDesktopLabels(GuiGraphicsExtractor graphics) {
@@ -475,49 +467,7 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             return;
         }
 
-        var task = entry.task();
-
-        graphics.text(font, Component.literal(task.name()), 14, 12, 0xFFFFFFFF, false);
-
-        graphics.text(font, Component.literal("From: " + task.contractor()), 14, 27,
-                0xFF80CBC4, false);
-
-        int y = 45;
-
-        for (String line : wrapText(task.description(), 48)) {
-
-            if (y > 82) {
-                break;
-            }
-
-            graphics.text(font, Component.literal(line), 14, y, 0xFFD7E1E5, false);
-
-            y += 11;
-        }
-
-        y = 91;
-
-        graphics.text(font, Component.literal("Requirements:"), 14, y, 0xFFFFFFFF, false);
-
-        y += 12;
-
-        int shown = 0;
-
-        for (var requirement : task.requirements()) {
-            if (shown >= 3) {
-                break;
-            }
-
-            graphics.text(font, Component.literal(requirement.required() + "x " + requirement.label()),
-                    20, y, 0xFFD7E1E5, false);
-
-            y += 11;
-
-            shown++;
-        }
-
-        graphics.text(font, Component.literal("Rewards: +" + task.experienceReward() + " XP, +" +
-                task.moneyReward() + " money"), 14, 139, 0xFF80CBC4, false);
+        drawComputerTaskDetail(graphics, entry.task(), false);
     }
 
     private void extractMinazonLabels(GuiGraphicsExtractor graphics) {
@@ -627,19 +577,17 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             return;
         }
 
-        this.addRenderableWidget(Button.builder(Component.literal("Back"), button -> {
-                    view = View.MAIL_LIST;
+        BulletinBoardTaskEntry job = entry.job();
 
-                    rebuildView();
-                }
-        ).bounds(leftPos + 15, topPos + 153, 90, 22).build());
+        prepareComputerTask(job);
 
-        Button accept = this.addRenderableWidget(Button.builder(Component.literal(entry.canAccept()
-                ? "Accept Job" : "Unavailable"), button -> {
-            button.active = false;
+        Button accept = addRenderableWidget(Button.builder(Component.literal(entry.canAccept() ?
+                        "Accept" : "Unavailable"), button -> {
+                    button.active = false;
 
-            NetworkManager.sendToServer(new AcceptEmailJobPayload(entry.emailId()));
-        }).bounds(leftPos + 131, topPos + 153, 110, 22).build());
+                    NetworkManager.sendToServer(new AcceptEmailJobPayload(entry.emailId()));
+                })
+                .bounds(leftPos + 67, topPos + 70, 68, 20).build());
 
         accept.active = entry.canAccept();
     }
@@ -756,5 +704,92 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             graphics.blit(RenderPipelines.GUI_TEXTURED, ACCEPTED_TASK, x + 4, y + 4, 0, 0,
                     16, 16, 16, 16);
         }
+    }
+
+    private void prepareComputerTask(BulletinBoardTaskEntry task) {
+        computerTaskWidget = new TaskRequirementWidget(144, 15, task.requirements(),
+                false, COMPUTER_TASK_TEXTURE);
+
+        computerContractorSkin = ContractorSkinManager.getTexture(task.skin());
+    }
+
+    private void drawComputerTaskBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        graphics.blit(RenderPipelines.GUI_TEXTURED, COMPUTER_CONTRACT_TEXTURE,
+                leftPos + 3, topPos + 3, 0, 0, 250, 188, 256, 256);
+
+        if (isInside(mouseX, mouseY, COMPUTER_DETAIL_CLOSE_X, COMPUTER_DETAIL_CLOSE_Y, 9, 9)) {
+            graphics.blit(RenderPipelines.GUI_TEXTURED, COMPUTER_CONTRACT_TEXTURE,
+                    leftPos + COMPUTER_DETAIL_CLOSE_X, topPos + COMPUTER_DETAIL_CLOSE_Y,
+                    0, 188, 9, 9, 256, 256);
+        }
+    }
+
+    private void drawComputerTaskDetail(GuiGraphicsExtractor graphics, BulletinBoardTaskEntry task, boolean repeatable) {
+        graphics.text(font, Component.literal(task.name()), 5, 4, 0xFFFFFFFF, false);
+
+        drawComputerContractor(graphics);
+
+        graphics.text(font, Component.literal(task.profession()), 6, 96, 0xFF000000, false);
+
+        Component rewards = Component.literal("Rewards");
+
+        graphics.text(font, rewards, 101 - font.width(rewards) / 2, 15, 0xFF000000, false);
+
+        graphics.text(font, Component.literal("XP: +" + task.experienceReward()), 63, 25,
+                0xFF404040, false);
+
+        graphics.text(font, Component.literal("Money: +" + task.moneyReward()), 63, 35,
+                0xFF404040, false);
+
+        if (repeatable) {
+            graphics.text(font, Component.literal("Repeatable Job"), 63, 46,
+                    0xFF8A6500, false);
+        }
+
+        Component name = Component.literal(task.name());
+
+        graphics.text(font, name, (imageWidth - font.width(name)) / 2, 123, 0xFF000000, false);
+
+        List<FormattedCharSequence> description = font.split(Component.literal(task.description()),
+                imageWidth - 16);
+
+        int y = 136;
+
+        for (FormattedCharSequence line : description) {
+            if (y > 181) {
+                break;
+            }
+
+            graphics.text(font, line, 8, y, 0xFF404040, false);
+
+            y += font.lineHeight + 1;
+        }
+
+        if (computerTaskWidget != null) {
+            computerTaskWidget.extract(graphics, desktopMouseX, desktopMouseY,
+                    desktopMouseX + leftPos, desktopMouseY + topPos);
+        }
+    }
+
+    private void drawComputerContractor(GuiGraphicsExtractor graphics) {
+        if (computerContractorSkin == null || computerContractorModel == null) {
+            return;
+        }
+
+        int portraitWidth = 46;
+        int portraitHeight = 73;
+
+        int leftPadding = 8;
+        int topPadding = 15;
+
+        int x0 = leftPos + leftPadding;
+        int y0 = topPos + topPadding;
+        int x1 = x0 + portraitWidth;
+        int y1 = y0 + portraitHeight;
+
+        float scale = 0.90F * (y1 - y0) / 2.125F;
+
+        graphics.skin(computerContractorModel, computerContractorSkin, scale,
+                0F, 0F, -1.0625F, x0, y0, x1, y1);
     }
 }
