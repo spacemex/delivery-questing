@@ -10,24 +10,36 @@ import java.util.UUID;
 
 public record ComputerInboxEntry(UUID emailId, GroupEmail.Type type, boolean read, Identifier referenceId, String title,
                                  String sender) {
+
     private static final int MAX_EMAILS = 1024;
 
     public void write(FriendlyByteBuf buffer) {
         buffer.writeLong(emailId.getMostSignificantBits());
+
         buffer.writeLong(emailId.getLeastSignificantBits());
+
         buffer.writeUtf(type.name(), 32);
+
         buffer.writeBoolean(read);
+
         buffer.writeUtf(referenceId.toString(), 256);
+
         buffer.writeUtf(title, 512);
+
         buffer.writeUtf(sender, 256);
     }
 
     public static ComputerInboxEntry read(FriendlyByteBuf buffer) {
         UUID emailId = new UUID(buffer.readLong(), buffer.readLong());
+
         GroupEmail.Type type = GroupEmail.Type.valueOf(buffer.readUtf(32));
+
         boolean read = buffer.readBoolean();
+
         Identifier referenceId = Identifier.parse(buffer.readUtf(256));
+
         String title = buffer.readUtf(512);
+
         String sender = buffer.readUtf(256);
 
         return new ComputerInboxEntry(emailId, type, read, referenceId, title, sender);

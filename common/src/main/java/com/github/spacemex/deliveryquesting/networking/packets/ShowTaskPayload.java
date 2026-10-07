@@ -8,7 +8,10 @@ import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;
 
 public record ShowTaskPayload(Identifier taskId) implements CustomPacketPayload {
-    public static final Type<ShowTaskPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "show_task"));
+
+    public static final Type<ShowTaskPayload> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "show_task"));
+
     public static final StreamCodec<RegistryFriendlyByteBuf, ShowTaskPayload> CODEC =
             StreamCodec.composite(Identifier.STREAM_CODEC, ShowTaskPayload::taskId, ShowTaskPayload::new);
 

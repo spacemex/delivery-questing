@@ -24,19 +24,25 @@ import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 public final class DronePadMenu extends AbstractContainerMenu {
+
     private static final int MACHINE_END = DronePadBlockEntity.SLOT_COUNT;
     private static final int PLAYER_START = MACHINE_END;
     private static final int PLAYER_END = PLAYER_START + Inventory.INVENTORY_SIZE;
     private static final int DATA_COUNT = 3;
+
     private final BlockPos blockPos;
+
     private final Container container;
+
     private final ContainerData data;
 
     public DronePadMenu(int containerId, Inventory inventory, BlockPos blockPos) {
-        this(containerId, inventory, blockPos, new SimpleContainer(DronePadBlockEntity.SLOT_COUNT), new SimpleContainerData(DATA_COUNT));
+        this(containerId, inventory, blockPos, new SimpleContainer(DronePadBlockEntity.SLOT_COUNT),
+                new SimpleContainerData(DATA_COUNT));
     }
 
-    private DronePadMenu(int containerId, Inventory inventory, BlockPos blockPos, Container container, ContainerData data) {
+    private DronePadMenu(int containerId, Inventory inventory, BlockPos blockPos, Container container,
+                         ContainerData data) {
         super(ModMenus.DRONE_PAD.get(), containerId);
 
         checkContainerSize(container, DronePadBlockEntity.SLOT_COUNT);
@@ -44,12 +50,15 @@ public final class DronePadMenu extends AbstractContainerMenu {
         checkContainerDataCount(data, DATA_COUNT);
 
         this.blockPos = blockPos;
+
         this.container = container;
+
         this.data = data;
 
         container.startOpen(inventory.player);
 
         addSlot(new Slot(container, DronePadBlockEntity.PAYLOAD_SLOT, 53, 36) {
+
             @Override
             public boolean mayPlace(@NonNull ItemStack stack) {
                 return stack.getItem() instanceof CardboardBoxItem;
@@ -62,6 +71,7 @@ public final class DronePadMenu extends AbstractContainerMenu {
         });
 
         addSlot(new Slot(container, DronePadBlockEntity.UPGRADE_SLOT, 80, 59) {
+
             @Override
             public boolean mayPlace(@NonNull ItemStack stack) {
                 return stack.getItem() instanceof UpgradeItem;
@@ -73,6 +83,7 @@ public final class DronePadMenu extends AbstractContainerMenu {
             }
         });
         addStandardInventorySlots(inventory, 8, 84);
+
         addDataSlots(data);
     }
 
@@ -128,17 +139,14 @@ public final class DronePadMenu extends AbstractContainerMenu {
             if (!moveItemStackTo(stack, PLAYER_START, PLAYER_END, true)) {
                 return ItemStack.EMPTY;
             }
-
         } else if (stack.getItem() instanceof CardboardBoxItem) {
             if (!moveItemStackTo(stack, DronePadBlockEntity.PAYLOAD_SLOT, DronePadBlockEntity.PAYLOAD_SLOT + 1, false)) {
                 return ItemStack.EMPTY;
             }
-
         } else if (stack.getItem() instanceof UpgradeItem) {
             if (!moveItemStackTo(stack, DronePadBlockEntity.UPGRADE_SLOT, DronePadBlockEntity.UPGRADE_SLOT + 1, false)) {
                 return ItemStack.EMPTY;
             }
-
         } else {
             return ItemStack.EMPTY;
         }
@@ -148,6 +156,7 @@ public final class DronePadMenu extends AbstractContainerMenu {
         } else {
             slot.setChanged();
         }
+
         return original;
     }
 
@@ -163,6 +172,7 @@ public final class DronePadMenu extends AbstractContainerMenu {
     @Override
     public void removed(@NonNull Player player) {
         super.removed(player);
+
         container.stopOpen(player);
     }
 }

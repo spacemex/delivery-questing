@@ -33,34 +33,45 @@ import java.util.Optional;
 import java.util.UUID;
 
 public final class MailboxMenu extends AbstractContainerMenu {
+
     private final BlockPos blockPos;
+
     private final List<MailboxParcelEntry> parcels;
+
     private static final int INBOX_START = 0;
     private static final int INBOX_END = 4;
     private static final int OUTBOX_START = INBOX_END;
     private static final int OUTBOX_END = OUTBOX_START + MailboxBlockEntity.OUTBOX_SIZE;
     private static final int PLAYER_START = OUTBOX_END;
     private static final int PLAYER_END = PLAYER_START + Inventory.INVENTORY_SIZE;
+
     private final Container inbox;
     private final Container outbox;
 
     public MailboxMenu(int containerId, Inventory inventory, BlockPos blockPos, List<MailboxParcelEntry> parcels) {
-        this(containerId, inventory, blockPos, parcels, createInbox(parcels), new SimpleContainer(MailboxBlockEntity.OUTBOX_SIZE));
+        this(containerId, inventory, blockPos, parcels, createInbox(parcels),
+                new SimpleContainer(MailboxBlockEntity.OUTBOX_SIZE));
     }
 
-    private MailboxMenu(int containerId, Inventory inventory, BlockPos blockPos, List<MailboxParcelEntry> parcels, Container inbox, Container outbox) {
+    private MailboxMenu(int containerId, Inventory inventory, BlockPos blockPos, List<MailboxParcelEntry> parcels,
+                        Container inbox, Container outbox) {
         super(ModMenus.MAILBOX.get(), containerId);
 
         checkContainerSize(inbox, 4);
+
         checkContainerSize(outbox, MailboxBlockEntity.OUTBOX_SIZE);
 
         this.blockPos = blockPos;
+
         this.parcels = List.copyOf(parcels);
+
         this.inbox = inbox;
+
         this.outbox = outbox;
 
         for (int i = 0; i < 4; i++) {
             addSlot(new Slot(inbox, i, 8 + i * 18, 46) {
+
                 @Override
                 public boolean mayPlace(@NonNull ItemStack stack) {
                     return false;
@@ -75,6 +86,7 @@ public final class MailboxMenu extends AbstractContainerMenu {
 
         for (int i = 0; i < MailboxBlockEntity.OUTBOX_SIZE; i++) {
             addSlot(new Slot(outbox, i, 98 + i * 18, 46) {
+
                 @Override
                 public boolean mayPlace(ItemStack stack) {
                     return stack.getItem() instanceof DeliveryContainerItem;
@@ -87,12 +99,15 @@ public final class MailboxMenu extends AbstractContainerMenu {
 
     public static MailboxMenu fromNetwork(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
         BlockPos blockPos = buffer.readBlockPos();
+
         List<MailboxParcelEntry> parcels = MailboxParcelEntry.readList(buffer);
+
         return new MailboxMenu(containerId, inventory, blockPos, parcels);
     }
 
     public static void open(ServerPlayer player, BlockPos pos, MailboxBlockEntity mailbox) {
         DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(player.level().getServer());
+
         Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(player.getUUID());
 
         if (optionalGroup.isEmpty()) {
@@ -106,6 +121,7 @@ public final class MailboxMenu extends AbstractContainerMenu {
         }
 
         DeliveryGroup group = optionalGroup.get();
+
         Optional<UUID> boundGroup = mailbox.groupId();
 
         if (boundGroup.isEmpty()) {
@@ -113,10 +129,12 @@ public final class MailboxMenu extends AbstractContainerMenu {
         } else if (!boundGroup.get().equals(group.id())) {
             if (data.getGroup(boundGroup.get()).isPresent()) {
                 player.sendSystemMessage(Component.literal("This mailbox belongs to another delivery group."));
+
                 return;
             }
 
             mailbox.rebindToGroup(group.id());
+
             player.sendSystemMessage(Component.literal("Reclaimed abandoned mailbox for '" + group.name() + "'."));
         }
 
@@ -129,6 +147,7 @@ public final class MailboxMenu extends AbstractContainerMenu {
 
         MenuRegistry.openExtendedMenu(player, provider, buffer -> {
             buffer.writeBlockPos(pos);
+
             MailboxParcelEntry.writeList(buffer, entries);
         });
     }
@@ -174,6 +193,7 @@ public final class MailboxMenu extends AbstractContainerMenu {
             slot.setByPlayer(ItemStack.EMPTY);
         } else {
             slot.setChanged();
+
         }
         return original;
     }
@@ -203,6 +223,7 @@ public final class MailboxMenu extends AbstractContainerMenu {
 
         for (int i = 0; i < Math.min(parcels.size(), 4); i++) {
             MailboxParcelEntry parcel = parcels.get(i);
+
             inbox.setItem(i, createInboxDisplayStack(parcel));
         }
         return inbox;
@@ -259,15 +280,14 @@ public final class MailboxMenu extends AbstractContainerMenu {
             MailboxParcelEntry parcel = parcels.get(inboxIndex);
 
             if (MailboxNetworkHandler.collectParcel(serverPlayer, parcel.id())) {
-
                 inbox.setItem(inboxIndex, ItemStack.EMPTY);
+
                 broadcastChanges();
             }
+
             return;
         }
 
         super.clicked(slotIndex, buttonNum, input, player);
     }
-
-
 }

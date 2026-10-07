@@ -21,9 +21,13 @@ import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 public final class CardboardBoxMenu extends AbstractContainerMenu {
+
     private final BlockPos blockPos;
+
     private final Container container;
+
     private final CardboardBoxTier tier;
+
     private final int boxEnd;
     private final int playerStart;
     private final int playerEnd;
@@ -32,16 +36,22 @@ public final class CardboardBoxMenu extends AbstractContainerMenu {
         this(containerId, inventory, blockPos, tier, new SimpleContainer(tier.slots()));
     }
 
-    private CardboardBoxMenu(int containerId, Inventory inventory, BlockPos blockPos, CardboardBoxTier tier, Container container) {
+    private CardboardBoxMenu(int containerId, Inventory inventory, BlockPos blockPos, CardboardBoxTier tier,
+                             Container container) {
         super(ModMenus.CARDBOARD_BOX.get(), containerId);
 
         checkContainerSize(container, tier.slots());
 
         this.blockPos = blockPos;
+
         this.container = container;
+
         this.tier = tier;
+
         this.boxEnd = tier.slots();
+
         this.playerStart = boxEnd;
+
         this.playerEnd = playerStart + Inventory.INVENTORY_SIZE;
 
         container.startOpen(inventory.player);
@@ -53,20 +63,23 @@ public final class CardboardBoxMenu extends AbstractContainerMenu {
             int column = i % tier.columns();
             int row = i / tier.columns();
 
-            addSlot(
-                    new Slot(container, i, startX + column * 18, startY + row * 18) {
-                        @Override
-                        public boolean mayPlace(@NonNull ItemStack stack) {
-                            return CardboardBoxItem.canStore(stack);
-                        }
-                    });
+            addSlot(new Slot(container, i, startX + column * 18, startY + row * 18) {
+
+                @Override
+                public boolean mayPlace(@NonNull ItemStack stack) {
+                    return CardboardBoxItem.canStore(stack);
+                }
+            });
         }
+
         addStandardInventorySlots(inventory, 8, playerInventoryY());
     }
 
     public static CardboardBoxMenu fromNetwork(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
         BlockPos blockPos = buffer.readBlockPos();
+
         CardboardBoxTier tier = CardboardBoxTier.fromLevel(buffer.readVarInt());
+
         return new CardboardBoxMenu(containerId, inventory, blockPos, tier);
     }
 
@@ -74,10 +87,12 @@ public final class CardboardBoxMenu extends AbstractContainerMenu {
         CardboardBoxTier tier = box.tier();
         SimpleMenuProvider provider = new SimpleMenuProvider((containerId, inventory, menuPlayer) ->
                 new CardboardBoxMenu(containerId, inventory, pos, tier, box),
+
                 Component.translatable("block.delivery_questing.cardboard_box_tier_" + tier.level()));
 
         MenuRegistry.openExtendedMenu(player, provider, buffer -> {
             buffer.writeBlockPos(pos);
+
             buffer.writeVarInt(tier.level());
         });
     }
@@ -109,6 +124,7 @@ public final class CardboardBoxMenu extends AbstractContainerMenu {
     @Override
     public @NonNull ItemStack quickMoveStack(@NonNull Player player, int slotIndex) {
         Slot slot = slots.get(slotIndex);
+
         if (!slot.hasItem()) {
             return ItemStack.EMPTY;
         }
@@ -135,6 +151,7 @@ public final class CardboardBoxMenu extends AbstractContainerMenu {
         } else {
             slot.setChanged();
         }
+
         return original;
     }
 
@@ -158,6 +175,7 @@ public final class CardboardBoxMenu extends AbstractContainerMenu {
     @Override
     public void removed(@NonNull Player player) {
         super.removed(player);
+
         container.stopOpen(player);
     }
 }

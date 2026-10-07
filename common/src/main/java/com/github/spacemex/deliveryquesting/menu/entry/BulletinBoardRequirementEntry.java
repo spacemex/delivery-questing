@@ -1,7 +1,7 @@
 package com.github.spacemex.deliveryquesting.menu.entry;
 
-import com.github.spacemex.deliveryquesting.task.ItemRequirement;
 import com.github.spacemex.deliveryquesting.task.TaskRequirement;
+import com.github.spacemex.deliveryquesting.task.entry.ItemRequirement;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.Identifier;
 
@@ -11,6 +11,7 @@ import java.util.Objects;
 
 public record BulletinBoardRequirementEntry(ItemRequirement.TargetType targetType, Identifier target, long current,
                                             long required) {
+
     private static final int MAX_REQUIREMENTS = 128;
 
     public BulletinBoardRequirementEntry {
@@ -52,8 +53,11 @@ public record BulletinBoardRequirementEntry(ItemRequirement.TargetType targetTyp
 
     public void write(FriendlyByteBuf buffer) {
         buffer.writeEnum(targetType);
+
         buffer.writeUtf(target.toString(), 256);
+
         buffer.writeLong(current);
+
         buffer.writeLong(required);
     }
 
@@ -61,6 +65,7 @@ public record BulletinBoardRequirementEntry(ItemRequirement.TargetType targetTyp
         ItemRequirement.TargetType targetType = buffer.readEnum(ItemRequirement.TargetType.class);
 
         Identifier target = Identifier.parse(buffer.readUtf(256));
+
         long current = buffer.readLong();
         long required = buffer.readLong();
 

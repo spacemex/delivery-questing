@@ -15,7 +15,11 @@ import net.minecraft.world.item.ItemStack;
 import java.util.Optional;
 
 public final class DronePadNetworkHandler {
+
     private static boolean initialized;
+
+    private DronePadNetworkHandler() {
+    }
 
     public static void initialize() {
         if (initialized) {
@@ -24,12 +28,14 @@ public final class DronePadNetworkHandler {
 
         initialized = true;
 
-        NetworkManager.registerReceiver(NetworkManager.Side.C2S, SubmitDroneDeliveryPayload.TYPE, SubmitDroneDeliveryPayload.CODEC, (payload, context) -> {
-            if (!(context.getPlayer() instanceof ServerPlayer player)) {
-                return;
-            }
-            context.queue(() -> handleSubmit(player, payload));
-        });
+        NetworkManager.registerReceiver(NetworkManager.Side.C2S, SubmitDroneDeliveryPayload.TYPE,
+                SubmitDroneDeliveryPayload.CODEC, (payload, context) -> {
+                    if (!(context.getPlayer() instanceof ServerPlayer player)) {
+                        return;
+                    }
+
+                    context.queue(() -> handleSubmit(player, payload));
+                });
     }
 
     private static void handleSubmit(ServerPlayer player, SubmitDroneDeliveryPayload payload) {
@@ -43,6 +49,7 @@ public final class DronePadNetworkHandler {
 
         if (!(player.level().getBlockEntity(payload.pos()) instanceof DronePadBlockEntity pad)) {
             player.closeContainer();
+
             return;
         }
 
@@ -52,10 +59,12 @@ public final class DronePadNetworkHandler {
         }
 
         DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(player.level().getServer());
+
         Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(player.getUUID());
 
         if (optionalGroup.isEmpty()) {
             player.closeContainer();
+
             return;
         }
 
@@ -63,6 +72,7 @@ public final class DronePadNetworkHandler {
 
         if (!pad.groupId().filter(group.id()::equals).isPresent()) {
             player.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.wrong_group"));
+
             player.closeContainer();
             return;
         }
@@ -75,6 +85,7 @@ public final class DronePadNetworkHandler {
 
         if (boxItem.getContents(boxStack).isEmpty()) {
             player.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.empty_box"));
+
             return;
         }
 
@@ -89,10 +100,14 @@ public final class DronePadNetworkHandler {
 
         if (!drone.isIdle()) {
             if (!drone.isFullyCharged()) {
-                player.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.charging", drone.getEnergy(), DroneEntity.ENERGY_CAPACITY));
+                player.sendSystemMessage
+                        (Component.translatable("message.delivery_questing.drone_pad.charging", drone.getEnergy(),
+                                DroneEntity.ENERGY_CAPACITY));
+
                 return;
             }
             player.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.busy"));
+
             return;
         }
 
@@ -101,11 +116,14 @@ public final class DronePadNetworkHandler {
 
         if (!drone.launch(payloadStack)) {
             pad.setItem(0, payloadStack);
+
             player.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.busy"));
+
             return;
         }
 
         player.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.launched"));
+
         player.closeContainer();
     }
 }

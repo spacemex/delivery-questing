@@ -1,6 +1,7 @@
-package com.github.spacemex.deliveryquesting.task;
+package com.github.spacemex.deliveryquesting.task.manager;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.task.definition.OfferDefinition;
 import com.google.gson.*;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.platform.Platform;
@@ -13,15 +14,22 @@ import java.nio.file.Path;
 import java.util.*;
 
 public final class OfferManager {
+
     private static final String OFFER_FILE = "DeliveryQuesting/offers.json";
+
     private static boolean initialized;
+
     private static volatile Map<Identifier, OfferDefinition> offers = Map.of();
+
+    private OfferManager() {}
 
     public static void initialize() {
         if (initialized) {
             return;
         }
+
         initialized = true;
+
         LifecycleEvent.SERVER_STARTING.register(server -> reload());
     }
 
@@ -30,12 +38,14 @@ public final class OfferManager {
 
         if (!Files.exists(file)) {
             offers = Map.of();
+
             DeliveryQuesting.LOGGER.info("No Delivery Questing offers file found at {}", file);
             return;
         }
 
         try (Reader reader = Files.newBufferedReader(file)) {
             JsonElement root = JsonParser.parseReader(reader);
+
             JsonArray array;
 
             if (root.isJsonArray()) {
@@ -69,6 +79,7 @@ public final class OfferManager {
             }
 
             offers = Collections.unmodifiableMap(loaded);
+
             DeliveryQuesting.LOGGER.info("Loaded {} Delivery Questing offer(s)", offers.size());
         } catch (IOException | JsonParseException exception) {
             throw new RuntimeException("Failed to load Delivery Questing offers", exception);
@@ -78,9 +89,12 @@ public final class OfferManager {
     private static OfferDefinition parse(Path source, JsonObject object) {
         Identifier id = parseIdentifier(source, "id", requiredString(source, object, "id"));
         Identifier item = parseIdentifier(source, "item", requiredString(source, object, "item"));
+
         int count = optionalInt(object, "count", 1);
-        long price = requiredLong(source, object, "price");
         int minLevel = optionalInt(object, "min_level", 0);
+
+        long price = requiredLong(source, object, "price");
+
         boolean forEveryMember = optionalBoolean(object, "for_every_member", false);
 
         return new OfferDefinition(id, item, count, price, minLevel, forEveryMember);
@@ -94,19 +108,14 @@ public final class OfferManager {
         return Optional.ofNullable(offers.get(id));
     }
 
-    public static boolean contains(
-            Identifier id
-    ) {
-        return offers.containsKey(
-                id
-        );
+    public static boolean contains(Identifier id) {
+        return offers.containsKey(id);
     }
 
     private static Identifier parseIdentifier(Path source, String field, String value) {
         int separator = value.indexOf(':');
 
         if (separator <= 0 || separator == value.length() - 1) {
-
             throw error(source, "'" + field + "' must use a namespaced identifier: " + value);
         }
 

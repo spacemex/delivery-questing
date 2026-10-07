@@ -5,7 +5,7 @@ import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
 import com.github.spacemex.deliveryquesting.registry.ModBlocks;
 import com.github.spacemex.deliveryquesting.registry.ModMenus;
-import com.github.spacemex.deliveryquesting.task.TaskManager;
+import com.github.spacemex.deliveryquesting.task.manager.TaskManager;
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -24,38 +24,53 @@ import java.util.List;
 import java.util.Optional;
 
 public final class BulletinBoardMenu extends AbstractContainerMenu {
+
     private final BlockPos blockPos;
+
     private final List<BulletinBoardTaskEntry> availableTasks;
     private final List<BulletinBoardTaskEntry> activeTasks;
+
     private final double groupLevel;
 
-    public BulletinBoardMenu(int containerId, Inventory inventory, BlockPos blockPos, double groupLevel, List<BulletinBoardTaskEntry> availableTasks, List<BulletinBoardTaskEntry> activeTasks) {
+    public BulletinBoardMenu(int containerId, Inventory inventory, BlockPos blockPos, double groupLevel,
+                             List<BulletinBoardTaskEntry> availableTasks, List<BulletinBoardTaskEntry> activeTasks) {
         super(ModMenus.BULLETIN_BOARD.get(), containerId);
 
         this.blockPos = blockPos;
+
         this.groupLevel = groupLevel;
+
         this.availableTasks = List.copyOf(availableTasks);
+
         this.activeTasks = List.copyOf(activeTasks);
     }
 
     public static BulletinBoardMenu fromNetwork(int containerId, Inventory inventory, FriendlyByteBuf buffer) {
         BlockPos blockPos = buffer.readBlockPos();
+
         double groupLevel = buffer.readDouble();
+
         List<BulletinBoardTaskEntry> availableTasks = BulletinBoardTaskEntry.readList(buffer);
+
         List<BulletinBoardTaskEntry> activeTasks = BulletinBoardTaskEntry.readList(buffer);
+
         return new BulletinBoardMenu(containerId, inventory, blockPos, groupLevel, availableTasks, activeTasks);
     }
 
     public static void open(ServerPlayer player, BlockPos pos) {
         DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(player.level().getServer());
+
         Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(player.getUUID());
 
         if (optionalGroup.isEmpty()) {
-            player.sendSystemMessage(Component.literal("You must be in a delivery group to use the bulletin board."));
+            player.sendSystemMessage
+                    (Component.literal("You must be in a delivery group to use the bulletin board."));
+
             return;
         }
 
         DeliveryGroup group = optionalGroup.get();
+
         List<BulletinBoardTaskEntry> availableEntries = createAvailableEntries(group);
         List<BulletinBoardTaskEntry> activeEntries = createActiveEntries(group);
 
@@ -67,8 +82,11 @@ public final class BulletinBoardMenu extends AbstractContainerMenu {
 
         MenuRegistry.openExtendedMenu(player, provider, buffer -> {
             buffer.writeBlockPos(pos);
+
             buffer.writeDouble(groupLevel);
+
             BulletinBoardTaskEntry.writeList(buffer, availableEntries);
+
             BulletinBoardTaskEntry.writeList(buffer, activeEntries);
         });
     }
@@ -92,18 +110,15 @@ public final class BulletinBoardMenu extends AbstractContainerMenu {
         return blockPos;
     }
 
-    public List<BulletinBoardTaskEntry>
-    availableTasks() {
+    public List<BulletinBoardTaskEntry> availableTasks() {
         return availableTasks;
     }
 
-    public List<BulletinBoardTaskEntry>
-    activeTasks() {
+    public List<BulletinBoardTaskEntry> activeTasks() {
         return activeTasks;
     }
 
-    public boolean hasAvailableTask(
-            Identifier taskId) {
+    public boolean hasAvailableTask(Identifier taskId) {
         return availableTasks.stream().anyMatch(task -> task.id().equals(taskId));
     }
 

@@ -10,6 +10,9 @@ import dev.architectury.registry.client.level.entity.EntityRendererRegistry;
 public final class DeliveryQuestingClient {
     private static boolean initialized = false;
 
+    private DeliveryQuestingClient() {
+    }
+
     public static void initialize() {
         if (initialized) {
             return;

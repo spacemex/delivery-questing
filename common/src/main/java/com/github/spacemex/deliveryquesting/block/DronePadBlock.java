@@ -36,7 +36,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 public final class DronePadBlock extends BaseEntityBlock {
+
     public static final EnumProperty<Direction> FACING;
+
     private static final Map<Direction, VoxelShape> SHAPES = Map.of(
             Direction.NORTH, Shapes.or(
                     Block.box(0D, 0D, 0D, 16D, 1D, 16D),
@@ -66,6 +68,7 @@ public final class DronePadBlock extends BaseEntityBlock {
 
     public DronePadBlock(Properties properties) {
         super(properties);
+
         registerDefaultState(defaultBlockState().setValue(FACING, Direction.NORTH));
     }
 
@@ -85,55 +88,70 @@ public final class DronePadBlock extends BaseEntityBlock {
     }
 
     @Override
-    public void setPlacedBy(@NonNull Level level, @NonNull BlockPos pos, @NonNull BlockState state, @Nullable LivingEntity placer, @NonNull ItemStack stack) {
+    public void setPlacedBy(@NonNull Level level, @NonNull BlockPos pos, @NonNull BlockState state,
+                            @Nullable LivingEntity placer, @NonNull ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
 
-        if (level.isClientSide() || !(placer instanceof ServerPlayer player) || !(level.getBlockEntity(pos) instanceof DronePadBlockEntity pad)) {
+        if (level.isClientSide() || !(placer instanceof ServerPlayer player) || !(level.getBlockEntity(pos)
+                instanceof DronePadBlockEntity pad)) {
             return;
         }
         DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(player.level().getServer());
+
         data.getGroupForPlayer(player.getUUID()).ifPresent(group -> pad.bindToGroup(group.id()));
     }
 
     @Override
-    protected @NonNull InteractionResult useWithoutItem(@NonNull BlockState state, @NonNull Level level, @NonNull BlockPos pos, @NonNull Player player, @NonNull BlockHitResult hitResult) {
+    protected @NonNull InteractionResult useWithoutItem(@NonNull BlockState state, @NonNull Level level,
+                                                        @NonNull BlockPos pos, @NonNull Player player,
+                                                        @NonNull BlockHitResult hitResult) {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
 
-        if (!(player instanceof ServerPlayer serverPlayer) || !(level.getBlockEntity(pos) instanceof DronePadBlockEntity pad)) {
+        if (!(player instanceof ServerPlayer serverPlayer) || !(level.getBlockEntity(pos)
+                instanceof DronePadBlockEntity pad)) {
             return InteractionResult.SUCCESS_SERVER;
         }
 
         DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(serverPlayer.level().getServer());
+
         Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(serverPlayer.getUUID());
 
         if (optionalGroup.isEmpty()) {
             serverPlayer.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.no_group"));
+
             return InteractionResult.SUCCESS_SERVER;
         }
 
         DeliveryGroup group = optionalGroup.get();
+
         Optional<UUID> boundGroup = pad.groupId();
+
         if (boundGroup.isEmpty()) {
             pad.bindToGroup(group.id());
         } else if (!boundGroup.get().equals(group.id())) {
-
             if (data.getGroup(boundGroup.get()).isPresent()) {
 
-                serverPlayer.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.wrong_group"));
+                serverPlayer.sendSystemMessage(
+                        Component.translatable("message.delivery_questing.drone_pad.wrong_group"));
+
                 return InteractionResult.SUCCESS_SERVER;
             }
 
             pad.rebindToGroup(group.id());
-            serverPlayer.sendSystemMessage(Component.literal("Reclaimed abandoned Drone Pad for '" + group.name() + "'."));
+
+            serverPlayer.sendSystemMessage(Component.literal("Reclaimed abandoned Drone Pad for '"
+                    + group.name() + "'."));
         }
 
         if (!pad.isSkyFree()) {
             serverPlayer.sendSystemMessage(Component.translatable("message.delivery_questing.drone_pad.no_sky"));
+
             return InteractionResult.SUCCESS_SERVER;
         }
         DronePadMenu.open(serverPlayer, pos, pad);
+
         return InteractionResult.SUCCESS_SERVER;
     }
 
@@ -161,11 +179,13 @@ public final class DronePadBlock extends BaseEntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.@NonNull Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
+
         builder.add(FACING);
     }
 
     @Override
-    protected @NonNull VoxelShape getShape(BlockState state, @NonNull BlockGetter level, @NonNull BlockPos pos, @NonNull CollisionContext context) {
+    protected @NonNull VoxelShape getShape(BlockState state, @NonNull BlockGetter level,
+                                           @NonNull BlockPos pos, @NonNull CollisionContext context) {
         return SHAPES.getOrDefault(state.getValue(FACING), SHAPES.get(Direction.NORTH));
     }
 

@@ -4,8 +4,8 @@ import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
 import com.github.spacemex.deliveryquesting.progression.TaskProgress;
 import com.github.spacemex.deliveryquesting.progression.TaskRuntimeManager;
-import com.github.spacemex.deliveryquesting.task.TaskDefinition;
-import com.github.spacemex.deliveryquesting.task.TaskManager;
+import com.github.spacemex.deliveryquesting.task.definition.TaskDefinition;
+import com.github.spacemex.deliveryquesting.task.manager.TaskManager;
 import com.github.spacemex.deliveryquesting.task.TaskRequirement;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -25,6 +25,7 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+// TODO: Remake Entire Command
 public final class TaskCommand {
     private static boolean initialized;
 

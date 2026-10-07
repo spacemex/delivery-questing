@@ -11,7 +11,10 @@ import org.jspecify.annotations.NonNull;
 import java.util.UUID;
 
 public record AcceptEmailJobPayload(UUID emailId) implements CustomPacketPayload {
-    public static final Type<AcceptEmailJobPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "accept_email_job"));
+
+    public static final Type<AcceptEmailJobPayload> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "accept_email_job"));
+
     public static final StreamCodec<ByteBuf, AcceptEmailJobPayload> CODEC =
             UUIDUtil.STREAM_CODEC.map(AcceptEmailJobPayload::new, AcceptEmailJobPayload::emailId);
 

@@ -17,29 +17,22 @@ public record SyncPayload(String json) implements CustomPacketPayload {
 
     private static final Gson GSON = new Gson();
 
-    public static final Type<SyncPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "sync_config"));
+    public static final Type<SyncPayload> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(MOD_ID, "sync_config"));
 
     public static final StreamCodec<? super RegistryFriendlyByteBuf, SyncPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8,
             SyncPayload::json,
-            SyncPayload::new
-    );
+            SyncPayload::new);
 
-    /**
-     * Convenience constructor.
-     * <p>
-     * Converts the config map into valid JSON before transmission.
-     */
     public SyncPayload(Map<String, Object> config) {
         this(GSON.toJson(config));
     }
 
-    /**
-     * Converts the received JSON back into a config map.
-     */
     @SuppressWarnings("unchecked")
     public Map<String, Object> config() {
         Map<String, Object> result = GSON.fromJson(json, HashMap.class);
+
         return result != null ? result : new HashMap<>();
     }
 

@@ -8,12 +8,14 @@ import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;
 
 public record BuyOfferPayload(Identifier offerId) implements CustomPacketPayload {
-    public static final Type<BuyOfferPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "buy_offer"));
+
+    public static final Type<BuyOfferPayload> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "buy_offer"));
+
     public static final StreamCodec<RegistryFriendlyByteBuf, BuyOfferPayload> CODEC = StreamCodec.composite(
             Identifier.STREAM_CODEC,
             BuyOfferPayload::offerId,
-            BuyOfferPayload::new
-    );
+            BuyOfferPayload::new);
 
     @Override
     public @NonNull Type<? extends CustomPacketPayload> type() {

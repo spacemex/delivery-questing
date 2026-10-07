@@ -13,12 +13,16 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 public final class ModItems {
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.ITEM);
+
+    private ModItems() {}
+
+    private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.ITEM);
 
     public static final RegistrySupplier<BlockItem> BULLETIN_BOARD;
     public static final RegistrySupplier<BlockItem> MAILBOX;
@@ -74,6 +78,8 @@ public final class ModItems {
         return register(name, p -> p.stacksTo(1), p -> new DeliveryContainerItem(p, capacity));
     }
 
+    @ApiStatus.Experimental
+    @SuppressWarnings("all")
     private static <T extends Item> RegistrySupplier<T> register(String name, UnaryOperator<Item.Properties> properties, Function<Item.Properties, T> factory) {
         return ITEMS.register(name, () -> factory.apply(properties.apply(new Item.Properties()).arch$tab(ModCreativeModeTabs.DELIVERY_TAB).setId(key(name))));
     }

@@ -1,8 +1,8 @@
 package com.github.spacemex.deliveryquesting.progression;
 
 import com.github.spacemex.deliveryquesting.job.JobDefinition;
-import com.github.spacemex.deliveryquesting.task.OfferDefinition;
-import com.github.spacemex.deliveryquesting.task.TaskDefinition;
+import com.github.spacemex.deliveryquesting.task.definition.OfferDefinition;
+import com.github.spacemex.deliveryquesting.task.definition.TaskDefinition;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.UUIDUtil;
@@ -13,24 +13,37 @@ import java.util.Objects;
 import java.util.UUID;
 
 public final class GroupEmail {
-    private static final Codec<Type> TYPE_CODEC = Codec.STRING.xmap(value -> Type.valueOf(value.toUpperCase(Locale.ROOT)),
-            type -> type.name().toLowerCase(Locale.ROOT));
-    public static final Codec<GroupEmail> CODEC =
-            RecordCodecBuilder.create(instance -> instance.group(
-                            UUIDUtil.CODEC.fieldOf("id").forGetter(GroupEmail::id),
-                            TYPE_CODEC.fieldOf("type").forGetter(GroupEmail::type),
-                            Identifier.CODEC.fieldOf("reference_id").forGetter(GroupEmail::referenceId),
-                            Codec.BOOL.optionalFieldOf("read", false).forGetter(GroupEmail::read))
+
+    private static final Codec<Type> TYPE_CODEC = Codec.STRING.xmap(value ->
+            Type.valueOf(value.toUpperCase(Locale.ROOT)), type -> type.name().toLowerCase(Locale.ROOT));
+
+    public static final Codec<GroupEmail> CODEC = RecordCodecBuilder.create(instance ->
+            instance.group(
+                            UUIDUtil.CODEC.fieldOf("id")
+                                    .forGetter(GroupEmail::id),
+                            TYPE_CODEC.fieldOf("type")
+                                    .forGetter(GroupEmail::type),
+                            Identifier.CODEC.fieldOf("reference_id")
+                                    .forGetter(GroupEmail::referenceId),
+                            Codec.BOOL.optionalFieldOf("read", false)
+                                    .forGetter(GroupEmail::read))
                     .apply(instance, GroupEmail::new));
+
     private final UUID id;
+
     private final Type type;
+
     private final Identifier referenceId;
+
     private boolean read;
 
     private GroupEmail(UUID id, Type type, Identifier referenceId, boolean read) {
         this.id = Objects.requireNonNull(id, "id");
+
         this.type = Objects.requireNonNull(type, "type");
+
         this.referenceId = Objects.requireNonNull(referenceId, "referenceId");
+
         this.read = read;
     }
 
@@ -68,6 +81,7 @@ public final class GroupEmail {
         }
 
         read = true;
+
         return true;
     }
 

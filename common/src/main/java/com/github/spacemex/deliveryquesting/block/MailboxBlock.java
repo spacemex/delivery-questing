@@ -24,12 +24,16 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 public final class MailboxBlock extends BaseEntityBlock {
+
     public static final EnumProperty<Direction> FACING;
+
     public static final BooleanProperty NEW_MAIL;
 
     public MailboxBlock(Properties properties) {
         super(properties);
-        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH).setValue(NEW_MAIL, false));
+
+        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH)
+                .setValue(NEW_MAIL, false));
     }
 
     @Override
@@ -48,15 +52,21 @@ public final class MailboxBlock extends BaseEntityBlock {
     }
 
     @Override
-    public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NonNull Level level, @NonNull BlockState blockState, @NonNull BlockEntityType<T> type) {
+    public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NonNull Level level,
+                                                                            @NonNull BlockState blockState,
+                                                                            @NonNull BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.MAILBOX.get(), MailboxBlockEntity::tick);
     }
 
     @Override
-    protected @NonNull InteractionResult useWithoutItem(@NonNull BlockState state, @NonNull Level level, @NonNull BlockPos pos, @NonNull Player player, @NonNull BlockHitResult hitResult) {
-        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer && level.getBlockEntity(pos) instanceof MailboxBlockEntity mailbox) {
+    protected @NonNull InteractionResult useWithoutItem(@NonNull BlockState state, @NonNull Level level,
+                                                        @NonNull BlockPos pos, @NonNull Player player,
+                                                        @NonNull BlockHitResult hitResult) {
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer
+                && level.getBlockEntity(pos) instanceof MailboxBlockEntity mailbox) {
             MailboxMenu.open(serverPlayer, pos, mailbox);
         }
+
         return InteractionResult.SUCCESS;
     }
 
@@ -76,7 +86,7 @@ public final class MailboxBlock extends BaseEntityBlock {
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(StateDefinition.@NonNull Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
         builder.add(FACING, NEW_MAIL);
     }

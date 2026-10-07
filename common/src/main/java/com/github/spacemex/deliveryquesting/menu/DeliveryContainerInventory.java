@@ -6,7 +6,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 
 public final class DeliveryContainerInventory extends SimpleContainer {
+
     private final ItemStack containerStack;
+
     private final int capacity;
 
     public DeliveryContainerInventory(ItemStack containerStack, int capacity) {
@@ -15,7 +17,8 @@ public final class DeliveryContainerInventory extends SimpleContainer {
         this.containerStack = containerStack;
         this.capacity = capacity;
 
-        ItemContainerContents contents = containerStack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
+        ItemContainerContents contents = containerStack.getOrDefault(DataComponents.CONTAINER,
+                ItemContainerContents.EMPTY);
 
         contents.copyInto(getItems());
 
@@ -24,9 +27,11 @@ public final class DeliveryContainerInventory extends SimpleContainer {
         if (!content.isEmpty() && content.getCount() > capacity) {
 
             content = content.copy();
+
             content.setCount(capacity);
 
             super.setItem(0, content);
+
             setChanged();
         }
     }
@@ -45,6 +50,7 @@ public final class DeliveryContainerInventory extends SimpleContainer {
     @Override
     public void setChanged() {
         super.setChanged();
+
         containerStack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(getItems()));
     }
 }

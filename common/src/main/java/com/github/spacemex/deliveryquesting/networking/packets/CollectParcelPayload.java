@@ -11,7 +11,10 @@ import org.jspecify.annotations.NonNull;
 import java.util.UUID;
 
 public record CollectParcelPayload(UUID parcelId) implements CustomPacketPayload {
-    public static final Type<CollectParcelPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "collect_parcel"));
+
+    public static final Type<CollectParcelPayload> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "collect_parcel"));
+
     public static final StreamCodec<ByteBuf, CollectParcelPayload> CODEC =
             UUIDUtil.STREAM_CODEC.map(CollectParcelPayload::new, CollectParcelPayload::parcelId);
 

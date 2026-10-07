@@ -14,7 +14,10 @@ import net.minecraft.world.entity.MobCategory;
 import java.util.function.UnaryOperator;
 
 public final class ModEntities {
-    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.ENTITY_TYPE);
+
+    private ModEntities() {}
+
+    private static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.ENTITY_TYPE);
 
     public static final RegistrySupplier<EntityType<DroneEntity>> DRONE;
 

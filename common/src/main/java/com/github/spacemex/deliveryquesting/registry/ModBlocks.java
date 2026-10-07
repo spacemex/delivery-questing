@@ -16,7 +16,10 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 public final class ModBlocks {
-    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.BLOCK);
+
+    private ModBlocks() {}
+
+    private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.BLOCK);
 
     public static final RegistrySupplier<BulletinBoardBlock> BULLETIN_BOARD;
     public static final RegistrySupplier<MailboxBlock> MAILBOX;

@@ -1,5 +1,7 @@
-package com.github.spacemex.deliveryquesting.task;
+package com.github.spacemex.deliveryquesting.task.definition;
 
+import com.github.spacemex.deliveryquesting.task.TaskRequirement;
+import com.github.spacemex.deliveryquesting.task.entry.TaskRewards;
 import net.minecraft.resources.Identifier;
 
 import java.util.HashSet;
@@ -29,6 +31,7 @@ public record TaskDefinition(Identifier id, String name, String description, Con
         }
 
         dependencies = List.copyOf(dependencies);
+
         requirements = List.copyOf(requirements);
 
         validateRequirementKeys(id, requirements);

@@ -3,7 +3,14 @@ package com.github.spacemex.deliveryquesting.progression;
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.job.JobDefinition;
 import com.github.spacemex.deliveryquesting.job.JobManager;
-import com.github.spacemex.deliveryquesting.task.*;
+import com.github.spacemex.deliveryquesting.progression.entry.MailboxParcel;
+import com.github.spacemex.deliveryquesting.progression.entry.PhysicalContractReservation;
+import com.github.spacemex.deliveryquesting.task.TaskRequirement;
+import com.github.spacemex.deliveryquesting.task.definition.OfferDefinition;
+import com.github.spacemex.deliveryquesting.task.definition.TaskDefinition;
+import com.github.spacemex.deliveryquesting.task.entry.ItemReward;
+import com.github.spacemex.deliveryquesting.task.manager.OfferManager;
+import com.github.spacemex.deliveryquesting.task.manager.TaskManager;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.UUIDUtil;
@@ -21,34 +28,41 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @SuppressWarnings("all")
 public final class DeliveryQuestingSavedData extends SavedData {
-    public static final Codec<DeliveryQuestingSavedData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                    DeliveryGroup.CODEC.listOf().optionalFieldOf("groups", List.of())
-                            .forGetter(data -> List.copyOf(data.groups.values())),
-                    UUIDUtil.CODEC.listOf().optionalFieldOf("starter_kits_delivered", List.of())
-                            .forGetter(data -> List.copyOf(data.starterKitsDelivered)),
-                    PhysicalContractReservation.CODEC.listOf().optionalFieldOf("outstanding_physical_contracts", List.of())
-                            .forGetter(data -> List.copyOf(data.outstandingPhysicalContracts.values())))
-            .apply(instance, DeliveryQuestingSavedData::new)
-    );
+    public static final Codec<DeliveryQuestingSavedData> CODEC = RecordCodecBuilder.
+            create(instance -> instance.group(
+                            DeliveryGroup.CODEC.listOf().optionalFieldOf("groups", List.of())
+                                    .forGetter(data -> List.copyOf(data.groups.values())),
+                            UUIDUtil.CODEC.listOf().optionalFieldOf("starter_kits_delivered", List.of())
+                                    .forGetter(data -> List.copyOf(data.starterKitsDelivered)),
+                            PhysicalContractReservation.CODEC.listOf().
+                                    optionalFieldOf("outstanding_physical_contracts", List.of())
+                                    .forGetter(data ->
+                                            List.copyOf(data.outstandingPhysicalContracts.values())))
+                    .apply(instance, DeliveryQuestingSavedData::new));
+
     private static final SavedDataType<DeliveryQuestingSavedData> TYPE = new SavedDataType<>(
             Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "progression"),
-            DeliveryQuestingSavedData::new,
-            CODEC,
-            DataFixTypes.SAVED_DATA_COMMAND_STORAGE
-    );
+            DeliveryQuestingSavedData::new, CODEC, DataFixTypes.SAVED_DATA_COMMAND_STORAGE);
+
     private static final Identifier ENVELOPE_ITEM = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "envelope");
     private static final Identifier PARCEL_ITEM = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "parcel");
+
     private static final int STARTER_ENVELOPES = 8;
     private static final int STARTER_PARCELS = 4;
+
     private final Map<UUID, DeliveryGroup> groups = new LinkedHashMap<>();
+
     private final Set<UUID> starterKitsDelivered = new LinkedHashSet<>();
+
     private final Map<UUID, PhysicalContractReservation> outstandingPhysicalContracts = new LinkedHashMap<>();
+
     private static final long PHYSICAL_CONTRACT_REISSUE_TICKS = 24000L;
 
     private DeliveryQuestingSavedData() {
     }
 
-    private DeliveryQuestingSavedData(List<DeliveryGroup> loadedGroups, List<UUID> starterKitsDelivered, List<PhysicalContractReservation> physicalContracts) {
+    private DeliveryQuestingSavedData(List<DeliveryGroup> loadedGroups, List<UUID> starterKitsDelivered,
+                                      List<PhysicalContractReservation> physicalContracts) {
         Objects.requireNonNull(loadedGroups, "loadedGroups");
         Objects.requireNonNull(starterKitsDelivered, "starterKitsDelivered");
         Objects.requireNonNull(physicalContracts, "physicalContracts");
@@ -62,6 +76,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         this.starterKitsDelivered.addAll(starterKitsDelivered);
+
         this.starterKitsDelivered.retainAll(groups.keySet());
 
         for (PhysicalContractReservation reservation : physicalContracts) {
@@ -69,10 +84,12 @@ public final class DeliveryQuestingSavedData extends SavedData {
                 continue;
             }
 
-            PhysicalContractReservation existing = outstandingPhysicalContracts.putIfAbsent(reservation.groupId(), reservation);
+            PhysicalContractReservation existing = outstandingPhysicalContracts.
+                    putIfAbsent(reservation.groupId(), reservation);
 
             if (existing != null) {
-                throw new IllegalArgumentException("Group " + reservation.groupId() + " contains multiple outstanding physical contracts");
+                throw new IllegalArgumentException("Group " + reservation.groupId()
+                        + " contains multiple outstanding physical contracts");
             }
         }
 
@@ -81,6 +98,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
 
     public static DeliveryQuestingSavedData get(MinecraftServer server) {
         Objects.requireNonNull(server, "server");
+
         return server.getDataStorage().computeIfAbsent(TYPE);
     }
 
@@ -111,6 +129,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
     public DeliveryGroup createGroup(String name, UUID owner) {
         Objects.requireNonNull(name, "name");
         Objects.requireNonNull(owner, "owner");
+
         String trimmedName = name.trim();
 
         if (trimmedName.isEmpty()) {
@@ -126,6 +145,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         UUID id = UUID.randomUUID();
+
         DeliveryGroup group = DeliveryGroup.create(id, trimmedName, owner);
 
         ProgressionManager.reconcileGroup(group);
@@ -137,6 +157,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         clearInvitationsForPlayer(owner);
 
         setDirty();
+
         return group;
     }
 
@@ -148,9 +169,11 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         starterKitsDelivered.remove(groupId);
+
         outstandingPhysicalContracts.remove(groupId);
 
         setDirty();
+
         return true;
     }
 
@@ -172,6 +195,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         outstandingPhysicalContracts.remove(groupId);
 
         setDirty();
+
         return true;
     }
 
@@ -195,6 +219,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         clearInvitationsForPlayer(playerId);
 
         setDirty();
+
         return true;
     }
 
@@ -210,6 +235,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         setDirty();
+
         return true;
     }
 
@@ -229,9 +255,11 @@ public final class DeliveryQuestingSavedData extends SavedData {
         group.addExperience(amount);
 
         int currentLevel = group.wholeLevel();
+
         ProgressionManager.processLevelChange(group, previousLevel, currentLevel);
 
         setDirty();
+
         return true;
     }
 
@@ -249,6 +277,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         group.addBalance(amount);
 
         setDirty();
+
         return true;
     }
 
@@ -264,6 +293,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         setDirty();
+
         return true;
     }
 
@@ -279,6 +309,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         setDirty();
+
         return true;
     }
 
@@ -304,6 +335,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         if (accepted > 0L) {
             setDirty();
         }
+
         return accepted;
     }
 
@@ -340,10 +372,12 @@ public final class DeliveryQuestingSavedData extends SavedData {
 
         if (!task.rewards().items().isEmpty()) {
             MailboxParcel parcel = MailboxParcel.create(task.contractor().name(), task.rewards().items());
+
             group.addMailboxParcel(parcel);
         }
 
         setDirty();
+
         return true;
     }
 
@@ -370,6 +404,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
 
     public boolean invitePlayer(UUID groupId, UUID playerId) {
         Objects.requireNonNull(playerId, "playerId");
+
         DeliveryGroup group = groups.get(groupId);
 
         if (group == null) {
@@ -385,6 +420,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         setDirty();
+
         return true;
     }
 
@@ -410,6 +446,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         clearInvitationsForPlayer(playerId);
 
         setDirty();
+
         return true;
     }
 
@@ -425,6 +462,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         setDirty();
+
         return true;
     }
 
@@ -444,6 +482,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         setDirty();
+
         return true;
     }
 
@@ -464,8 +503,10 @@ public final class DeliveryQuestingSavedData extends SavedData {
             if (reservation != null) {
                 Identifier physicalTask = reservation.taskId();
 
-                if (group.computerUnlocked() || !TaskManager.contains(physicalTask) || group.hasActiveTask(physicalTask) || group.hasCompletedTask(physicalTask)) {
+                if (group.computerUnlocked() || !TaskManager.contains(physicalTask) || group.hasActiveTask(physicalTask)
+                        || group.hasCompletedTask(physicalTask)) {
                     outstandingPhysicalContracts.remove(group.id());
+
                     changed = true;
                 }
             }
@@ -474,7 +515,9 @@ public final class DeliveryQuestingSavedData extends SavedData {
                 Optional<Identifier> physicalContract = findPhysicalContractInMailbox(group);
 
                 if (physicalContract.isPresent()) {
-                    outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(), physicalContract.get(), -1L));
+                    outstandingPhysicalContracts.put(group.id(),
+                            new PhysicalContractReservation(group.id(), physicalContract.get(), -1L));
+
                     changed = true;
                 }
             }
@@ -497,6 +540,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         setDirty();
+
         return true;
     }
 
@@ -544,6 +588,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         setDirty();
+
         return true;
     }
 
@@ -577,13 +622,15 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         List<JobDefinition> possibleJobs = JobManager.getJobs().stream().filter(job ->
-                JobRuntimeManager.getAcceptanceFailure(group, job).isEmpty()).filter(job -> !group.hasJobEmail(job.id())).toList();
+                JobRuntimeManager.getAcceptanceFailure(group, job).isEmpty()).filter(job ->
+                !group.hasJobEmail(job.id())).toList();
 
         if (possibleJobs.isEmpty()) {
             return Optional.empty();
         }
 
         JobDefinition job = possibleJobs.get(ThreadLocalRandom.current().nextInt(possibleJobs.size()));
+
         GroupEmail email = GroupEmail.job(job);
 
         if (!group.addEmail(email)) {
@@ -591,6 +638,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         setDirty();
+
         return Optional.of(email);
     }
 
@@ -620,6 +668,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         TaskDefinition task = possibleTasks.get(ThreadLocalRandom.current().nextInt(possibleTasks.size()));
+
         GroupEmail email = GroupEmail.contract(task);
 
         if (!group.addEmail(email)) {
@@ -627,6 +676,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         setDirty();
+
         return Optional.of(email);
     }
 
@@ -648,7 +698,8 @@ public final class DeliveryQuestingSavedData extends SavedData {
         for (DeliveryGroup group : groups.values()) {
             for (UUID member : group.members()) {
                 if (!seenPlayers.add(member)) {
-                    throw new IllegalStateException("Player " + member + " belongs to multiple Delivery Questing groups");
+                    throw new IllegalStateException("Player " + member +
+                            " belongs to multiple Delivery Questing groups");
                 }
             }
         }
@@ -676,15 +727,18 @@ public final class DeliveryQuestingSavedData extends SavedData {
         OfferDefinition offer = optionalOffer.get();
 
         if (!group.computerUnlocked()) {
-            return new PurchaseResult(false, "Your group has not unlocked the Computer.", group.balance());
+            return new PurchaseResult(false, "Your group has not unlocked the Computer.",
+                    group.balance());
         }
 
         if (group.wholeLevel() < offer.minLevel()) {
-            return new PurchaseResult(false, "That offer requires delivery level " + offer.minLevel() + ".", group.balance());
+            return new PurchaseResult(false, "That offer requires delivery level " + offer.minLevel()
+                    + ".", group.balance());
         }
 
         if (group.balance() < offer.price()) {
-            return new PurchaseResult(false, "Your group does not have enough money.", group.balance());
+            return new PurchaseResult(false, "Your group does not have enough money.",
+                    group.balance());
         }
 
         Item item = BuiltInRegistries.ITEM.getValue(offer.item());
@@ -694,11 +748,11 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         int multiplier = offer.forEveryMember() ? group.members().size() : 1;
+
         long totalCount;
 
         try {
             totalCount = Math.multiplyExact((long) offer.count(), multiplier);
-
         } catch (ArithmeticException exception) {
             return new PurchaseResult(false, "The resulting order is too large.", group.balance());
         }
@@ -711,13 +765,15 @@ public final class DeliveryQuestingSavedData extends SavedData {
             return new PurchaseResult(false, "Failed to charge the group balance.", group.balance());
         }
 
-        MailboxParcel parcel = MailboxParcel.create("Minazon", List.of(new ItemReward(offer.item(), (int) totalCount)));
+        MailboxParcel parcel = MailboxParcel.create("Minazon",
+                List.of(new ItemReward(offer.item(), (int) totalCount)));
 
         group.addPendingDelivery(parcel);
 
         setDirty();
-        return new PurchaseResult(true, "Purchased " + totalCount + "x " + offer.item() + " for " + offer.price()
-                + ". Delivery is scheduled for the next morning.", group.balance());
+
+        return new PurchaseResult(true, "Purchased " + totalCount + "x " + offer.item() + " for "
+                + offer.price() + ". Delivery is scheduled for the next morning.", group.balance());
     }
 
     public Optional<UUID> acceptJob(UUID groupId, Identifier jobId) {
@@ -734,6 +790,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         setDirty();
+
         return Optional.of(progress.get().instanceId());
     }
 
@@ -795,6 +852,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         group.addExperience(job.rewards().experience());
 
         int currentLevel = group.wholeLevel();
+
         ProgressionManager.processLevelChange(group, previousLevel, currentLevel);
 
         group.addBalance(job.rewards().money());
@@ -806,6 +864,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         setDirty();
+
         return true;
     }
 
@@ -832,14 +891,15 @@ public final class DeliveryQuestingSavedData extends SavedData {
             return false;
         }
 
-        MailboxParcel starterParcel = MailboxParcel.create("Unknown", List.of(new ItemReward(ENVELOPE_ITEM, STARTER_ENVELOPES),
-                new ItemReward(PARCEL_ITEM, STARTER_PARCELS)));
+        MailboxParcel starterParcel = MailboxParcel.create("Unknown",
+                List.of(new ItemReward(ENVELOPE_ITEM, STARTER_ENVELOPES),
+                        new ItemReward(PARCEL_ITEM, STARTER_PARCELS)));
 
         group.addMailboxParcel(starterParcel);
 
         starterKitsDelivered.add(group.id());
 
-        DeliveryQuesting.LOGGER.info("Delivered starter kit to group '{}'", group.name());
+        DeliveryQuesting.LOGGER.debug("Delivered starter kit to group '{}'", group.name());
 
         return true;
     }
@@ -862,6 +922,7 @@ public final class DeliveryQuestingSavedData extends SavedData {
 
             if (!TaskManager.contains(taskId) || group.hasActiveTask(taskId) || group.hasCompletedTask(taskId)) {
                 outstandingPhysicalContracts.remove(group.id());
+
                 setDirty();
             } else {
                 if (mailboxContainsContract(group, taskId)) {
@@ -869,9 +930,11 @@ public final class DeliveryQuestingSavedData extends SavedData {
                 }
 
                 if (reservation.lastIssuedGameTime() < 0L) {
-                    outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(), taskId, currentGameTime));
+                    outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(),
+                            taskId, currentGameTime));
 
                     setDirty();
+
                     return Optional.empty();
                 }
 
@@ -885,19 +948,24 @@ public final class DeliveryQuestingSavedData extends SavedData {
 
                 if (optionalTask.isEmpty()) {
                     outstandingPhysicalContracts.remove(group.id());
+
                     setDirty();
+
                     return Optional.empty();
                 }
 
                 TaskDefinition task = optionalTask.get();
+
                 MailboxParcel replacement = MailboxParcel.createContract(task.contractor().name(), task.id());
 
                 group.addMailboxParcel(replacement);
 
-                outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(), task.id(), currentGameTime));
+                outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(),
+                        task.id(), currentGameTime));
 
                 setDirty();
-                DeliveryQuesting.LOGGER.info("Reissued physical contract {} to group '{}'", task.id(), group.name());
+
+                DeliveryQuesting.LOGGER.debug("Reissued physical contract {} to group '{}'", task.id(), group.name());
 
                 return Optional.of(replacement);
             }
@@ -906,9 +974,11 @@ public final class DeliveryQuestingSavedData extends SavedData {
         Optional<Identifier> existingContract = findPhysicalContractInMailbox(group);
 
         if (existingContract.isPresent()) {
-            outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(), existingContract.get(), currentGameTime));
+            outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(),
+                    existingContract.get(), currentGameTime));
 
             setDirty();
+
             return Optional.empty();
         }
 
@@ -920,13 +990,16 @@ public final class DeliveryQuestingSavedData extends SavedData {
         }
 
         TaskDefinition task = possibleTasks.get(ThreadLocalRandom.current().nextInt(possibleTasks.size()));
+
         MailboxParcel envelope = MailboxParcel.createContract(task.contractor().name(), task.id());
 
-        outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(), task.id(), currentGameTime));
+        outstandingPhysicalContracts.put(group.id(), new PhysicalContractReservation(group.id(),
+                task.id(), currentGameTime));
 
         group.addMailboxParcel(envelope);
 
         setDirty();
+
         return Optional.of(envelope);
     }
 

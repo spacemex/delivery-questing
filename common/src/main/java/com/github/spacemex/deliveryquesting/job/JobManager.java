@@ -12,9 +12,15 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public final class JobManager {
+
     private static final String JOB_DIRECTORY = "DeliveryQuesting/jobs";
+
     private static boolean initialized;
+
     private static volatile Map<Identifier, JobDefinition> jobs = Map.of();
+
+    private JobManager() {
+    }
 
     public static void initialize() {
         if (initialized) {
@@ -31,6 +37,7 @@ public final class JobManager {
 
         try {
             Files.createDirectories(directory);
+
             Map<Identifier, JobDefinition> loaded = loadDirectory(directory);
 
             jobs = Collections.unmodifiableMap(new LinkedHashMap<>(loaded));
@@ -52,7 +59,8 @@ public final class JobManager {
                 JobDefinition existing = loaded.putIfAbsent(job.id(), job);
 
                 if (existing != null) {
-                    throw new IllegalArgumentException("Duplicate job ID '" + job.id() + "' found while loading " + file);
+                    throw new IllegalArgumentException("Duplicate job ID '" + job.id()
+                            + "' found while loading " + file);
                 }
 
                 DeliveryQuesting.LOGGER.debug("Loaded repeatable job {} from {}", job.id(), file);

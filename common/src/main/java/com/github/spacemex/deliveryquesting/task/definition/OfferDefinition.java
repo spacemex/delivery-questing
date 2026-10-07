@@ -1,4 +1,4 @@
-package com.github.spacemex.deliveryquesting.task;
+package com.github.spacemex.deliveryquesting.task.definition;
 
 import net.minecraft.resources.Identifier;
 

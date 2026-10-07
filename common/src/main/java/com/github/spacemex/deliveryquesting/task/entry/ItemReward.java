@@ -1,4 +1,4 @@
-package com.github.spacemex.deliveryquesting.task;
+package com.github.spacemex.deliveryquesting.task.entry;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -9,7 +9,8 @@ import java.util.Objects;
 public record ItemReward(Identifier item, int count) {
     public static final Codec<ItemReward> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Identifier.CODEC.fieldOf("item").forGetter(ItemReward::item),
-            Codec.intRange(1, Integer.MAX_VALUE).fieldOf("count").forGetter(ItemReward::count)).apply(instance, ItemReward::new));
+            Codec.intRange(1, Integer.MAX_VALUE).fieldOf("count")
+                    .forGetter(ItemReward::count)).apply(instance, ItemReward::new));
 
     public ItemReward {
         Objects.requireNonNull(item, "item");

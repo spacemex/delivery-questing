@@ -9,8 +9,8 @@ import com.github.spacemex.deliveryquesting.job.JobManager;
 import com.github.spacemex.deliveryquesting.networking.*;
 import com.github.spacemex.deliveryquesting.progression.ProgressionManager;
 import com.github.spacemex.deliveryquesting.registry.ModRegistries;
-import com.github.spacemex.deliveryquesting.task.OfferManager;
-import com.github.spacemex.deliveryquesting.task.TaskManager;
+import com.github.spacemex.deliveryquesting.task.manager.OfferManager;
+import com.github.spacemex.deliveryquesting.task.manager.TaskManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-
+// TODO: Move Scripting Dir Creation To Its Own Class
 public final class DeliveryQuesting {
     public static final String MOD_ID = "delivery_questing";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);

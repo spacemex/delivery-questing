@@ -1,6 +1,6 @@
-package com.github.spacemex.deliveryquesting.progression;
+package com.github.spacemex.deliveryquesting.progression.entry;
 
-import com.github.spacemex.deliveryquesting.task.ItemReward;
+import com.github.spacemex.deliveryquesting.task.entry.ItemReward;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.UUIDUtil;
@@ -12,8 +12,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 public record MailboxParcel(UUID id, String sender, List<ItemReward> items, Optional<Identifier> contractTaskId) {
-    public static final Codec<MailboxParcel> CODEC =
-            RecordCodecBuilder.create(instance -> instance.group(
+
+    public static final Codec<MailboxParcel> CODEC = RecordCodecBuilder.create(instance ->
+            instance.group(
                             UUIDUtil.CODEC.fieldOf("id")
                                     .forGetter(MailboxParcel::id),
                             Codec.STRING.fieldOf("sender")
@@ -22,8 +23,7 @@ public record MailboxParcel(UUID id, String sender, List<ItemReward> items, Opti
                                     .forGetter(MailboxParcel::items),
                             Identifier.CODEC.optionalFieldOf("contract_task")
                                     .forGetter(MailboxParcel::contractTaskId))
-                    .apply(instance, MailboxParcel::new)
-            );
+                    .apply(instance, MailboxParcel::new));
 
     public MailboxParcel {
         Objects.requireNonNull(id, "id");

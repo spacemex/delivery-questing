@@ -1,5 +1,6 @@
 package com.github.spacemex.deliveryquesting.progression;
 
+import com.github.spacemex.deliveryquesting.progression.entry.MailboxParcel;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.UUIDUtil;
@@ -8,9 +9,11 @@ import net.minecraft.resources.Identifier;
 import java.util.*;
 
 public final class DeliveryGroup {
+
     public static final int MAILBOX_INBOX_SIZE = 4;
-    public static final Codec<DeliveryGroup> CODEC =
-            RecordCodecBuilder.create(instance -> instance.group(
+
+    public static final Codec<DeliveryGroup> CODEC = RecordCodecBuilder.create(instance ->
+            instance.group(
                             UUIDUtil.CODEC.fieldOf("id")
                                     .forGetter(DeliveryGroup::id),
                             Codec.STRING.fieldOf("name")
@@ -52,28 +55,43 @@ public final class DeliveryGroup {
                                     .optionalFieldOf("pending_deliveries", List.of())
                                     .forGetter(group -> List.copyOf(group.pendingDeliveries)))
                     .apply(instance, DeliveryGroup::new));
+
     private final UUID id;
+
     private UUID owner;
+
     private final String name;
+
     private final Set<UUID> members;
+
     private final Map<Identifier, TaskProgress> activeTasks;
+
     private final Set<Identifier> completedTasks;
+
     private final List<MailboxParcel> mailboxInbox;
     private final List<MailboxParcel> pendingMailbox;
+
     private final Set<UUID> pendingInvitations;
+
     private long experience;
     private long balance;
+
     private boolean computerUnlocked;
     private boolean computerRewardDelivered;
+
     private final List<GroupEmail> emails;
     private final List<MailboxParcel> pendingDeliveries;
+
     private final Map<UUID, DeliveryJobProgress> activeJobs;
 
     private DeliveryGroup(UUID id, String name, Optional<UUID> owner, List<UUID> members, List<UUID> pendingInvitations,
-                          List<TaskProgress> activeTasks, List<DeliveryJobProgress> activeJobs, List<Identifier> completedTasks, long experience, long balance,
+                          List<TaskProgress> activeTasks, List<DeliveryJobProgress> activeJobs,
+                          List<Identifier> completedTasks, long experience, long balance,
                           boolean computerUnlocked, boolean computerRewardDelivered, List<GroupEmail> emails,
-                          List<MailboxParcel> mailboxInbox, List<MailboxParcel> pendingMailbox, List<MailboxParcel> pendingDeliveries) {
+                          List<MailboxParcel> mailboxInbox, List<MailboxParcel> pendingMailbox,
+                          List<MailboxParcel> pendingDeliveries) {
         this.id = Objects.requireNonNull(id, "id");
+
         this.name = Objects.requireNonNull(name, "name");
 
         if (name.isBlank()) {
@@ -100,11 +118,13 @@ public final class DeliveryGroup {
             throw new IllegalArgumentException("Group owner must also be a member of the group");
         }
 
-        this.pendingInvitations = new LinkedHashSet<>(Objects.requireNonNull(pendingInvitations, "pendingInvitations"));
+        this.pendingInvitations = new LinkedHashSet<>(Objects.requireNonNull(pendingInvitations,
+                "pendingInvitations"));
 
         for (UUID member : this.members) {
             if (this.pendingInvitations.contains(member)) {
-                throw new IllegalArgumentException("Group member " + member + " cannot also have a pending invitation");
+                throw new IllegalArgumentException("Group member " + member
+                        + " cannot also have a pending invitation");
             }
         }
 
@@ -114,7 +134,8 @@ public final class DeliveryGroup {
             TaskProgress existing = this.activeTasks.putIfAbsent(task.taskId(), task);
 
             if (existing != null) {
-                throw new IllegalArgumentException("Group '" + name + "' contains duplicate active task '" + task.taskId() + "'");
+                throw new IllegalArgumentException("Group '" + name +
+                        "' contains duplicate active task '" + task.taskId() + "'");
             }
         }
 
@@ -124,13 +145,16 @@ public final class DeliveryGroup {
             DeliveryJobProgress existing = this.activeJobs.putIfAbsent(job.instanceId(), job);
 
             if (existing != null) {
-                throw new IllegalArgumentException("Group '" + name + "' contains duplicate active job instance '" + job.instanceId() + "'");
+                throw new IllegalArgumentException("Group '" + name +
+                        "' contains duplicate active job instance '" + job.instanceId() + "'");
             }
 
-            long sameDefinition = this.activeJobs.values().stream().filter(active -> active.jobId().equals(job.jobId())).count();
+            long sameDefinition = this.activeJobs.values().stream()
+                    .filter(active -> active.jobId().equals(job.jobId())).count();
 
             if (sameDefinition > 1L) {
-                throw new IllegalArgumentException("Group '" + name + "' contains multiple active instances of job '" + job.jobId() + "'");
+                throw new IllegalArgumentException("Group '" + name +
+                        "' contains multiple active instances of job '" + job.jobId() + "'");
             }
         }
 
@@ -150,19 +174,25 @@ public final class DeliveryGroup {
         Objects.requireNonNull(pendingMailbox, "pendingMailbox");
 
         if (mailboxInbox.size() > MAILBOX_INBOX_SIZE) {
-            throw new IllegalArgumentException("Mailbox inbox cannot contain more than " + MAILBOX_INBOX_SIZE + " parcels");
+            throw new IllegalArgumentException("Mailbox inbox cannot contain more than "
+                    + MAILBOX_INBOX_SIZE + " parcels");
         }
 
         this.mailboxInbox = new ArrayList<>(mailboxInbox);
+
         this.pendingMailbox = new ArrayList<>(pendingMailbox);
 
-        this.pendingDeliveries = new ArrayList<>(Objects.requireNonNull(pendingDeliveries, "pendingDeliveries"));
+        this.pendingDeliveries = new ArrayList<>(Objects.requireNonNull(pendingDeliveries,
+                "pendingDeliveries"));
 
         validateMailboxParcels();
 
         this.experience = experience;
+
         this.balance = balance;
+
         this.computerUnlocked = computerUnlocked;
+
         this.computerRewardDelivered = computerRewardDelivered;
     }
 
@@ -191,11 +221,11 @@ public final class DeliveryGroup {
     }
 
     public boolean hasOfferEmail(Identifier offerId) {
-        return emails.stream().anyMatch(email -> email.type() == GroupEmail.Type.OFFER && email.referenceId().equals(offerId));
+        return emails.stream().anyMatch(email -> email.type() ==
+                GroupEmail.Type.OFFER && email.referenceId().equals(offerId));
     }
 
-    Optional<DeliveryJobProgress> addActiveJob(
-            Identifier jobId) {
+    Optional<DeliveryJobProgress> addActiveJob(Identifier jobId) {
         if (hasActiveJobDefinition(jobId)) {
             return Optional.empty();
         }
@@ -209,6 +239,7 @@ public final class DeliveryGroup {
 
     void addPendingDelivery(MailboxParcel parcel) {
         Objects.requireNonNull(parcel, "parcel");
+
         pendingDeliveries.add(parcel);
     }
 
@@ -221,7 +252,8 @@ public final class DeliveryGroup {
     }
 
     public boolean hasJobEmail(Identifier jobId) {
-        return emails.stream().anyMatch(email -> email.type() == GroupEmail.Type.JOB && email.referenceId().equals(jobId));
+        return emails.stream().anyMatch(email ->
+                email.type() == GroupEmail.Type.JOB && email.referenceId().equals(jobId));
     }
 
     boolean deliverPendingDeliveries() {
@@ -232,6 +264,7 @@ public final class DeliveryGroup {
         List<MailboxParcel> deliveries = new ArrayList<>(pendingDeliveries);
 
         pendingDeliveries.clear();
+
         for (MailboxParcel parcel : deliveries) {
             addMailboxParcel(parcel);
         }
@@ -251,7 +284,9 @@ public final class DeliveryGroup {
         if (computerRewardDelivered) {
             return false;
         }
+
         computerRewardDelivered = true;
+
         return true;
     }
 
@@ -331,12 +366,14 @@ public final class DeliveryGroup {
         return mailboxInbox.stream().filter(parcel -> parcel.id().equals(parcelId)).findFirst();
     }
 
+    @SuppressWarnings("all")
     boolean addMember(UUID playerId) {
         if (!members.add(playerId)) {
             return false;
         }
 
         pendingInvitations.remove(playerId);
+
         return true;
     }
 
@@ -370,6 +407,7 @@ public final class DeliveryGroup {
         }
 
         balance -= amount;
+
         return true;
     }
 
@@ -378,7 +416,9 @@ public final class DeliveryGroup {
             return false;
         }
 
+
         activeTasks.put(taskId, new TaskProgress(taskId));
+
         return true;
     }
 
@@ -404,6 +444,7 @@ public final class DeliveryGroup {
         }
 
         owner = newOwner;
+
         return true;
     }
 
@@ -415,6 +456,7 @@ public final class DeliveryGroup {
         }
 
         completedTasks.add(taskId);
+
         return true;
     }
 
@@ -423,6 +465,7 @@ public final class DeliveryGroup {
 
         if (mailboxInbox.size() < MAILBOX_INBOX_SIZE) {
             mailboxInbox.add(parcel);
+
             return;
         }
 
@@ -440,6 +483,7 @@ public final class DeliveryGroup {
             }
 
             mailboxInbox.remove(i);
+
             promotePendingMailbox();
 
             return Optional.of(parcel);
@@ -452,7 +496,9 @@ public final class DeliveryGroup {
         if (computerUnlocked) {
             return false;
         }
+
         computerUnlocked = true;
+
         return true;
     }
 
@@ -464,6 +510,7 @@ public final class DeliveryGroup {
         }
 
         emails.add(email);
+
         return true;
     }
 
@@ -490,17 +537,19 @@ public final class DeliveryGroup {
     }
 
     public long unreadEmailCount() {
-        return emails.stream()
-                .filter(email -> !email.read()).count();
+        return emails.stream().filter(email -> !email.read()).count();
     }
 
     public long unacceptedContractEmailCount() {
         return emails.stream().filter(email -> email.type() == GroupEmail.Type.CONTRACT)
-                .filter(email -> !hasActiveTask(email.referenceId())).filter(email -> !hasCompletedTask(email.referenceId())).count();
+                .filter(email ->
+                        !hasActiveTask(email.referenceId())).filter(email ->
+                        !hasCompletedTask(email.referenceId())).count();
     }
 
     public boolean hasContractEmail(Identifier taskId) {
-        return emails.stream().anyMatch(email -> email.type() == GroupEmail.Type.CONTRACT && email.referenceId().equals(taskId));
+        return emails.stream().anyMatch(email ->
+                email.type() == GroupEmail.Type.CONTRACT && email.referenceId().equals(taskId));
     }
 
     public Set<UUID> pendingInvitations() {

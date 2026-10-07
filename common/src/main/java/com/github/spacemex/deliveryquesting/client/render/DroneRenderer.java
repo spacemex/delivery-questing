@@ -15,11 +15,14 @@ import net.minecraft.world.level.block.Blocks;
 import org.jspecify.annotations.NonNull;
 
 public final class DroneRenderer extends EntityRenderer<DroneEntity, DroneRenderState> {
+
     private static final BlockDisplayContext DISPLAY_CONTEXT = BlockDisplayContext.create();
+
     private final BlockModelResolver blockModelResolver;
 
     public DroneRenderer(EntityRendererProvider.Context context) {
         super(context);
+
         blockModelResolver = context.getBlockModelResolver();
     }
 
@@ -35,6 +38,7 @@ public final class DroneRenderer extends EntityRenderer<DroneEntity, DroneRender
         blockModelResolver.update(state.body, Blocks.IRON_BLOCK.defaultBlockState(), DISPLAY_CONTEXT);
 
         ItemStack payload = entity.getPayload();
+
         state.hasPayload = payload.getItem() instanceof CardboardBoxItem;
 
         if (state.hasPayload && payload.getItem() instanceof CardboardBoxItem boxItem) {
@@ -43,21 +47,32 @@ public final class DroneRenderer extends EntityRenderer<DroneEntity, DroneRender
     }
 
     @Override
-    public void submit(@NonNull DroneRenderState state, @NonNull PoseStack poseStack, @NonNull SubmitNodeCollector collector, @NonNull CameraRenderState cameraState) {
+    public void submit(@NonNull DroneRenderState state, @NonNull PoseStack poseStack,
+                       @NonNull SubmitNodeCollector collector, @NonNull CameraRenderState cameraState) {
         super.submit(state, poseStack, collector, cameraState);
+
         poseStack.pushPose();
+
         poseStack.scale(0.65F, 0.18F, 0.65F);
+
         poseStack.translate(-0.5F, -0.5F, -0.5F);
+
         state.body.submit(poseStack, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor);
 
         poseStack.popPose();
 
         if (state.hasPayload) {
             poseStack.pushPose();
+
             poseStack.translate(0.0F, -0.55F, 0.0F);
+
             poseStack.scale(0.5F, 0.5F, 0.5F);
+
             poseStack.translate(-0.5F, -0.5F, -0.5F);
-            state.payload.submit(poseStack, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor);
+
+            state.payload.submit(poseStack, collector, state.lightCoords, OverlayTexture.NO_OVERLAY,
+                    state.outlineColor);
+
             poseStack.popPose();
         }
     }

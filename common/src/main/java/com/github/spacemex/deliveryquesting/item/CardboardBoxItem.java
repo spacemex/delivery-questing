@@ -17,10 +17,12 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public final class CardboardBoxItem extends BlockItem {
+
     private final CardboardBoxTier tier;
 
     public CardboardBoxItem(Block block, CardboardBoxTier tier, Properties properties) {
         super(block, properties);
+
         this.tier = tier;
     }
 
@@ -35,7 +37,9 @@ public final class CardboardBoxItem extends BlockItem {
 
     public List<ItemStack> getContents(ItemStack stack) {
         NonNullList<ItemStack> contents = NonNullList.withSize(tier.slots(), ItemStack.EMPTY);
+
         stack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY).copyInto(contents);
+
         return contents.stream().filter(item -> !item.isEmpty()).map(ItemStack::copy).toList();
     }
 
@@ -46,9 +50,14 @@ public final class CardboardBoxItem extends BlockItem {
     @SuppressWarnings("deprecation")
     @Override
     @Deprecated
-    public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context, @NonNull TooltipDisplay display, @NonNull Consumer<Component> builder, @NonNull TooltipFlag flag) {
+    public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context,
+                                @NonNull TooltipDisplay display, @NonNull Consumer<Component> builder,
+                                @NonNull TooltipFlag flag) {
         super.appendHoverText(stack, context, display, builder, flag);
+
         int occupied = getContents(stack).size();
-        builder.accept(Component.translatable("tooltip.delivery_questing.cardboard_box.stacks", occupied, tier.slots()).withStyle(ChatFormatting.GRAY));
+
+        builder.accept(Component.translatable("tooltip.delivery_questing.cardboard_box.stacks", occupied, tier.slots())
+                .withStyle(ChatFormatting.GRAY));
     }
 }

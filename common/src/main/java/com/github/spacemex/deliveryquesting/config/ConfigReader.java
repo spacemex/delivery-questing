@@ -13,16 +13,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class ConfigReader {
+
     private static final int DEFAULT_MIN_COMPUTER_LEVEL = 10;
 
     private static YamlConfigUtil localConfig;
+
     private static Map<String, Object> localRaw;
 
     private static YamlConfigUtil syncedConfig;
+
     private static Map<String, Object> syncedRaw;
 
     public static void load() {
         File yamlFile = Platform.getConfigFolder().resolve("DeliveryQuesting/config.yml").toFile();
+
         Map<String, Object> data;
 
         try (Reader reader = new FileReader(yamlFile)) {
@@ -38,21 +42,25 @@ public final class ConfigReader {
         }
 
         localRaw = new HashMap<>(data);
+
         localConfig = new YamlConfigUtil(localRaw);
     }
 
     public static void setSyncedConfig(Map<String, Object> data) {
         if (data == null) {
             clearSyncedConfig();
+
             return;
         }
 
         syncedRaw = new HashMap<>(data);
+
         syncedConfig = new YamlConfigUtil(syncedRaw);
     }
 
     public static void clearSyncedConfig() {
         syncedConfig = null;
+
         syncedRaw = null;
     }
 
@@ -62,6 +70,7 @@ public final class ConfigReader {
         if (Platform.getEnvironment() == Env.CLIENT && syncedConfig != null) {
             return syncedConfig;
         }
+
         return localConfig;
     }
 
@@ -71,17 +80,20 @@ public final class ConfigReader {
 
     public static Map<String, Object> getRawLocal() {
         ensureLoaded();
+
         return localRaw;
     }
 
     public static int getMinComputerLevel() {
         int value = getConfig().getInt("minComputerLevel", DEFAULT_MIN_COMPUTER_LEVEL);
+
         return Math.max(0, value);
     }
 
     private static void ensureLoaded() {
         if (localConfig == null || localRaw == null) {
-            throw new IllegalStateException("ConfigReader has not been loaded. " + "Call ConfigReader.load() during mod initialization.");
+            throw new IllegalStateException("ConfigReader has not been loaded. " +
+                    "Call ConfigReader.load() during mod initialization.");
         }
     }
 

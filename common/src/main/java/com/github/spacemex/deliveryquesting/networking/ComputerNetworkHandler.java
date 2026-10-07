@@ -8,8 +8,8 @@ import com.github.spacemex.deliveryquesting.networking.packets.AcceptEmailJobPay
 import com.github.spacemex.deliveryquesting.networking.packets.BuyOfferPayload;
 import com.github.spacemex.deliveryquesting.networking.packets.MarkEmailReadPayload;
 import com.github.spacemex.deliveryquesting.progression.*;
-import com.github.spacemex.deliveryquesting.task.TaskDefinition;
-import com.github.spacemex.deliveryquesting.task.TaskManager;
+import com.github.spacemex.deliveryquesting.task.definition.TaskDefinition;
+import com.github.spacemex.deliveryquesting.task.manager.TaskManager;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -17,6 +17,7 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.Optional;
 
 public final class ComputerNetworkHandler {
+
     private static boolean initialized;
 
     public static void initialize() {

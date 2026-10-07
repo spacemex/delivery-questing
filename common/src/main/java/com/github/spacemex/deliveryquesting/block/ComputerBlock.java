@@ -30,8 +30,11 @@ import org.jspecify.annotations.Nullable;
 import java.util.Map;
 
 public final class ComputerBlock extends BaseEntityBlock {
+
     public static final EnumProperty<Direction> FACING;
+
     public static final BooleanProperty ON;
+
     private static final Map<Direction, VoxelShape> SHAPES = Map.of(
             Direction.NORTH, Shapes.or(
                     Block.box(5D, 0D, 2D, 12D, 1D, 5D),
@@ -104,7 +107,8 @@ public final class ComputerBlock extends BaseEntityBlock {
     }
 
     @Override
-    public void setPlacedBy(@NonNull Level level, @NonNull BlockPos pos, @NonNull BlockState state, @Nullable LivingEntity placer, @NonNull ItemStack stack) {
+    public void setPlacedBy(@NonNull Level level, @NonNull BlockPos pos, @NonNull BlockState state,
+                            @Nullable LivingEntity placer, @NonNull ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
 
         if (level.isClientSide()) {
@@ -120,12 +124,16 @@ public final class ComputerBlock extends BaseEntityBlock {
         }
 
         DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(player.level().getServer());
+
         data.getGroupForPlayer(player.getUUID()).ifPresent(group -> computer.bindToGroup(group.id()));
     }
 
     @Override
-    protected @NonNull InteractionResult useWithoutItem(@NonNull BlockState state, @NonNull Level level, @NonNull BlockPos pos, @NonNull Player player, @NonNull BlockHitResult hitResult) {
-        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer && level.getBlockEntity(pos) instanceof ComputerBlockEntity computer) {
+    protected @NonNull InteractionResult useWithoutItem(@NonNull BlockState state, @NonNull Level level,
+                                                        @NonNull BlockPos pos, @NonNull Player player,
+                                                        @NonNull BlockHitResult hitResult) {
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer && level.getBlockEntity(pos)
+                instanceof ComputerBlockEntity computer) {
             ComputerMenu.open(serverPlayer, pos, computer);
         }
 
@@ -150,11 +158,13 @@ public final class ComputerBlock extends BaseEntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
+
         builder.add(FACING, ON);
     }
 
     @Override
-    protected @NonNull VoxelShape getShape(BlockState state, @NonNull BlockGetter level, @NonNull BlockPos pos, @NonNull CollisionContext context) {
+    protected @NonNull VoxelShape getShape(BlockState state, @NonNull BlockGetter level, @NonNull BlockPos pos,
+                                           @NonNull CollisionContext context) {
         return SHAPES.getOrDefault(state.getValue(FACING), SHAPES.get(Direction.NORTH));
     }
 

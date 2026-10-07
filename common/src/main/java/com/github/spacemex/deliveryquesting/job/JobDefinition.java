@@ -1,8 +1,8 @@
 package com.github.spacemex.deliveryquesting.job;
 
-import com.github.spacemex.deliveryquesting.task.ContractorDefinition;
 import com.github.spacemex.deliveryquesting.task.TaskRequirement;
-import com.github.spacemex.deliveryquesting.task.TaskRewards;
+import com.github.spacemex.deliveryquesting.task.definition.ContractorDefinition;
+import com.github.spacemex.deliveryquesting.task.entry.TaskRewards;
 import net.minecraft.resources.Identifier;
 
 import java.util.HashSet;
@@ -39,7 +39,8 @@ public record JobDefinition(Identifier id, String name, String description, Cont
 
         for (TaskRequirement requirement : requirements) {
             if (!keys.add(requirement.progressKey())) {
-                throw new IllegalArgumentException("Job '" + jobId + "' contains duplicate requirement '" + requirement.progressKey() + "'");
+                throw new IllegalArgumentException("Job '" + jobId + "' contains duplicate requirement '"
+                        + requirement.progressKey() + "'");
             }
         }
     }

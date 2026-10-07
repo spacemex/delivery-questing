@@ -8,8 +8,8 @@ import com.github.spacemex.deliveryquesting.networking.packets.SubmitTaskPayload
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
 import com.github.spacemex.deliveryquesting.progression.TaskRuntimeManager;
-import com.github.spacemex.deliveryquesting.task.TaskDefinition;
-import com.github.spacemex.deliveryquesting.task.TaskManager;
+import com.github.spacemex.deliveryquesting.task.definition.TaskDefinition;
+import com.github.spacemex.deliveryquesting.task.manager.TaskManager;
 import dev.architectury.networking.NetworkManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -17,7 +17,10 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.Optional;
 
 public final class TaskInteractionNetworkHandler {
+
     private static boolean initialized;
+
+    private TaskInteractionNetworkHandler() {}
 
     public static void initialize() {
         if (initialized) {
@@ -27,12 +30,15 @@ public final class TaskInteractionNetworkHandler {
         initialized = true;
 
         registerAcceptTask();
+
         registerSubmitTask();
+
         registerShowTask();
     }
 
     private static void registerAcceptTask() {
-        NetworkManager.registerReceiver(NetworkManager.Side.C2S, AcceptTaskPayload.TYPE, AcceptTaskPayload.CODEC, (payload, context) -> {
+        NetworkManager.registerReceiver(NetworkManager.Side.C2S, AcceptTaskPayload.TYPE, AcceptTaskPayload.CODEC,
+                (payload, context) -> {
             if (!(context.getPlayer() instanceof ServerPlayer serverPlayer)) {
                 return;
             }
@@ -42,7 +48,8 @@ public final class TaskInteractionNetworkHandler {
     }
 
     private static void registerSubmitTask() {
-        NetworkManager.registerReceiver(NetworkManager.Side.C2S, SubmitTaskPayload.TYPE, SubmitTaskPayload.CODEC, (payload, context) -> {
+        NetworkManager.registerReceiver(NetworkManager.Side.C2S, SubmitTaskPayload.TYPE, SubmitTaskPayload.CODEC,
+                (payload, context) -> {
             if (!(context.getPlayer() instanceof ServerPlayer serverPlayer)) {
                 return;
             }
@@ -64,22 +71,29 @@ public final class TaskInteractionNetworkHandler {
 
         if (optionalTask.isEmpty()) {
             serverPlayer.sendSystemMessage(Component.literal("That task no longer exists."));
+
             serverPlayer.closeContainer();
+
             return;
         }
 
         DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(serverPlayer.level().getServer());
+
         Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(serverPlayer.getUUID());
 
         if (optionalGroup.isEmpty()) {
             serverPlayer.sendSystemMessage(Component.literal("You are not currently in a delivery group."));
+
             serverPlayer.closeContainer();
+
             return;
         }
 
-        TaskRuntimeManager.ActionResult result = TaskRuntimeManager.acceptTask(data, optionalGroup.get(), optionalTask.get());
+        TaskRuntimeManager.ActionResult result = TaskRuntimeManager.acceptTask(data, optionalGroup.get(),
+                optionalTask.get());
 
         serverPlayer.sendSystemMessage(Component.literal(result.message()));
+
         serverPlayer.closeContainer();
     }
 
@@ -96,39 +110,52 @@ public final class TaskInteractionNetworkHandler {
 
         if (optionalTask.isEmpty()) {
             serverPlayer.sendSystemMessage(Component.literal("That task no longer exists."));
+
             serverPlayer.closeContainer();
+
             return;
         }
 
         DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(serverPlayer.level().getServer());
+
         Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(serverPlayer.getUUID());
 
         if (optionalGroup.isEmpty()) {
             serverPlayer.sendSystemMessage(Component.literal("You are not currently in a delivery group."));
+
             serverPlayer.closeContainer();
+
             return;
         }
 
         TaskDefinition task = optionalTask.get();
-        TaskRuntimeManager.SubmissionResult result = TaskRuntimeManager.submitItems(serverPlayer, data, optionalGroup.get(), task);
+
+        TaskRuntimeManager.SubmissionResult result =
+                TaskRuntimeManager.submitItems(serverPlayer, data, optionalGroup.get(), task);
 
         serverPlayer.sendSystemMessage(Component.literal(result.message()));
 
         if (result.completed()) {
-            serverPlayer.sendSystemMessage(Component.literal("Rewards: +" + task.rewards().experience() + " XP, +" + task.rewards().money() + " money"));
+            serverPlayer.sendSystemMessage
+                    (Component.literal("Rewards: +" + task.rewards().experience() + " XP, +"
+                            + task.rewards().money() + " money"));
 
             if (!task.rewards().items().isEmpty()) {
-                serverPlayer.sendSystemMessage(Component.literal("Item rewards were delivered to your group's mailbox."));
+                serverPlayer.sendSystemMessage(
+                        Component.literal("Item rewards were delivered to your group's mailbox."));
             }
         }
+
         serverPlayer.closeContainer();
     }
 
     private static void registerShowTask() {
-        NetworkManager.registerReceiver(NetworkManager.Side.C2S, ShowTaskPayload.TYPE, ShowTaskPayload.CODEC, (payload, context) -> {
+        NetworkManager.registerReceiver(NetworkManager.Side.C2S, ShowTaskPayload.TYPE, ShowTaskPayload.CODEC,
+                (payload, context) -> {
             if (!(context.getPlayer() instanceof ServerPlayer serverPlayer)) {
                 return;
             }
+
             context.queue(() -> handleShowTask(serverPlayer, payload));
         });
     }

@@ -11,7 +11,8 @@ public enum CardboardBoxTier {
     TIER_5(5, 27, 9),
     TIER_6(6, 54, 9);
 
-    public static final Codec<CardboardBoxTier> CODEC = Codec.INT.xmap(CardboardBoxTier::fromLevel, CardboardBoxTier::level);
+    public static final Codec<CardboardBoxTier> CODEC = Codec.INT.xmap(CardboardBoxTier::fromLevel,
+            CardboardBoxTier::level);
 
     private final int level;
     private final int slots;
@@ -45,6 +46,7 @@ public enum CardboardBoxTier {
                 return tier;
             }
         }
+
         throw new IllegalArgumentException("Unknown cardboard box tier: " + level);
     }
 }

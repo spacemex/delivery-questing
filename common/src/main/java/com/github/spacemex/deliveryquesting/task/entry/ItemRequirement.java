@@ -1,5 +1,6 @@
-package com.github.spacemex.deliveryquesting.task;
+package com.github.spacemex.deliveryquesting.task.entry;
 
+import com.github.spacemex.deliveryquesting.task.TaskRequirement;
 import net.minecraft.resources.Identifier;
 
 import java.util.Locale;

@@ -5,8 +5,8 @@ import com.github.spacemex.deliveryquesting.menu.BulletinBoardMenu;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
 import com.github.spacemex.deliveryquesting.progression.TaskRuntimeManager;
-import com.github.spacemex.deliveryquesting.task.TaskDefinition;
-import com.github.spacemex.deliveryquesting.task.TaskManager;
+import com.github.spacemex.deliveryquesting.task.definition.TaskDefinition;
+import com.github.spacemex.deliveryquesting.task.manager.TaskManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -33,7 +33,9 @@ import java.util.Map;
 import java.util.Optional;
 
 public final class BulletinBoardBlock extends Block {
+
     public static final EnumProperty<Direction> FACING;
+
     private static final Map<Direction, VoxelShape> SHAPES = Map.of(
             Direction.NORTH, Shapes.or(
                     Block.box(0D, 0D, 15D, 16D, 16D, 16D),
@@ -86,7 +88,9 @@ public final class BulletinBoardBlock extends Block {
     }
 
     @Override
-    protected @NonNull InteractionResult useWithoutItem(@NonNull BlockState state, Level level, @NonNull BlockPos pos, @NonNull Player player, @NonNull BlockHitResult hitResult) {
+    protected @NonNull InteractionResult useWithoutItem(@NonNull BlockState state, Level level,
+                                                        @NonNull BlockPos pos, @NonNull Player player,
+                                                        @NonNull BlockHitResult hitResult) {
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
             BulletinBoardMenu.open(serverPlayer, pos);
         }
@@ -97,11 +101,14 @@ public final class BulletinBoardBlock extends Block {
     @Override
     protected void createBlockStateDefinition(StateDefinition.@NonNull Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
+
         builder.add(FACING);
     }
 
     @Override
-    protected @NonNull InteractionResult useItemOn(ItemStack stack, @NonNull BlockState state, @NonNull Level level, @NonNull BlockPos pos, @NonNull Player player, @NonNull InteractionHand hand, @NonNull BlockHitResult hitResult) {
+    protected @NonNull InteractionResult useItemOn(ItemStack stack, @NonNull BlockState state,
+                                                   @NonNull Level level, @NonNull BlockPos pos, @NonNull Player player,
+                                                   @NonNull InteractionHand hand, @NonNull BlockHitResult hitResult) {
         if (!(stack.getItem() instanceof ContractItem)) {
             return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
         }
@@ -121,10 +128,13 @@ public final class BulletinBoardBlock extends Block {
         }
 
         DeliveryQuestingSavedData data = DeliveryQuestingSavedData.get(serverPlayer.level().getServer());
+
         Optional<DeliveryGroup> optionalGroup = data.getGroupForPlayer(serverPlayer.getUUID());
 
         if (optionalGroup.isEmpty()) {
-            serverPlayer.sendSystemMessage(Component.literal("You must be in a delivery group to accept a contract."));
+            serverPlayer.sendSystemMessage(
+                    Component.literal("You must be in a delivery group to accept a contract."));
+
             return InteractionResult.SUCCESS_SERVER;
         }
 
@@ -133,6 +143,7 @@ public final class BulletinBoardBlock extends Block {
 
         if (optionalTask.isEmpty()) {
             serverPlayer.sendSystemMessage(Component.literal("That contract no longer exists."));
+
             return InteractionResult.SUCCESS_SERVER;
         }
 
@@ -156,7 +167,8 @@ public final class BulletinBoardBlock extends Block {
     }
 
     @Override
-    protected @NonNull VoxelShape getShape(BlockState state, @NonNull BlockGetter level, @NonNull BlockPos pos, @NonNull CollisionContext context) {
+    protected @NonNull VoxelShape getShape(BlockState state, @NonNull BlockGetter level,
+                                           @NonNull BlockPos pos, @NonNull CollisionContext context) {
         return SHAPES.getOrDefault(state.getValue(FACING), SHAPES.get(Direction.NORTH));
     }
 

@@ -10,15 +10,23 @@ import net.minecraft.resources.Identifier;
 import java.util.*;
 
 public final class DeliveryJobProgress {
+
     private static final Codec<Map<String, Long>> PROGRESS_CODEC = Codec.unboundedMap(Codec.STRING, Codec.LONG);
+
     public static final Codec<DeliveryJobProgress> CODEC =
             RecordCodecBuilder.create(instance -> instance.group(
-                    UUIDUtil.CODEC.fieldOf("instance").forGetter(DeliveryJobProgress::instanceId),
-                    Identifier.CODEC.fieldOf("job").forGetter(DeliveryJobProgress::jobId),
-                    PROGRESS_CODEC.optionalFieldOf("progress", Map.of()).forGetter(DeliveryJobProgress::progress)
-            ).apply(instance, DeliveryJobProgress::new));
+                            UUIDUtil.CODEC.fieldOf("instance")
+                                    .forGetter(DeliveryJobProgress::instanceId),
+                            Identifier.CODEC.fieldOf("job")
+                                    .forGetter(DeliveryJobProgress::jobId),
+                            PROGRESS_CODEC.optionalFieldOf("progress", Map.of())
+                                    .forGetter(DeliveryJobProgress::progress))
+                    .apply(instance, DeliveryJobProgress::new));
+
     private final UUID instanceId;
+
     private final Identifier jobId;
+
     private final Map<String, Long> progress;
 
     public DeliveryJobProgress(Identifier jobId) {
@@ -27,6 +35,7 @@ public final class DeliveryJobProgress {
 
     private DeliveryJobProgress(UUID instanceId, Identifier jobId, Map<String, Long> progress) {
         this.instanceId = Objects.requireNonNull(instanceId, "instanceId");
+
         this.jobId = Objects.requireNonNull(jobId, "jobId");
 
         Objects.requireNonNull(progress, "progress");
@@ -79,16 +88,19 @@ public final class DeliveryJobProgress {
         }
 
         long accepted = Math.min(remaining, amount);
+
         progress.put(requirement.progressKey(), current + accepted);
 
         return accepted;
     }
 
+    @SuppressWarnings("all")
     public boolean isComplete(JobDefinition definition) {
         Objects.requireNonNull(definition, "definition");
 
         if (!jobId.equals(definition.id())) {
-            throw new IllegalArgumentException("Job progress for '" + jobId + "' cannot be checked against job '" + definition.id() + "'");
+            throw new IllegalArgumentException("Job progress for '" + jobId
+                    + "' cannot be checked against job '" + definition.id() + "'");
         }
 
         for (TaskRequirement requirement : definition.requirements()) {

@@ -24,19 +24,27 @@ import org.jspecify.annotations.NonNull;
 import java.util.*;
 
 public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> {
+
     private static final int MAILS_PER_PAGE = 4;
+
     private View view = View.DESKTOP;
+
     private int mailPage;
+
     private final Set<UUID> readThisSession = new HashSet<>();
+
     private static final int OFFERS_PER_PAGE = 4;
     private int minazonPage;
+
     private UUID selectedMailId;
+
     private static final Identifier COMPUTER_TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID,
             "textures/gui/container/computer.png");
     private static final Identifier DESKTOP_TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID,
             "textures/gui/computer/desktop.png");
     private static final Identifier DESKTOP_ICONS = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID,
             "textures/gui/computer/icons.png");
+
     private static final int ICON_SIZE = 32;
     private static final int MINTERNET_X = 16;
     private static final int MINTERNET_Y = 16;
@@ -77,7 +85,6 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
     }
 
     private void buildDesktop() {
-
     }
 
     private void buildMailList() {
@@ -96,28 +103,32 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
 
             String prefix = isRead(entry) ? "" : "* ";
 
-            this.addRenderableWidget(Button.builder(Component.literal(prefix + entry.title() + " - " + entry.sender()),
-                    button -> openMail(entry)
-            ).bounds(leftPos + 15, topPos + 35 + row * 27, 226, 22).build());
+            this.addRenderableWidget(Button.builder(Component.literal(prefix + entry.title()
+                                    + " - " + entry.sender()),
+                            button -> openMail(entry))
+                    .bounds(leftPos + 15, topPos + 35 + row * 27, 226, 22).build());
         }
 
         this.addRenderableWidget(Button.builder(Component.literal("Desktop"), button -> {
                     view = View.DESKTOP;
+
                     selectedMailId = null;
+
                     rebuildView();
                 }).bounds(leftPos + 15, topPos + 153, 70, 22).build()
         );
 
         Button previous = this.addRenderableWidget(Button.builder(Component.literal("Previous"), button -> {
             mailPage--;
+
             rebuildView();
         }).bounds(leftPos + 93, topPos + 153, 70, 22).build());
 
         previous.active = mailPage > 0;
 
-        Button next = this.addRenderableWidget(Button.builder(Component.literal("Next"
-        ), button -> {
+        Button next = this.addRenderableWidget(Button.builder(Component.literal("Next"), button -> {
             mailPage++;
+
             rebuildView();
         }).bounds(leftPos + 171, topPos + 153, 70, 22).build());
 
@@ -129,29 +140,24 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
 
         if (entry == null) {
             view = View.MAIL_LIST;
+
             rebuildView();
+
             return;
         }
 
         this.addRenderableWidget(Button.builder(Component.literal("Back"), button -> {
             view = View.MAIL_LIST;
-            rebuildView();
-        }).bounds(
-                leftPos + 15,
-                topPos + 153,
-                90,
-                22
-        ).build());
 
-        Button accept = this.addRenderableWidget(Button.builder(Component.literal(entry.canAccept() ? "Accept Contract" : "Already Handled"), button -> {
+            rebuildView();
+        }).bounds(leftPos + 15, topPos + 153, 90, 22).build());
+
+        Button accept = this.addRenderableWidget(Button.builder(Component.literal(entry.canAccept()
+                ? "Accept Contract" : "Already Handled"), button -> {
             button.active = false;
+
             NetworkManager.sendToServer(new AcceptEmailContractPayload(entry.emailId()));
-        }).bounds(
-                leftPos + 131,
-                topPos + 153,
-                110,
-                22
-        ).build());
+        }).bounds(leftPos + 131, topPos + 153, 110, 22).build());
 
         accept.active = entry.canAccept();
     }
@@ -183,6 +189,7 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             Button button = this.addRenderableWidget(Button.builder(
                     Component.literal(label), pressed -> {
                         pressed.active = false;
+
                         NetworkManager.sendToServer(new BuyOfferPayload(offer.id()));
                     }
             ).bounds(leftPos + 15, topPos + 38 + row * 27, 226, 22).build());
@@ -192,11 +199,13 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
 
         this.addRenderableWidget(Button.builder(Component.literal("Desktop"), button -> {
             view = View.DESKTOP;
+
             rebuildView();
         }).bounds(leftPos + 15, topPos + 153, 80, 22).build());
 
         Button previous = this.addRenderableWidget(Button.builder(Component.literal("Previous"), button -> {
             minazonPage--;
+
             rebuildView();
         }).bounds(leftPos + 110, topPos + 153, 80, 22).build());
 
@@ -204,6 +213,7 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
 
         Button next = this.addRenderableWidget(Button.builder(Component.literal("Next"), button -> {
             minazonPage++;
+
             rebuildView();
         }).bounds(leftPos + 205, topPos + 153, 80, 22).build());
 
@@ -220,15 +230,19 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         switch (entry.type()) {
             case CONTRACT -> {
                 selectedMailId = entry.emailId();
+
                 view = View.MAIL_DETAIL;
             }
             case OFFER -> {
                 selectedMailId = null;
+
                 view = View.MINAZON;
+
                 minazonPage = findOfferPage(entry.referenceId());
             }
             case JOB -> {
                 selectedMailId = entry.emailId();
+
                 view = View.JOB_DETAIL;
             }
         }
@@ -240,7 +254,9 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         if (selectedMailId == null) {
             return null;
         }
-        return menu.mail().stream().filter(entry -> entry.emailId().equals(selectedMailId)).findFirst().orElse(null);
+
+        return menu.mail().stream().filter(entry -> entry.emailId().equals(selectedMailId))
+                .findFirst().orElse(null);
     }
 
     private boolean isRead(ComputerInboxEntry entry) {
@@ -265,6 +281,7 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         if (view == View.DESKTOP) {
             graphics.blit(RenderPipelines.GUI_TEXTURED, DESKTOP_TEXTURE,
                     leftPos + 3, topPos + 3, 0, 0, 250, 188, 256, 256);
+
             return;
         }
 
@@ -274,6 +291,7 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
     @Override
     protected void extractLabels(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         desktopMouseX = mouseX - leftPos;
+
         desktopMouseY = mouseY - topPos;
 
         switch (view) {
@@ -286,24 +304,31 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
     }
 
     @Override
-    public boolean mouseClicked(
-            MouseButtonEvent event, boolean doubleClick) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (view == View.DESKTOP && event.button() == 0) {
             double mouseX = event.x() - leftPos;
+
             double mouseY = event.y() - topPos;
 
             if (isInside(mouseX, mouseY, MINTERNET_X, MINTERNET_Y, ICON_SIZE, ICON_SIZE)) {
                 view = View.MINAZON;
+
                 minazonPage = 0;
+
                 rebuildView();
+
                 return true;
             }
 
             if (isInside(mouseX, mouseY, MAIL_X, MAIL_Y, ICON_SIZE, ICON_SIZE)) {
                 view = View.MAIL_LIST;
+
                 mailPage = 0;
+
                 selectedMailId = null;
+
                 rebuildView();
+
                 return true;
             }
         }
@@ -316,7 +341,8 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
     }
 
     private boolean isDesktopIconHovered(int x, int y) {
-        return desktopMouseX >= x && desktopMouseX < x + ICON_SIZE && desktopMouseY >= y && desktopMouseY < y + ICON_SIZE;
+        return desktopMouseX >= x && desktopMouseX < x + ICON_SIZE && desktopMouseY >= y
+                && desktopMouseY < y + ICON_SIZE;
     }
 
     private void extractJobDetailLabels(GuiGraphicsExtractor graphics) {
@@ -329,8 +355,11 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         var job = entry.job();
 
         graphics.text(font, Component.literal(job.name()), 14, 12, 0xFFFFFFFF, false);
+
         graphics.text(font, Component.literal("Repeatable Job"), 200, 12, 0xFFFFC107, false);
-        graphics.text(font, Component.literal("From: " + job.contractor()), 14, 27, 0xFF80CBC4, false);
+
+        graphics.text(font, Component.literal("From: " + job.contractor()), 14, 27,
+                0xFF80CBC4, false);
 
         int y = 45;
 
@@ -357,24 +386,31 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
                 break;
             }
 
-            graphics.text(font, Component.literal(requirement.required() + "x " + requirement.label()), 20, y, 0xFFD7E1E5, false);
+            graphics.text(font, Component.literal(requirement.required() + "x " + requirement.label()),
+                    20, y, 0xFFD7E1E5, false);
 
             y += 11;
+
             shown++;
         }
 
-        graphics.text(font, Component.literal("Rewards: +" + job.experienceReward() + " XP, +" + job.moneyReward() + " money"), 14, 139, 0xFF80CBC4, false);
+        graphics.text(font, Component.literal("Rewards: +" + job.experienceReward() + " XP, +"
+                + job.moneyReward() + " money"), 14, 139, 0xFF80CBC4, false);
     }
 
     private void extractDesktopLabels(GuiGraphicsExtractor graphics) {
         drawDesktopIcon(graphics, MINTERNET_X, MINTERNET_Y, 0, Component.literal("Minternet"));
+
         drawDesktopIcon(graphics, MAIL_X, MAIL_Y, 32, Component.literal("Mail"));
+
         drawDesktopCount(graphics, MAIL_X, MAIL_Y, getUnreadMailCount());
     }
 
     private void extractMailListLabels(GuiGraphicsExtractor graphics) {
         graphics.text(font, Component.literal("Mail"), 14, 12, 0xFFFFFFFF, false);
-        graphics.text(font, Component.literal("Inbox - " + getUnreadMailCount() + " unread"), 14, 23, 0xFF80CBC4, false);
+
+        graphics.text(font, Component.literal("Inbox - " + getUnreadMailCount() + " unread"), 14, 23,
+                0xFF80CBC4, false);
 
         if (menu.inbox().isEmpty()) {
             graphics.centeredText(font, Component.literal("No mail."), imageWidth / 2, 85, 0xFF9EA7AA);
@@ -391,7 +427,9 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         var task = entry.task();
 
         graphics.text(font, Component.literal(task.name()), 14, 12, 0xFFFFFFFF, false);
-        graphics.text(font, Component.literal("From: " + task.contractor()), 14, 27, 0xFF80CBC4, false);
+
+        graphics.text(font, Component.literal("From: " + task.contractor()), 14, 27,
+                0xFF80CBC4, false);
 
         int y = 45;
 
@@ -415,104 +453,56 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         int shown = 0;
 
         for (var requirement : task.requirements()) {
-
             if (shown >= 3) {
                 break;
             }
 
-            graphics.text(font, Component.literal(requirement.required() + "x " + requirement.label()), 20, y, 0xFFD7E1E5, false);
+            graphics.text(font, Component.literal(requirement.required() + "x " + requirement.label()),
+                    20, y, 0xFFD7E1E5, false);
 
             y += 11;
+
             shown++;
         }
-        graphics.text(font, Component.literal("Rewards: +" + task.experienceReward() + " XP, +" + task.moneyReward() + " money"), 14, 139, 0xFF80CBC4, false);
+
+        graphics.text(font, Component.literal("Rewards: +" + task.experienceReward() + " XP, +" +
+                task.moneyReward() + " money"), 14, 139, 0xFF80CBC4, false);
     }
 
     private void extractMinazonLabels(GuiGraphicsExtractor graphics) {
-        graphics.text(font, Component.literal("Minazon"), 14, 12, 0xFFFFFFFF, false);
+        graphics.text(font, Component.literal("Minazon"), 14, 12,
+                0xFFFFFFFF, false);
 
-        graphics.text(font, Component.literal("Balance: " + menu.balance()), 14, 24, 0xFF80CBC4, false);
+        graphics.text(font, Component.literal("Balance: " + menu.balance()),
+                14, 24, 0xFF80CBC4, false);
 
         if (menu.offers().isEmpty()) {
-            graphics.centeredText(font, Component.literal("No offers available."), imageWidth / 2, 85, 0xFF9EA7AA);
+            graphics.centeredText(font, Component.literal("No offers available."),
+                    imageWidth / 2, 85, 0xFF9EA7AA);
         }
 
-        graphics.centeredText(font, Component.literal("Orders arrive the next Minecraft morning"), imageWidth / 2, 142, 0xFF9EA7AA);
+        graphics.centeredText(font, Component.literal("Orders arrive the next Minecraft morning"),
+                imageWidth / 2, 142, 0xFF9EA7AA);
     }
 
-    private void drawDesktopIcon(
-            GuiGraphicsExtractor graphics,
-            int x,
-            int y,
-            int textureY,
-            Component name
-    ) {
-        boolean hovered =
-                isDesktopIconHovered(
-                        x,
-                        y
-                );
+    private void drawDesktopIcon(GuiGraphicsExtractor graphics, int x, int y, int textureY, Component name) {
+        boolean hovered = isDesktopIconHovered(x, y);
 
-        /*
-         * The original 1.18 GUI blit overload implicitly
-         * used a 256x256 texture UV space.
-         */
         if (hovered) {
-            graphics.blit(
-                    RenderPipelines.GUI_TEXTURED,
-                    DESKTOP_ICONS,
-                    x,
-                    y,
-                    32,
-                    textureY,
-                    ICON_SIZE,
-                    ICON_SIZE,
-                    256,
-                    256
-            );
+            graphics.blit(RenderPipelines.GUI_TEXTURED, DESKTOP_ICONS, x, y, 32, textureY,
+                    ICON_SIZE, ICON_SIZE, 256, 256);
         }
 
-        graphics.blit(
-                RenderPipelines.GUI_TEXTURED,
-                DESKTOP_ICONS,
-                x,
-                y,
-                0,
-                textureY,
-                ICON_SIZE,
-                ICON_SIZE,
-                256,
-                256
-        );
+        graphics.blit(RenderPipelines.GUI_TEXTURED, DESKTOP_ICONS, x, y, 0, textureY,
+                ICON_SIZE, ICON_SIZE, 256, 256);
 
-        int center =
-                x
-                        + ICON_SIZE / 2;
+        int center = x + ICON_SIZE / 2;
 
-        graphics.text(
-                font,
-                name,
-                center
-                        - font.width(name) / 2
-                        + 1,
-                y
-                        + ICON_SIZE
-                        + 2,
-                0xFF404040,
-                false
-        );
+        graphics.text(font, name, center - font.width(name) / 2 + 1, y + ICON_SIZE + 2,
+                0xFF404040, false);
 
-        graphics.text(
-                font,
-                name,
-                center
-                        - font.width(name) / 2,
-                y
-                        + ICON_SIZE
-                        + 1,
-                0xFFFFFFFF,
-                false
-        );
+        graphics.text(font, name, center - font.width(name) / 2, y + ICON_SIZE + 1,
+                0xFFFFFFFF, false);
     }
 
     private void drawDesktopCount(GuiGraphicsExtractor graphics, int x, int y, long count) {
@@ -522,16 +512,19 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
 
         Component text = Component.literal(Long.toString(count));
 
-        graphics.text(font, text, x + ICON_SIZE - 1 - font.width(text), y + 4, 0xFFAA0000, false);
+        graphics.text(font, text, x + ICON_SIZE - 1 - font.width(text), y + 4,
+                0xFFAA0000, false);
     }
 
     private static List<String> wrapText(String text, int maxCharacters) {
         List<String> lines = new ArrayList<>();
+
         StringBuilder current = new StringBuilder();
 
         for (String word : text.split("\\s+")) {
             if (!current.isEmpty() && current.length() + word.length() + 1 > maxCharacters) {
                 lines.add(current.toString());
+
                 current.setLength(0);
             }
 
@@ -567,7 +560,9 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         if (selectedMailId == null) {
             return null;
         }
-        return menu.jobMail().stream().filter(entry -> entry.emailId().equals(selectedMailId)).findFirst().orElse(null);
+
+        return menu.jobMail().stream().filter(entry ->
+                entry.emailId().equals(selectedMailId)).findFirst().orElse(null);
     }
 
     private void buildJobDetail() {
@@ -575,30 +570,25 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
 
         if (entry == null) {
             view = View.MAIL_LIST;
+
             rebuildView();
+
             return;
         }
 
         this.addRenderableWidget(Button.builder(Component.literal("Back"), button -> {
                     view = View.MAIL_LIST;
+
                     rebuildView();
                 }
-        ).bounds(
-                leftPos + 15,
-                topPos + 153,
-                90,
-                22
-        ).build());
+        ).bounds(leftPos + 15, topPos + 153, 90, 22).build());
 
-        Button accept = this.addRenderableWidget(Button.builder(Component.literal(entry.canAccept() ? "Accept Job" : "Unavailable"), button -> {
+        Button accept = this.addRenderableWidget(Button.builder(Component.literal(entry.canAccept()
+                ? "Accept Job" : "Unavailable"), button -> {
             button.active = false;
+
             NetworkManager.sendToServer(new AcceptEmailJobPayload(entry.emailId()));
-        }).bounds(
-                leftPos + 131,
-                topPos + 153,
-                110,
-                22
-        ).build());
+        }).bounds(leftPos + 131, topPos + 153, 110, 22).build());
 
         accept.active = entry.canAccept();
     }

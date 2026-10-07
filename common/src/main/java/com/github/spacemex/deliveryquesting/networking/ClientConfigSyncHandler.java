@@ -6,7 +6,11 @@ import dev.architectury.event.events.client.ClientPlayerEvent;
 import dev.architectury.networking.NetworkManager;
 
 public final class ClientConfigSyncHandler {
-    private static boolean initialized = false;
+
+    private static boolean initialized;
+
+    private ClientConfigSyncHandler() {
+    }
 
     public static void initialize() {
         if (initialized) {
@@ -16,7 +20,8 @@ public final class ClientConfigSyncHandler {
         initialized = true;
 
         NetworkManager.registerReceiver(NetworkManager.Side.S2C, SyncPayload.TYPE, SyncPayload.CODEC,
-                (payload, context) -> context.queue(() -> ConfigReader.setSyncedConfig(payload.config())));
+                (payload, context) -> context.queue(() ->
+                        ConfigReader.setSyncedConfig(payload.config())));
 
         ClientPlayerEvent.CLIENT_PLAYER_QUIT.register(player -> ConfigReader.clearSyncedConfig());
     }

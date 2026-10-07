@@ -21,15 +21,22 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.NonNull;
 
 public final class CardboardBoxBlock extends BaseEntityBlock {
-    public static final MapCodec<CardboardBoxBlock> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            CardboardBoxTier.CODEC.fieldOf("tier")
-                    .forGetter(CardboardBoxBlock::tier), propertiesCodec()).apply(instance, CardboardBoxBlock::new));
+
+    public static final MapCodec<CardboardBoxBlock> CODEC = RecordCodecBuilder.mapCodec
+            (instance -> instance.group(
+                            CardboardBoxTier.CODEC.fieldOf("tier")
+                                    .forGetter(CardboardBoxBlock::tier), propertiesCodec())
+                    .apply(instance, CardboardBoxBlock::new));
+
     private final CardboardBoxTier tier;
+
     public static final EnumProperty<Direction> FACING;
 
     public CardboardBoxBlock(CardboardBoxTier tier, Properties properties) {
         super(properties);
+
         this.tier = tier;
+
         registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH));
     }
 
@@ -53,8 +60,11 @@ public final class CardboardBoxBlock extends BaseEntityBlock {
     }
 
     @Override
-    protected @NonNull InteractionResult useWithoutItem(@NonNull BlockState state, @NonNull Level level, @NonNull BlockPos pos, @NonNull Player player, @NonNull BlockHitResult hitResult) {
-        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer && level.getBlockEntity(pos) instanceof CardboardBoxBlockEntity box) {
+    protected @NonNull InteractionResult useWithoutItem(@NonNull BlockState state, @NonNull Level level,
+                                                        @NonNull BlockPos pos, @NonNull Player player,
+                                                        @NonNull BlockHitResult hitResult) {
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer && level.getBlockEntity(pos)
+                instanceof CardboardBoxBlockEntity box) {
             CardboardBoxMenu.open(serverPlayer, pos, box);
         }
         return InteractionResult.SUCCESS;
@@ -79,6 +89,7 @@ public final class CardboardBoxBlock extends BaseEntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.@NonNull Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
+
         builder.add(FACING);
     }
 

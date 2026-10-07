@@ -20,16 +20,25 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 public final class ContractScreen extends AbstractContainerScreen<ContractMenu> {
-    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/contract.png");
+
+    private static final Identifier TEXTURE =
+            Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/contract.png");
+
     private TaskRequirementWidget requirementWidget;
+
     private static final int DESCRIPTION_TOP = 135;
     private static final int DESCRIPTION_BOTTOM = 211;
     private static final int DESCRIPTION_LEFT = 8;
-    private static final float DESCRIPTION_SCALE = 0.5F;
     private static final int DESCRIPTION_LINE_HEIGHT = 6;
+
+    private static final float DESCRIPTION_SCALE = 0.5F;
+
     private List<FormattedCharSequence> descriptionLines = List.of();
+
     private int descriptionScroll;
+
     private PlayerModel contractorModel;
+
     private @Nullable Identifier contractorSkin;
 
     public ContractScreen(ContractMenu menu, Inventory inventory, Component title) {
@@ -39,18 +48,25 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
     @Override
     protected void init() {
         super.init();
+
         requirementWidget = new TaskRequirementWidget(61, 6, menu.task().requirements(), false);
+
         descriptionLines = font.split(Component.literal(menu.task().description()),
                 Math.round((imageWidth - DESCRIPTION_LEFT * 2) / DESCRIPTION_SCALE));
+
         descriptionScroll = 0;
+
         contractorModel = new PlayerModel(minecraft.getEntityModels().bakeLayer(ModelLayers.PLAYER), false);
+
         contractorSkin = ContractorSkinManager.getTexture(menu.task().skin());
     }
 
     @Override
     public void extractBackground(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, 256);
+
+        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos, topPos, 0, 0,
+                imageWidth, imageHeight, 256, 256);
     }
 
     @Override
@@ -60,27 +76,36 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
         drawContractor(graphics);
 
         graphics.pose().pushMatrix();
+
         graphics.pose().scale(0.7f, 0.7f);
 
-        graphics.text(font, Component.literal(task.contractor()), Math.round(8 / 0.7f), Math.round(84 / 0.7f), 0xFF000000, false);
-        graphics.text(font, Component.literal(task.profession()), Math.round(8 / 0.7f), Math.round(90 / 0.7f), 0xFF404040, false);
+        graphics.text(font, Component.literal(task.contractor()), Math.round(8 / 0.7f), Math.round(84 / 0.7f),
+                0xFF000000, false);
+
+        graphics.text(font, Component.literal(task.profession()), Math.round(8 / 0.7f), Math.round(90 / 0.7f),
+                0xFF404040, false);
 
         graphics.pose().popMatrix();
 
         graphics.pose().pushMatrix();
+
         graphics.pose().scale(0.5f, 0.5f);
 
         graphics.text(font, Component.literal("Min. level: " + task.minLevel()),
                 8 * 2, 212, 0xFF404040, false);
+
         graphics.text(font, Component.literal("XP: +" + task.experienceReward()),
                 8 * 2, 223, 0xFF404040, false);
+
         graphics.text(font, Component.literal("Money: +" + task.moneyReward()),
                 8 * 2, 234, 0xFF404040, false);
 
         graphics.pose().popMatrix();
 
         drawCentered(graphics, Component.literal(task.name()), 125, 0xFF000000);
+
         drawDescription(graphics);
+
         requirementWidget.extract(graphics, mouseX - leftPos, mouseY - topPos, mouseX, mouseY);
     }
 
@@ -94,6 +119,7 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
         int y = DESCRIPTION_TOP;
 
         graphics.pose().pushMatrix();
+
         graphics.pose().scale(DESCRIPTION_SCALE, DESCRIPTION_SCALE);
 
         for (int i = descriptionScroll; i < end; i++) {
@@ -103,6 +129,7 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
             int x = Math.round((imageWidth / DESCRIPTION_SCALE - renderedWidth) / 2F);
 
             graphics.text(font, line, x, Math.round(y / DESCRIPTION_SCALE), 0xFF404040, false);
+
             y += DESCRIPTION_LINE_HEIGHT;
         }
 
@@ -129,6 +156,7 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
         }
 
         graphics.fill(trackX, trackY, trackX + 2, trackY + trackHeight, 0x44333333);
+
         graphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbHeight, 0xFF777777);
     }
 
@@ -139,35 +167,23 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
 
         int portraitWidth = 45;
         int portraitHeight = 72;
-
         int rightPadding = 121;
         int topPadding = 10;
-
         int x1 = leftPos + imageWidth - rightPadding;
         int x0 = x1 - portraitWidth;
-
         int y0 = topPos + topPadding;
         int y1 = y0 + portraitHeight;
 
         float scale = 0.90F * (y1 - y0) / 2.125F;
 
-        graphics.skin(
-                contractorModel,
-                contractorSkin,
-                scale,
-                0.0F,
-                0.0F,
-                -1.0625F,
-                x0,
-                y0,
-                x1,
-                y1
-        );
+        graphics.skin(contractorModel, contractorSkin, scale, 0.0F, 0.0F, -1.0625F,
+                x0, y0, x1, y1);
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (event.button() == 0 && requirementWidget != null && requirementWidget.mouseClicked(event.x() - leftPos, event.y() - topPos)) {
+        if (event.button() == 0 && requirementWidget != null &&
+                requirementWidget.mouseClicked(event.x() - leftPos, event.y() - topPos)) {
             return true;
         }
 
@@ -179,12 +195,14 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
         double relativeX = mouseX - leftPos;
         double relativeY = mouseY - topPos;
 
-        if (hasDescriptionScroll() && relativeX >= DESCRIPTION_LEFT && relativeX < imageWidth - DESCRIPTION_LEFT && relativeY >= DESCRIPTION_TOP && relativeY < DESCRIPTION_BOTTOM) {
+        if (hasDescriptionScroll() && relativeX >= DESCRIPTION_LEFT && relativeX <
+                imageWidth - DESCRIPTION_LEFT && relativeY >= DESCRIPTION_TOP && relativeY < DESCRIPTION_BOTTOM) {
             if (scrollY > 0D) {
                 descriptionScroll = Math.max(0, descriptionScroll - 1);
             } else if (scrollY < 0D) {
                 descriptionScroll = Math.min(getMaxDescriptionScroll(), descriptionScroll + 1);
             }
+
             return true;
         }
 

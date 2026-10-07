@@ -8,6 +8,8 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class BlockEntityTypeFactory {
+    private BlockEntityTypeFactory() {}
+
     @ExpectPlatform
     public static <T extends BlockEntity> BlockEntityType<T> create(Factory<? extends T> factory, Block... blocks) {
         throw new AssertionError();
@@ -17,5 +19,4 @@ public final class BlockEntityTypeFactory {
     public interface Factory<T extends BlockEntity> {
         T create(BlockPos pos, BlockState state);
     }
-
 }

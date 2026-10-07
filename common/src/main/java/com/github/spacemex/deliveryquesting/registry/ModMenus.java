@@ -10,7 +10,10 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 
 public final class ModMenus {
-    public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.MENU);
+
+    private ModMenus() {}
+
+    private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.MENU);
 
     public static final RegistrySupplier<MenuType<BulletinBoardMenu>> BULLETIN_BOARD;
     public static final RegistrySupplier<MenuType<MailboxMenu>> MAILBOX;

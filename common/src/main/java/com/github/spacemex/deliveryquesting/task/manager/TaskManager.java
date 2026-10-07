@@ -1,6 +1,8 @@
-package com.github.spacemex.deliveryquesting.task;
+package com.github.spacemex.deliveryquesting.task.manager;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.task.definition.TaskDefinition;
+import com.github.spacemex.deliveryquesting.task.TaskDefinitionParser;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.platform.Platform;
 import net.minecraft.resources.Identifier;
@@ -14,8 +16,12 @@ import java.util.stream.Stream;
 public final class TaskManager {
 
     private static final String TASK_DIRECTORY = "DeliveryQuesting/tasks";
+
     private static boolean initialized;
+
     private static volatile Map<Identifier, TaskDefinition> tasks = Map.of();
+
+    private TaskManager() {}
 
     public static void initialize() {
         if (initialized) {
@@ -32,11 +38,15 @@ public final class TaskManager {
 
         try {
             Files.createDirectories(directory);
+
             Map<Identifier, TaskDefinition> loaded = loadDirectory(directory);
 
             validateDependencies(loaded);
+
             validateDependencyCycles(loaded);
+
             tasks = Collections.unmodifiableMap(new LinkedHashMap<>(loaded));
+
             DeliveryQuesting.LOGGER.info("Loaded {} Delivery Questing task(s)", tasks.size());
         } catch (IOException e) {
             throw new RuntimeException("Failed to load Delivery Questing tasks", e);
@@ -51,6 +61,7 @@ public final class TaskManager {
 
             for (Path file : files) {
                 TaskDefinition task = TaskDefinitionParser.parse(file);
+
                 TaskDefinition existing = loaded.putIfAbsent(task.id(), task);
 
                 if (existing != null) {
@@ -60,11 +71,13 @@ public final class TaskManager {
                 DeliveryQuesting.LOGGER.debug("Loaded task {} from {}", task.id(), file);
             }
         }
+
         return loaded;
     }
 
     private static boolean isJsonFile(Path file) {
         String name = file.getFileName().toString().toLowerCase(Locale.ROOT);
+
         return name.endsWith(".json");
     }
 
@@ -80,6 +93,7 @@ public final class TaskManager {
 
     private static void validateDependencyCycles(Map<Identifier, TaskDefinition> loaded) {
         Map<Identifier, VisitState> states = new HashMap<>();
+
         Deque<Identifier> path = new ArrayDeque<>();
 
         for (Identifier id : loaded.keySet()) {
@@ -87,7 +101,8 @@ public final class TaskManager {
         }
     }
 
-    private static void visit(Identifier id, Map<Identifier, TaskDefinition> loaded, Map<Identifier, VisitState> states, Deque<Identifier> path) {
+    private static void visit(Identifier id, Map<Identifier, TaskDefinition> loaded, Map<Identifier, VisitState> states,
+                              Deque<Identifier> path) {
         VisitState state = states.get(id);
 
         if (state == VisitState.VISITED) {
@@ -99,7 +114,9 @@ public final class TaskManager {
         }
 
         states.put(id, VisitState.VISITING);
+
         path.addLast(id);
+
         TaskDefinition task = loaded.get(id);
 
         for (Identifier dependency : task.dependencies()) {
@@ -107,11 +124,13 @@ public final class TaskManager {
         }
 
         path.removeLast();
+
         states.put(id, VisitState.VISITED);
     }
 
     private static String formatCycle(Deque<Identifier> path, Identifier repeated) {
         List<Identifier> cycle = new ArrayList<>();
+
         boolean recording = false;
 
         for (Identifier id : path) {
@@ -125,6 +144,7 @@ public final class TaskManager {
         }
 
         cycle.add(repeated);
+
         return String.join(" -> ", cycle.stream().map(Identifier::toString).toList());
     }
 

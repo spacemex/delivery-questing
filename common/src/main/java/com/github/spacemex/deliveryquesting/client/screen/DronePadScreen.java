@@ -16,9 +16,14 @@ import net.minecraft.world.entity.player.Inventory;
 import org.jspecify.annotations.NonNull;
 
 public final class DronePadScreen extends AbstractContainerScreen<DronePadMenu> {
+
     private Button sendButton;
-    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/drone_pad.png");
-    private static final Identifier UPGRADE_SLOT_TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/item/upgrade_slot.png");
+
+    private static final Identifier TEXTURE =
+            Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/drone_pad.png");
+    private static final Identifier UPGRADE_SLOT_TEXTURE =
+            Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/item/upgrade_slot.png");
+
     private static final int BAR_WIDTH = 16;
     private static final int BAR_HEIGHT = 53;
 
@@ -29,15 +34,13 @@ public final class DronePadScreen extends AbstractContainerScreen<DronePadMenu> 
     @Override
     protected void init() {
         super.init();
+
         sendButton = addRenderableWidget(Button.builder(Component.literal("Send"), button -> {
             button.active = false;
+
             NetworkManager.sendToServer(new SubmitDroneDeliveryPayload(menu.blockPos()));
-        }).bounds(
-                leftPos + 110,
-                topPos + 59,
-                50,
-                20
-        ).build());
+        }).bounds(leftPos + 110, topPos + 59, 50, 20).build());
+
         sendButton.active = menu.hasPayload();
     }
 
@@ -53,7 +56,9 @@ public final class DronePadScreen extends AbstractContainerScreen<DronePadMenu> 
     public void extractBackground(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
 
-        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, 256);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos, topPos, 0, 0, imageWidth,
+                imageHeight, 256, 256);
+
         drawEnergyBar(graphics, leftPos + 27, topPos + 17, menu.padEnergy(), DronePadBlockEntity.ENERGY_CAPACITY);
 
 
@@ -73,7 +78,9 @@ public final class DronePadScreen extends AbstractContainerScreen<DronePadMenu> 
 
         Component droneTitle = Component.translatable("entity.delivery_questing.drone");
 
-        graphics.text(font, droneTitle, imageWidth - 26 - font.width(droneTitle), 7, 0xFF404040, false);
+        graphics.text(font, droneTitle, imageWidth - 26 - font.width(droneTitle), 7,
+                0xFF404040, false);
+
         graphics.text(font, playerInventoryTitle, 8, imageHeight - 93, 0xFF404040, false);
     }
 

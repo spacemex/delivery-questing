@@ -1,6 +1,10 @@
 package com.github.spacemex.deliveryquesting.job;
 
-import com.github.spacemex.deliveryquesting.task.*;
+import com.github.spacemex.deliveryquesting.task.TaskRequirement;
+import com.github.spacemex.deliveryquesting.task.definition.ContractorDefinition;
+import com.github.spacemex.deliveryquesting.task.entry.ItemRequirement;
+import com.github.spacemex.deliveryquesting.task.entry.ItemReward;
+import com.github.spacemex.deliveryquesting.task.entry.TaskRewards;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
@@ -14,7 +18,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("all")
 public final class JobDefinitionParser {
+
+    private JobDefinitionParser() {
+    }
 
     public static JobDefinition parse(Path file) throws IOException {
         try (Reader reader = Files.newBufferedReader(file)) {
@@ -33,11 +41,17 @@ public final class JobDefinitionParser {
 
     private static JobDefinition parse(Path source, JsonObject root) {
         Identifier id = parseIdentifier(source, "id", requiredString(source, root, "id"));
+
         String name = requiredString(source, root, "name");
+
         String description = optionalString(root, "description", "");
+
         ContractorDefinition contractor = parseContractor(source, root);
+
         int minLevel = optionalInt(root, "min_level", 0);
+
         List<TaskRequirement> requirements = parseRequirements(source, root);
+
         TaskRewards rewards = parseRewards(source, root);
 
         return new JobDefinition(id, name, description, contractor, minLevel, requirements, rewards);
@@ -53,7 +67,8 @@ public final class JobDefinitionParser {
         JsonObject contractor = element.getAsJsonObject();
 
         return new ContractorDefinition(requiredString(source, contractor, "name"),
-                optionalString(contractor, "profession", ""), optionalString(contractor, "skin", ""));
+                optionalString(contractor, "profession", ""),
+                optionalString(contractor, "skin", ""));
     }
 
     private static List<TaskRequirement> parseRequirements(Path source, JsonObject root) {
@@ -75,6 +90,7 @@ public final class JobDefinitionParser {
             }
 
             JsonObject requirement = entry.getAsJsonObject();
+
             String type = requiredString(source, requirement, "type");
 
             switch (type) {
@@ -97,10 +113,12 @@ public final class JobDefinitionParser {
         long amount = optionalLong(object, "amount", 1L);
 
         if (hasItem) {
-            return ItemRequirement.item(parseIdentifier(source, "item", requiredString(source, object, "item")), amount);
+            return ItemRequirement.item(parseIdentifier(source, "item", requiredString(source, object,
+                    "item")), amount);
         }
 
-        return ItemRequirement.tag(parseIdentifier(source, "tag", requiredString(source, object, "tag")), amount);
+        return ItemRequirement.tag(parseIdentifier(source, "tag", requiredString(source, object,
+                "tag")), amount);
     }
 
     private static TaskRewards parseRewards(Path source, JsonObject root) {
@@ -115,8 +133,11 @@ public final class JobDefinitionParser {
         }
 
         JsonObject rewards = element.getAsJsonObject();
+
         int experience = optionalInt(rewards, "experience", 0);
+
         long money = optionalLong(rewards, "money", 0L);
+
         List<ItemReward> items = parseItemRewards(source, rewards);
 
         return new TaskRewards(experience, money, items);
@@ -141,7 +162,10 @@ public final class JobDefinitionParser {
             }
 
             JsonObject reward = entry.getAsJsonObject();
-            Identifier item = parseIdentifier(source, "rewards.items.item", requiredString(source, reward, "item"));
+
+            Identifier item = parseIdentifier(source, "rewards.items.item",
+                    requiredString(source, reward, "item"));
+
             int count = optionalInt(reward, "count", 1);
 
             result.add(new ItemReward(item, count));
@@ -158,7 +182,8 @@ public final class JobDefinitionParser {
         }
 
         try {
-            return Identifier.fromNamespaceAndPath(value.substring(0, separator), value.substring(separator + 1));
+            return Identifier.fromNamespaceAndPath(value.substring(0, separator),
+                    value.substring(separator + 1));
         } catch (RuntimeException exception) {
             throw error(source, "Invalid identifier for '" + field + "': " + value);
         }

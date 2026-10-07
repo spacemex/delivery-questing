@@ -7,7 +7,11 @@ import dev.architectury.networking.NetworkManager;
 import net.minecraft.server.level.ServerPlayer;
 
 public final class ConfigSyncHandler {
-    private static boolean initialized = false;
+
+    private static boolean initialized;
+
+    private ConfigSyncHandler() {
+    }
 
     public static void initialize() {
         if (initialized) {

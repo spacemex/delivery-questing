@@ -31,13 +31,22 @@ import java.util.Optional;
 import java.util.UUID;
 
 public final class DroneEntity extends Entity {
-    private static final EntityDataAccessor<BlockPos> DATA_PAD_POS = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.BLOCK_POS);
-    private static final EntityDataAccessor<Integer> DATA_STATE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<ItemStack> DATA_PAYLOAD = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.ITEM_STACK);
+
+    private static final EntityDataAccessor<BlockPos> DATA_PAD_POS = SynchedEntityData
+            .defineId(DroneEntity.class, EntityDataSerializers.BLOCK_POS);
+    private static final EntityDataAccessor<Integer> DATA_STATE = SynchedEntityData
+            .defineId(DroneEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<ItemStack> DATA_PAYLOAD = SynchedEntityData
+            .defineId(DroneEntity.class, EntityDataSerializers.ITEM_STACK);
+
     private static final double IDLE_HEIGHT = 1.35D;
     private static final double ARRIVAL_DISTANCE_SQR = 0.04D;
-    private static final EntityDataAccessor<Integer> DATA_ENERGY = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> DATA_TIER = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.INT);
+
+    private static final EntityDataAccessor<Integer> DATA_ENERGY = SynchedEntityData
+            .defineId(DroneEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_TIER = SynchedEntityData
+            .defineId(DroneEntity.class, EntityDataSerializers.INT);
+
     public static final int ENERGY_CAPACITY = 16_000;
     private static final int LOADED_ENERGY_PER_TICK = 5;
     private static final int RETURN_ENERGY_PER_TICK = 1;
@@ -46,25 +55,36 @@ public final class DroneEntity extends Entity {
         super(type, level);
 
         noPhysics = true;
+
         setNoGravity(true);
     }
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(DATA_PAD_POS, BlockPos.ZERO);
+
         builder.define(DATA_STATE, FlightState.IDLE.id());
+
         builder.define(DATA_PAYLOAD, ItemStack.EMPTY);
+
         builder.define(DATA_ENERGY, 0);
+
         builder.define(DATA_TIER, 0);
     }
 
     public void initialize(BlockPos padPos) {
         setPadPos(padPos);
+
         setFlightState(FlightState.IDLE);
+
         setPayload(ItemStack.EMPTY);
+
         setEnergy(0);
+
         setTier(0);
+
         Vec3 idle = getIdlePosition();
+
         setPos(idle.x, idle.y, idle.z);
     }
 
@@ -98,9 +118,11 @@ public final class DroneEntity extends Entity {
 
     public int getPayloadTier() {
         ItemStack payload = getPayload();
+
         if (payload.getItem() instanceof CardboardBoxItem box) {
             return box.tier().level();
         }
+
         return 1;
     }
 
@@ -152,15 +174,20 @@ public final class DroneEntity extends Entity {
         if (!getPayload().isEmpty()) {
             return false;
         }
+
         setPayload(payload);
+
         setFlightState(FlightState.DEPARTING);
+
         return true;
     }
 
     @Override
     public void tick() {
         super.tick();
+
         noPhysics = true;
+
         setNoGravity(true);
 
         if (level().isClientSide()) {
@@ -175,7 +202,9 @@ public final class DroneEntity extends Entity {
 
         if (!(serverLevel.getBlockEntity(padPos) instanceof DronePadBlockEntity pad)) {
             dropPayload(serverLevel);
+
             discard();
+
             return;
         }
 
@@ -198,6 +227,7 @@ public final class DroneEntity extends Entity {
     private void tickDeparting(ServerLevel level, DronePadBlockEntity pad) {
         if (getEnergy() <= 0) {
             crash(level);
+
             return;
         }
 
@@ -210,16 +240,18 @@ public final class DroneEntity extends Entity {
         }
 
         submitPayload(level, pad);
+
         setFlightState(FlightState.RETURNING);
     }
 
     private void tickReturning() {
-        if (!(level() instanceof ServerLevel serverLevel)) {
+        if (!(level() instanceof ServerLevel)) {
             return;
         }
 
         if (getEnergy() <= 0) {
             discard();
+
             return;
         }
 
@@ -230,6 +262,7 @@ public final class DroneEntity extends Entity {
         }
 
         setDeltaMovement(Vec3.ZERO);
+
         setFlightState(FlightState.IDLE);
     }
 
@@ -240,22 +273,30 @@ public final class DroneEntity extends Entity {
             setPos(target.x, target.y, target.z);
 
             setDeltaMovement(Vec3.ZERO);
+
             return true;
         }
+
         Vec3 movement = difference.normalize().scale(Math.min(speed, difference.length()));
+
         setDeltaMovement(movement);
+
         move(MoverType.SELF, movement);
+
         return false;
     }
 
     private void crash(ServerLevel level) {
         DeliveryQuesting.LOGGER.debug("Drone at {} ran out of energy and crashed", blockPosition());
+
         dropPayload(level);
+
         discard();
     }
 
     private Vec3 getIdlePosition() {
         BlockPos padPos = getPadPos();
+
         return new Vec3(padPos.getX() + 0.5D, padPos.getY() + IDLE_HEIGHT, padPos.getZ() + 0.5D);
     }
 
@@ -264,6 +305,7 @@ public final class DroneEntity extends Entity {
 
         if (!(payload.getItem() instanceof CardboardBoxItem boxItem)) {
             setPayload(ItemStack.EMPTY);
+
             return;
         }
 
@@ -271,6 +313,7 @@ public final class DroneEntity extends Entity {
 
         if (optionalGroupId.isEmpty()) {
             returnPayload(level);
+
             return;
         }
 
@@ -280,6 +323,7 @@ public final class DroneEntity extends Entity {
 
         if (optionalGroup.isEmpty()) {
             returnPayload(level);
+
             return;
         }
 
@@ -287,6 +331,7 @@ public final class DroneEntity extends Entity {
 
         if (contents.isEmpty()) {
             returnPayload(level);
+
             return;
         }
 
@@ -296,11 +341,10 @@ public final class DroneEntity extends Entity {
 
         setPayload(ItemStack.EMPTY);
 
-        Component message = Component.literal("Drone delivery completed: " + result.submitted() + " item(s) submitted, " + result.discarded() + " item(s) discarded.");
+        Component message = Component.literal("Drone delivery completed: " + result.submitted()
+                + " item(s) submitted, " + result.discarded() + " item(s) discarded.");
 
-        for (UUID member :
-                group.members()) {
-
+        for (UUID member : group.members()) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(member);
 
             if (player != null) {
@@ -308,7 +352,8 @@ public final class DroneEntity extends Entity {
             }
         }
 
-        DeliveryQuesting.LOGGER.debug("Drone delivery for group '{}' submitted {} item(s), discarded {}", group.name(), result.submitted(), result.discarded());
+        DeliveryQuesting.LOGGER.debug("Drone delivery for group '{}' submitted {} item(s), discarded {}",
+                group.name(), result.submitted(), result.discarded());
     }
 
     private void returnPayload(ServerLevel level) {
@@ -319,10 +364,14 @@ public final class DroneEntity extends Entity {
         }
 
         BlockPos padPos = getPadPos();
-        ItemEntity dropped = new ItemEntity(level, padPos.getX() + 0.5D, padPos.getY() + 1.0D, padPos.getZ() + 0.5D, payload.copy());
+
+        ItemEntity dropped = new ItemEntity(level, padPos.getX() + 0.5D, padPos.getY() + 1.0D,
+                padPos.getZ() + 0.5D, payload.copy());
 
         dropped.setDefaultPickUpDelay();
+
         level.addFreshEntity(dropped);
+
         setPayload(ItemStack.EMPTY);
     }
 
@@ -336,15 +385,20 @@ public final class DroneEntity extends Entity {
         ItemEntity dropped = new ItemEntity(level, getX(), getY(), getZ(), payload.copy());
 
         dropped.setDefaultPickUpDelay();
+
         level.addFreshEntity(dropped);
+
         setPayload(ItemStack.EMPTY);
     }
 
     @Override
     protected void addAdditionalSaveData(@NonNull ValueOutput output) {
         output.store("pad_pos", BlockPos.CODEC, getPadPos());
+
         output.putInt("flight_state", getFlightState().id());
+
         output.putInt("energy", getEnergy());
+
         output.putInt("tier", getTier());
 
         if (!getPayload().isEmpty()) {
@@ -355,9 +409,13 @@ public final class DroneEntity extends Entity {
     @Override
     protected void readAdditionalSaveData(@NonNull ValueInput input) {
         input.read("pad_pos", BlockPos.CODEC).ifPresent(this::setPadPos);
+
         setFlightState(FlightState.fromId(input.getIntOr("flight_state", FlightState.IDLE.id())));
+
         setPayload(input.read("payload", ItemStack.CODEC).orElse(ItemStack.EMPTY));
+
         setEnergy(input.getIntOr("energy", 0));
+
         setTier(input.getIntOr("tier", 0));
     }
 
@@ -372,7 +430,7 @@ public final class DroneEntity extends Entity {
     }
 
     @Override
-    public PushReaction getPistonPushReaction() {
+    public @NonNull PushReaction getPistonPushReaction() {
         return PushReaction.IGNORE;
     }
 
@@ -397,6 +455,7 @@ public final class DroneEntity extends Entity {
                     return state;
                 }
             }
+
             return IDLE;
         }
     }

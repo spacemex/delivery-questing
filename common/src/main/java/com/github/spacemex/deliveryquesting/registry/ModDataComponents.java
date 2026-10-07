@@ -1,7 +1,7 @@
 package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
-import com.github.spacemex.deliveryquesting.progression.MailboxParcel;
+import com.github.spacemex.deliveryquesting.progression.entry.MailboxParcel;
 import com.mojang.serialization.Codec;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -13,7 +13,10 @@ import net.minecraft.resources.Identifier;
 import java.util.function.UnaryOperator;
 
 public final class ModDataComponents {
-    public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENTS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.DATA_COMPONENT_TYPE);
+
+    private ModDataComponents() {}
+
+    private static final DeferredRegister<DataComponentType<?>> DATA_COMPONENTS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.DATA_COMPONENT_TYPE);
 
     public static final RegistrySupplier<DataComponentType<MailboxParcel>> MAILBOX_PARCEL;
     public static final RegistrySupplier<DataComponentType<Identifier>> CONTRACT_TASK_ID;

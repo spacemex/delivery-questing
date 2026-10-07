@@ -1,5 +1,10 @@
 package com.github.spacemex.deliveryquesting.task;
 
+import com.github.spacemex.deliveryquesting.task.definition.ContractorDefinition;
+import com.github.spacemex.deliveryquesting.task.definition.TaskDefinition;
+import com.github.spacemex.deliveryquesting.task.entry.ItemRequirement;
+import com.github.spacemex.deliveryquesting.task.entry.ItemReward;
+import com.github.spacemex.deliveryquesting.task.entry.TaskRewards;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
@@ -14,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class TaskDefinitionParser {
+
+    private TaskDefinitionParser() {}
 
     public static TaskDefinition parse(Path file) throws IOException {
         try (Reader reader = Files.newBufferedReader(file)) {
@@ -31,13 +38,18 @@ public final class TaskDefinitionParser {
 
     private static TaskDefinition parse(Path source, JsonObject root) {
         Identifier id = parseIdentifier(source, "id", requiredString(source, root, "id"));
+
         String name = requiredString(source, root, "name");
         String description = optionalString(root, "description", "");
+
         ContractorDefinition contractor = parseContractor(source, root);
+
         int minLevel = optionalInt(root, "min_level", 0);
         boolean forced = optionalBoolean(root, "forced", false);
+
         List<Identifier> dependencies = parseDependencies(source, root);
         List<TaskRequirement> requirements = parseRequirements(source, root);
+
         TaskRewards rewards = parseRewards(source, root);
 
         return new TaskDefinition(id, name, description, contractor, minLevel, dependencies, forced, requirements, rewards);
@@ -51,6 +63,7 @@ public final class TaskDefinitionParser {
         }
 
         JsonObject contractor = element.getAsJsonObject();
+
         String name = requiredString(source, contractor, "name");
         String profession = optionalString(contractor, "profession", "");
         String skin = optionalString(contractor, "skin", "");
@@ -74,6 +87,7 @@ public final class TaskDefinitionParser {
 
             dependencies.add(parseIdentifier(source, "dependencies", dependency.getAsString()));
         }
+
         return dependencies;
     }
 
@@ -96,6 +110,7 @@ public final class TaskDefinitionParser {
             }
 
             JsonObject requirement = requirementElement.getAsJsonObject();
+
             String type = requiredString(source, requirement, "type");
 
             switch (type) {
@@ -103,6 +118,7 @@ public final class TaskDefinitionParser {
                 default -> throw error(source, "Unknown requirement type: " + type);
             }
         }
+
         return requirements;
     }
 
@@ -122,6 +138,7 @@ public final class TaskDefinitionParser {
         }
 
         Identifier tag = parseIdentifier(source, "tag", requiredString(source, object, "tag"));
+
         return ItemRequirement.tag(tag, amount);
     }
 
@@ -137,9 +154,13 @@ public final class TaskDefinitionParser {
         }
 
         JsonObject rewards = element.getAsJsonObject();
+
         int experience = optionalInt(rewards, "experience", 0);
+
         long money = optionalLong(rewards, "money", 0L);
+
         List<ItemReward> itemRewards = parseItemRewards(source, rewards);
+
 
         return new TaskRewards(experience, money, itemRewards);
     }
@@ -163,11 +184,14 @@ public final class TaskDefinitionParser {
             }
 
             JsonObject reward = rewardElement.getAsJsonObject();
+
             Identifier item = parseIdentifier(source, "rewards.items.item", requiredString(source, reward, "item"));
+
             int count = optionalInt(reward, "count", 1);
 
             result.add(new ItemReward(item, count));
         }
+
         return result;
     }
 

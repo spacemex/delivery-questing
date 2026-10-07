@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public final class DeliveryContainerItem extends Item {
+
     private final int capacity;
 
     public DeliveryContainerItem(Properties properties, int capacity) {
@@ -72,10 +73,15 @@ public final class DeliveryContainerItem extends Item {
     @SuppressWarnings("deprecation")
     @Override
     @Deprecated
-    public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context, @NonNull TooltipDisplay display, @NonNull Consumer<Component> builder, @NonNull TooltipFlag flag) {
+    public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context,
+                                @NonNull TooltipDisplay display, @NonNull Consumer<Component> builder,
+                                @NonNull TooltipFlag flag) {
         super.appendHoverText(stack, context, display, builder, flag);
 
-        builder.accept(Component.translatable("tooltip.delivery_questing.delivery_container.items", getContainedItemCount(stack), capacity).withStyle(ChatFormatting.GRAY));
-        builder.accept(Component.translatable("tooltip.delivery_questing.delivery_container.open").withStyle(ChatFormatting.DARK_GRAY));
+        builder.accept(Component.translatable("tooltip.delivery_questing.delivery_container.items", getContainedItemCount(stack), capacity)
+                .withStyle(ChatFormatting.GRAY));
+
+        builder.accept(Component.translatable("tooltip.delivery_questing.delivery_container.open")
+                .withStyle(ChatFormatting.DARK_GRAY));
     }
 }

@@ -1,6 +1,6 @@
 package com.github.spacemex.deliveryquesting.menu.entry;
 
-import com.github.spacemex.deliveryquesting.progression.MailboxParcel;
+import com.github.spacemex.deliveryquesting.progression.entry.MailboxParcel;
 import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.ArrayList;
@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record MailboxParcelEntry(UUID id, String sender, long itemCount, boolean contractEnvelope) {
+
     private static final int MAX_ENTRIES = 4;
 
     public static MailboxParcelEntry from(MailboxParcel parcel) {
@@ -16,17 +17,25 @@ public record MailboxParcelEntry(UUID id, String sender, long itemCount, boolean
 
     public void write(FriendlyByteBuf buffer) {
         buffer.writeLong(id.getMostSignificantBits());
+
         buffer.writeLong(id.getLeastSignificantBits());
+
         buffer.writeUtf(sender, 256);
+
         buffer.writeLong(itemCount);
+
         buffer.writeBoolean(contractEnvelope);
     }
 
     public static MailboxParcelEntry read(FriendlyByteBuf buffer) {
         UUID id = new UUID(buffer.readLong(), buffer.readLong());
+
         String sender = buffer.readUtf(256);
+
         long itemCount = buffer.readLong();
+
         boolean contractEnvelope = buffer.readBoolean();
+
         return new MailboxParcelEntry(id, sender, itemCount, contractEnvelope);
     }
 
@@ -54,6 +63,7 @@ public record MailboxParcelEntry(UUID id, String sender, long itemCount, boolean
         for (int i = 0; i < size; ++i) {
             entries.add(read(buffer));
         }
+
         return List.copyOf(entries);
     }
 }

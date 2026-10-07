@@ -28,7 +28,9 @@ public final class ContractItem extends Item {
 
     public static ItemStack create(Identifier taskId) {
         ItemStack stack = new ItemStack(ModItems.CONTRACT.get());
+
         stack.set(ModDataComponents.CONTRACT_TASK_ID.get(), taskId);
+
         return stack;
     }
 
@@ -40,6 +42,7 @@ public final class ContractItem extends Item {
     @Override
     public @NonNull InteractionResult use(@NonNull Level level, @NonNull Player player, @NonNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+
         Identifier taskId = getTaskId(stack);
 
         if (taskId == null) {
@@ -62,10 +65,13 @@ public final class ContractItem extends Item {
     @SuppressWarnings("deprecation")
     @Override
     @Deprecated
-    public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context, @NonNull TooltipDisplay display, @NonNull Consumer<Component> builder, @NonNull TooltipFlag flag) {
+    public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context,
+                                @NonNull TooltipDisplay display, @NonNull Consumer<Component> builder,
+                                @NonNull TooltipFlag flag) {
         super.appendHoverText(stack, context, display, builder, flag);
 
-        builder.accept(Component.translatable("tooltip.delivery_questing.contract.inspect").withStyle(ChatFormatting.GRAY));
+        builder.accept(Component.translatable("tooltip.delivery_questing.contract.inspect")
+                .withStyle(ChatFormatting.GRAY));
 
         Identifier taskId = getTaskId(stack);
 

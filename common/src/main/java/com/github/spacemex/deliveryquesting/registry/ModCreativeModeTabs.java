@@ -10,7 +10,10 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 
 public final class ModCreativeModeTabs {
-    public static DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.CREATIVE_MODE_TAB);
+
+    private ModCreativeModeTabs() {}
+
+    private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.CREATIVE_MODE_TAB);
 
     public static RegistrySupplier<CreativeModeTab> DELIVERY_TAB;
 

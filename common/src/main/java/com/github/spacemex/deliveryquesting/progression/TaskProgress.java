@@ -1,7 +1,7 @@
 package com.github.spacemex.deliveryquesting.progression;
 
-import com.github.spacemex.deliveryquesting.task.TaskDefinition;
 import com.github.spacemex.deliveryquesting.task.TaskRequirement;
+import com.github.spacemex.deliveryquesting.task.definition.TaskDefinition;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.resources.Identifier;
@@ -12,12 +12,19 @@ import java.util.Map;
 import java.util.Objects;
 
 public final class TaskProgress {
+
     private static final Codec<Map<String, Long>> PROGRESS_CODEC = Codec.unboundedMap(Codec.STRING, Codec.LONG);
-    public static final Codec<TaskProgress> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Identifier.CODEC.fieldOf("task").forGetter(TaskProgress::taskId),
-            PROGRESS_CODEC.optionalFieldOf("progress", Map.of()).forGetter(TaskProgress::progress)
-    ).apply(instance, TaskProgress::new));
+
+    public static final Codec<TaskProgress> CODEC = RecordCodecBuilder.create(instance ->
+            instance.group(
+                            Identifier.CODEC.fieldOf("task")
+                                    .forGetter(TaskProgress::taskId),
+                            PROGRESS_CODEC.optionalFieldOf("progress", Map.of())
+                                    .forGetter(TaskProgress::progress))
+                    .apply(instance, TaskProgress::new));
+
     private final Identifier taskId;
+
     private final Map<String, Long> progress;
 
     public TaskProgress(Identifier taskId) {
@@ -26,11 +33,14 @@ public final class TaskProgress {
 
     private TaskProgress(Identifier taskId, Map<String, Long> progress) {
         this.taskId = Objects.requireNonNull(taskId, "taskId");
+
         Objects.requireNonNull(progress, "progress");
+
         this.progress = new LinkedHashMap<>();
 
         for (Map.Entry<String, Long> entry : progress.entrySet()) {
             String key = entry.getKey();
+
             Long value = entry.getValue();
 
             if (key == null || key.isBlank()) {
@@ -61,6 +71,7 @@ public final class TaskProgress {
         return Math.max(0L, requirement.amount() - getProgress(requirement));
     }
 
+    @SuppressWarnings("all")
     long addProgress(TaskRequirement requirement, long amount) {
         if (amount <= 0L) {
             return 0L;
@@ -76,6 +87,7 @@ public final class TaskProgress {
         long accepted = Math.min(remaining, amount);
 
         progress.put(requirement.progressKey(), current + accepted);
+
         return accepted;
     }
 
@@ -92,6 +104,7 @@ public final class TaskProgress {
                 return false;
             }
         }
+
         return true;
     }
 }

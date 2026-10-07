@@ -1,10 +1,10 @@
 package com.github.spacemex.deliveryquesting.item;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
-import com.github.spacemex.deliveryquesting.progression.MailboxParcel;
+import com.github.spacemex.deliveryquesting.progression.entry.MailboxParcel;
 import com.github.spacemex.deliveryquesting.registry.ModDataComponents;
 import com.github.spacemex.deliveryquesting.registry.ModItems;
-import com.github.spacemex.deliveryquesting.task.ItemReward;
+import com.github.spacemex.deliveryquesting.task.entry.ItemReward;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -31,12 +31,14 @@ public final class SealedParcelItem extends Item {
         ItemStack stack = new ItemStack(ModItems.SEALED_PARCEL.get());
 
         stack.set(ModDataComponents.MAILBOX_PARCEL.get(), parcel);
+
         return stack;
     }
 
     @Override
     public @NonNull InteractionResult use(@NonNull Level level, @NonNull Player player, @NonNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+
         MailboxParcel parcel = stack.get(ModDataComponents.MAILBOX_PARCEL.get());
 
         if (parcel == null) {
@@ -63,16 +65,19 @@ public final class SealedParcelItem extends Item {
 
         if (item == null || item == Items.AIR) {
             DeliveryQuesting.LOGGER.error("Mailbox parcel contains invalid reward item {}", reward.item());
+
             return;
         }
 
         int remaining = reward.count();
+
         ItemStack example = new ItemStack(item);
 
         int maxStackSize = example.getMaxStackSize();
 
         while (remaining > 0) {
             int amount = Math.min(remaining, maxStackSize);
+
             ItemStack rewardStack = new ItemStack(item, amount);
 
             player.getInventory().add(rewardStack);
@@ -80,6 +85,7 @@ public final class SealedParcelItem extends Item {
             if (!rewardStack.isEmpty()) {
                 player.drop(rewardStack, false, false);
             }
+
             remaining -= amount;
         }
     }
@@ -87,7 +93,9 @@ public final class SealedParcelItem extends Item {
     @SuppressWarnings("deprecation")
     @Override
     @Deprecated
-    public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context, @NonNull TooltipDisplay display, @NonNull Consumer<Component> builder, @NonNull TooltipFlag flag) {
+    public void appendHoverText(@NonNull ItemStack stack, @NonNull TooltipContext context,
+                                @NonNull TooltipDisplay display, @NonNull Consumer<Component> builder,
+                                @NonNull TooltipFlag flag) {
         super.appendHoverText(stack, context, display, builder, flag);
 
         MailboxParcel parcel = stack.get(ModDataComponents.MAILBOX_PARCEL.get());
@@ -100,8 +108,10 @@ public final class SealedParcelItem extends Item {
 
         builder.accept(Component.translatable("tooltip.delivery_questing.by", sender)
                 .withStyle(ChatFormatting.DARK_BLUE));
+
         builder.accept(Component.translatable("tooltip.delivery_questing.sealed_parcel.open")
                 .withStyle(ChatFormatting.GRAY));
+
         builder.accept(Component.translatable("tooltip.delivery_questing.item_count", parcel.itemCount())
                 .withStyle(ChatFormatting.GRAY));
     }

@@ -9,7 +9,10 @@ import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;
 
 public record SubmitDroneDeliveryPayload(BlockPos pos) implements CustomPacketPayload {
-    public static final Type<SubmitDroneDeliveryPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "submit_drone_delivery"));
+
+    public static final Type<SubmitDroneDeliveryPayload> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "submit_drone_delivery"));
+
     public static final StreamCodec<ByteBuf, SubmitDroneDeliveryPayload> CODEC =
             BlockPos.STREAM_CODEC.map(SubmitDroneDeliveryPayload::new, SubmitDroneDeliveryPayload::pos);
 

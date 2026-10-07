@@ -8,6 +8,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import org.jspecify.annotations.NonNull;
 
 public final class UpgradeItem extends Item {
+
     private final UpgradeTier tier;
 
     public UpgradeItem(UpgradeTier tier, Properties properties) {
@@ -32,6 +33,7 @@ public final class UpgradeItem extends Item {
         if (!pad.installUpgrade(context.getItemInHand(), context.getPlayer())) {
             return InteractionResult.PASS;
         }
+
         return InteractionResult.SUCCESS_SERVER;
     }
 }
