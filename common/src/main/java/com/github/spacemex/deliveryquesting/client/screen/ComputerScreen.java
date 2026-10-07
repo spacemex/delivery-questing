@@ -1,6 +1,7 @@
 package com.github.spacemex.deliveryquesting.client.screen;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.client.ContractorSkinManager;
 import com.github.spacemex.deliveryquesting.menu.ComputerMenu;
 import com.github.spacemex.deliveryquesting.menu.entry.ComputerInboxEntry;
 import com.github.spacemex.deliveryquesting.menu.entry.ComputerJobMailEntry;
@@ -18,6 +19,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Inventory;
 import org.jspecify.annotations.NonNull;
 
@@ -25,7 +27,8 @@ import java.util.*;
 
 public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> {
 
-    private static final int MAILS_PER_PAGE = 4;
+    private static final int MAILS_PER_PAGE = 5;
+    private int mailOffset;
 
     private View view = View.DESKTOP;
 
@@ -38,12 +41,12 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
 
     private UUID selectedMailId;
 
-    private static final Identifier COMPUTER_TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID,
-            "textures/gui/container/computer.png");
-    private static final Identifier DESKTOP_TEXTURE = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID,
-            "textures/gui/computer/desktop.png");
-    private static final Identifier DESKTOP_ICONS = Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID,
-            "textures/gui/computer/icons.png");
+    private static final Identifier COMPUTER_TEXTURE =
+            Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/container/computer.png");
+    private static final Identifier DESKTOP_TEXTURE =
+            Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/computer/desktop.png");
+    private static final Identifier DESKTOP_ICONS =
+            Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/computer/icons.png");
 
     private static final int ICON_SIZE = 32;
     private static final int MINTERNET_X = 16;
@@ -52,6 +55,20 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
     private static final int MAIL_Y = 16;
     private int desktopMouseX;
     private int desktopMouseY;
+
+    private static final Identifier MAIL_TEXTURE =
+            Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/computer/mail.png");
+    private static final Identifier MINAZON_ICON =
+            Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/computer/minazon_icon.png");
+    private static final Identifier ACCEPTED_TASK =
+            Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/computer/accepted_task.png");
+
+    private static final int MAIL_ROW_X = 3;
+    private static final int MAIL_ROW_Y = 12;
+    private static final int MAIL_ROW_WIDTH = 239;
+    private static final int MAIL_ROW_HEIGHT = 33;
+    private static final int MAIL_CLOSE_X = 244;
+    private static final int MAIL_CLOSE_Y = 3;
 
     private enum View {
         DESKTOP,
@@ -88,51 +105,6 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
     }
 
     private void buildMailList() {
-        List<ComputerInboxEntry> inbox = menu.inbox();
-
-        int start = mailPage * MAILS_PER_PAGE;
-
-        for (int row = 0; row < MAILS_PER_PAGE; row++) {
-            int index = start + row;
-
-            if (index >= inbox.size()) {
-                break;
-            }
-
-            ComputerInboxEntry entry = inbox.get(index);
-
-            String prefix = isRead(entry) ? "" : "* ";
-
-            this.addRenderableWidget(Button.builder(Component.literal(prefix + entry.title()
-                                    + " - " + entry.sender()),
-                            button -> openMail(entry))
-                    .bounds(leftPos + 15, topPos + 35 + row * 27, 226, 22).build());
-        }
-
-        this.addRenderableWidget(Button.builder(Component.literal("Desktop"), button -> {
-                    view = View.DESKTOP;
-
-                    selectedMailId = null;
-
-                    rebuildView();
-                }).bounds(leftPos + 15, topPos + 153, 70, 22).build()
-        );
-
-        Button previous = this.addRenderableWidget(Button.builder(Component.literal("Previous"), button -> {
-            mailPage--;
-
-            rebuildView();
-        }).bounds(leftPos + 93, topPos + 153, 70, 22).build());
-
-        previous.active = mailPage > 0;
-
-        Button next = this.addRenderableWidget(Button.builder(Component.literal("Next"), button -> {
-            mailPage++;
-
-            rebuildView();
-        }).bounds(leftPos + 171, topPos + 153, 70, 22).build());
-
-        next.active = mailPage < getMailPageCount() - 1;
     }
 
     private void buildMailDetail() {
@@ -285,6 +257,12 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             return;
         }
 
+        if (view == View.MAIL_LIST) {
+            drawMailBackground(graphics, mouseX - leftPos, mouseY - topPos);
+
+            return;
+        }
+
         graphics.fill(leftPos + 3, topPos + 3, leftPos + 253, topPos + 191, 0xFF263238);
     }
 
@@ -305,35 +283,87 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (view == View.DESKTOP && event.button() == 0) {
+        if (event.button() == 0) {
             double mouseX = event.x() - leftPos;
-
             double mouseY = event.y() - topPos;
 
-            if (isInside(mouseX, mouseY, MINTERNET_X, MINTERNET_Y, ICON_SIZE, ICON_SIZE)) {
-                view = View.MINAZON;
+            if (view == View.DESKTOP) {
+                if (isInside(mouseX, mouseY, MINTERNET_X, MINTERNET_Y, ICON_SIZE, ICON_SIZE)) {
+                    view = View.MINAZON;
 
-                minazonPage = 0;
+                    minazonPage = 0;
 
-                rebuildView();
+                    rebuildView();
 
-                return true;
+                    return true;
+                }
+
+                if (isInside(mouseX, mouseY, MAIL_X, MAIL_Y, ICON_SIZE, ICON_SIZE)) {
+                    view = View.MAIL_LIST;
+
+                    mailOffset = 0;
+
+                    selectedMailId = null;
+
+                    rebuildView();
+
+                    return true;
+                }
             }
 
-            if (isInside(mouseX, mouseY, MAIL_X, MAIL_Y, ICON_SIZE, ICON_SIZE)) {
-                view = View.MAIL_LIST;
+            if (view == View.MAIL_LIST) {
+                if (isInside(mouseX, mouseY, MAIL_CLOSE_X, MAIL_CLOSE_Y, 9, 9)) {
+                    view = View.DESKTOP;
 
-                mailPage = 0;
+                    selectedMailId = null;
 
-                selectedMailId = null;
+                    rebuildView();
 
-                rebuildView();
+                    return true;
+                }
+
+                List<ComputerInboxEntry> inbox = menu.inbox();
+
+                for (int row = 0; row < MAILS_PER_PAGE; row++) {
+                    int index = mailOffset + row;
+
+                    if (index >= inbox.size()) {
+                        break;
+                    }
+
+                    int rowY = MAIL_ROW_Y + row * MAIL_ROW_HEIGHT;
+
+                    if (!isInside(mouseX, mouseY, MAIL_ROW_X, rowY, MAIL_ROW_WIDTH, MAIL_ROW_HEIGHT)) {
+                        continue;
+                    }
+
+                    openMail(inbox.get(index));
+
+                    return true;
+                }
+            }
+        }
+
+        return super.mouseClicked(event, doubleClick);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (view == View.MAIL_LIST) {
+            int maxOffset = Math.max(0, menu.inbox().size() - MAILS_PER_PAGE);
+
+            if (maxOffset > 0) {
+                if (scrollY < 0D) {
+                    mailOffset = Math.min(mailOffset + 1, maxOffset);
+                } else if (scrollY > 0D) {
+                    mailOffset = Math.max(mailOffset - 1, 0);
+                }
 
                 return true;
             }
         }
 
-        return super.mouseClicked(event, doubleClick);
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     private static boolean isInside(double mouseX, double mouseY, int x, int y, int width, int height) {
@@ -407,13 +437,34 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
     }
 
     private void extractMailListLabels(GuiGraphicsExtractor graphics) {
-        graphics.text(font, Component.literal("Mail"), 14, 12, 0xFFFFFFFF, false);
+        graphics.text(font, Component.literal("E-Mail"), 5, 4, 0xFFFFFFFF, false);
 
-        graphics.text(font, Component.literal("Inbox - " + getUnreadMailCount() + " unread"), 14, 23,
-                0xFF80CBC4, false);
+        List<ComputerInboxEntry> inbox = menu.inbox();
 
-        if (menu.inbox().isEmpty()) {
-            graphics.centeredText(font, Component.literal("No mail."), imageWidth / 2, 85, 0xFF9EA7AA);
+        for (int row = 0; row < MAILS_PER_PAGE; row++) {
+            int index = mailOffset + row;
+
+            if (index >= inbox.size()) {
+                break;
+            }
+
+            ComputerInboxEntry entry = inbox.get(index);
+
+            int rowY = MAIL_ROW_Y + row * MAIL_ROW_HEIGHT;
+
+            drawMailIcon(graphics, entry, 11, rowY + 8);
+
+            graphics.text(font, Component.literal(entry.title()), 35, rowY + 2,
+                    0xFFFFFFFF, false);
+
+            Component preview = getMailPreview(entry);
+
+            List<FormattedCharSequence> lines = font.split(preview, MAIL_ROW_WIDTH - 32);
+
+            for (int line = 0; line < Math.min(2, lines.size()); line++) {
+                graphics.text(font, lines.get(line), 35, rowY + 12 + line * 10,
+                        0xFF000000, false);
+            }
         }
     }
 
@@ -591,5 +642,119 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         }).bounds(leftPos + 131, topPos + 153, 110, 22).build());
 
         accept.active = entry.canAccept();
+    }
+
+    private void drawMailBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        graphics.blit(RenderPipelines.GUI_TEXTURED, MAIL_TEXTURE, leftPos + 3,
+                topPos + 3, 0, 0, 250, 188, 512, 512);
+
+        List<ComputerInboxEntry> inbox = menu.inbox();
+
+        for (int row = 0; row < MAILS_PER_PAGE; row++) {
+            int index = mailOffset + row;
+
+            if (index >= inbox.size()) {
+                break;
+            }
+
+            ComputerInboxEntry entry = inbox.get(index);
+
+            int rowY = MAIL_ROW_Y + row * MAIL_ROW_HEIGHT;
+
+            boolean hovered = isInside(mouseX, mouseY, MAIL_ROW_X, rowY, MAIL_ROW_WIDTH, MAIL_ROW_HEIGHT);
+            boolean read = isRead(entry);
+
+            int textureY;
+
+            if (read) {
+                textureY = hovered ? 287 : 254;
+            } else {
+                textureY = hovered ? 221 : 188;
+            }
+
+            graphics.blit(RenderPipelines.GUI_TEXTURED, MAIL_TEXTURE, leftPos + MAIL_ROW_X,
+                    topPos + rowY, 0, textureY, MAIL_ROW_WIDTH, MAIL_ROW_HEIGHT, 512, 512);
+        }
+
+        drawMailScrollbar(graphics);
+
+        if (isInside(mouseX, mouseY, MAIL_CLOSE_X, MAIL_CLOSE_Y, 9, 9)) {
+            graphics.blit(RenderPipelines.GUI_TEXTURED, MAIL_TEXTURE, leftPos + MAIL_CLOSE_X,
+                    topPos + MAIL_CLOSE_Y, 0, 320, 9, 9, 512, 512);
+        }
+    }
+
+    private void drawMailScrollbar(GuiGraphicsExtractor graphics) {
+        int emailCount = menu.inbox().size();
+        int scrollbarX = imageWidth - 13;
+
+        if (emailCount > MAILS_PER_PAGE) {
+            float travel = 165F - 27F;
+            float percent = mailOffset / (float) (emailCount - MAILS_PER_PAGE);
+
+            int scrollbarY = MAIL_ROW_Y + Math.round(travel * percent);
+
+            graphics.blit(RenderPipelines.GUI_TEXTURED, MAIL_TEXTURE, leftPos + scrollbarX,
+                    topPos + scrollbarY, 239, 188, 10, 27, 512, 512);
+        } else {
+            graphics.blit(RenderPipelines.GUI_TEXTURED, MAIL_TEXTURE, leftPos + scrollbarX,
+                    topPos + MAIL_ROW_Y, 239, 215, 10, 27, 512, 512);
+        }
+    }
+
+    private Component getMailPreview(ComputerInboxEntry entry) {
+        return switch (entry.type()) {
+            case CONTRACT -> menu.mail().stream().filter(mail -> mail.emailId()
+                    .equals(entry.emailId())).findFirst().map(mail ->
+                    Component.literal(mail.task().description())).orElseGet(Component::empty);
+            case JOB -> menu.jobMail().stream().filter(mail -> mail.emailId()
+                    .equals(entry.emailId())).findFirst().map(mail ->
+                    Component.literal(mail.job().description())).orElseGet(Component::empty);
+            case OFFER -> {
+                String item = menu.offers().stream().filter(offer -> offer.id()
+                        .equals(entry.referenceId())).map(offer ->
+                        offer.item().toString()).findFirst().orElse(entry.title());
+
+                yield Component.literal(item + " is now available for you to buy on Minazon");
+            }
+        };
+    }
+
+    private void drawMailIcon(GuiGraphicsExtractor graphics, ComputerInboxEntry entry, int x, int y) {
+        switch (entry.type()) {
+            case OFFER -> graphics.blit(RenderPipelines.GUI_TEXTURED, MINAZON_ICON, x, y, 0, 0,
+                    16, 16, 16, 16);
+            case CONTRACT -> menu.mail().stream().filter(mail -> mail.emailId()
+                    .equals(entry.emailId())).findFirst().ifPresent(mail ->
+                    drawContractorHead(graphics, mail.task().skin(), x, y, !mail.canAccept()));
+            case JOB -> menu.jobMail().stream().filter(mail -> mail.emailId()
+                    .equals(entry.emailId())).findFirst().ifPresent(mail ->
+                    drawContractorHead(graphics, mail.job().skin(), x, y, false));
+        }
+    }
+
+    private void drawContractorHead(GuiGraphicsExtractor graphics, String skinName, int x, int y, boolean accepted) {
+        Identifier skin = ContractorSkinManager.getTexture(skinName);
+
+        if (skin != null) {
+            graphics.pose().pushMatrix();
+
+            graphics.pose().translate(x, y);
+
+            graphics.pose().scale(2F, 2F);
+
+            graphics.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 8, 8, 8,
+                    8, 64, 64);
+
+            graphics.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 40, 8, 8,
+                    8, 64, 64);
+
+            graphics.pose().popMatrix();
+        }
+
+        if (accepted) {
+            graphics.blit(RenderPipelines.GUI_TEXTURED, ACCEPTED_TASK, x + 4, y + 4, 0, 0,
+                    16, 16, 16, 16);
+        }
     }
 }
