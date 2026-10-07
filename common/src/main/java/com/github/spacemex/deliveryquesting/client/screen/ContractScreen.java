@@ -81,7 +81,7 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
 
         drawCentered(graphics, Component.literal(task.name()), 125, 0xFF000000);
         drawDescription(graphics);
-        requirementWidget.extract(graphics, mouseX - leftPos, mouseY - topPos);
+        requirementWidget.extract(graphics, mouseX - leftPos, mouseY - topPos, mouseX, mouseY);
     }
 
     private void drawCentered(GuiGraphicsExtractor graphics, Component text, int y, int color) {
@@ -137,10 +137,17 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
             return;
         }
 
-        int x0 = 160;
-        int y0 = 25;
-        int x1 = 205;
-        int y1 = 129 - 32;
+        int portraitWidth = 45;
+        int portraitHeight = 72;
+
+        int rightPadding = 121;
+        int topPadding = 10;
+
+        int x1 = leftPos + imageWidth - rightPadding;
+        int x0 = x1 - portraitWidth;
+
+        int y0 = topPos + topPadding;
+        int y1 = y0 + portraitHeight;
 
         float scale = 0.90F * (y1 - y0) / 2.125F;
 
@@ -148,9 +155,14 @@ public final class ContractScreen extends AbstractContainerScreen<ContractMenu> 
                 contractorModel,
                 contractorSkin,
                 scale,
-                -5.0F,
-                30.0F,
-                -1.0625F, x0, y0, x1, y1);
+                0.0F,
+                0.0F,
+                -1.0625F,
+                x0,
+                y0,
+                x1,
+                y1
+        );
     }
 
     @Override
