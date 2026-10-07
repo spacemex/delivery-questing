@@ -50,22 +50,16 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
     private static final int MINAZON_ROW_Y = 26;
     private static final int MINAZON_ROW_WIDTH = 239;
     private static final int MINAZON_ROW_HEIGHT = 33;
-
     private static final int MINAZON_CLOSE_X = 244;
     private static final int MINAZON_CLOSE_Y = 3;
-
     private static final int CONFIRM_X = 56;
     private static final int CONFIRM_Y = 132;
-
     private static final int CANCEL_X = 147;
     private static final int CANCEL_Y = 132;
-
     private static final int CONFIRM_BUTTON_WIDTH = 53;
     private static final int CONFIRM_BUTTON_HEIGHT = 18;
-
     private static final int CONFIRM_CLOSE_X = 244;
     private static final int CONFIRM_CLOSE_Y = 3;
-
     private static final int CONFIRM_DIALOG_CLOSE_X = 194;
     private static final int CONFIRM_DIALOG_CLOSE_Y = 64;
 
@@ -116,11 +110,21 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
 
     private Identifier computerContractorSkin;
 
+    private static final Identifier GENERIC_MAIL_TEXTURE =
+            Identifier.fromNamespaceAndPath(DeliveryQuesting.MOD_ID, "textures/gui/computer/generic_mail.png");
+
+    private static final int OFFER_MAIL_CLOSE_X = 244;
+    private static final int OFFER_MAIL_CLOSE_Y = 3;
+    private static final int OFFER_MAIL_ITEM_X = 120;
+    private static final int OFFER_MAIL_ITEM_Y = 128;
+    private View minazonParent = View.DESKTOP;
+
     private enum View {
         DESKTOP,
         MAIL_LIST,
         MAIL_DETAIL,
         JOB_DETAIL,
+        OFFER_DETAIL,
         MINAZON,
         CONFIRM_BUY
     }
@@ -151,6 +155,7 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             case MAIL_LIST -> buildMailList();
             case MAIL_DETAIL -> buildMailDetail();
             case JOB_DETAIL -> buildJobDetail();
+            case OFFER_DETAIL -> buildOfferDetail();
             case MINAZON -> buildMinazon();
             case CONFIRM_BUY -> buildConfirmBuy();
         }
@@ -215,9 +220,9 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             case OFFER -> {
                 selectedMailId = null;
 
-                view = View.MINAZON;
+                selectedOfferId = entry.referenceId();
 
-                minazonOffset = findOfferOffset(entry.referenceId());
+                view = View.OFFER_DETAIL;
             }
             case JOB -> {
                 selectedMailId = entry.emailId();
@@ -272,6 +277,12 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             return;
         }
 
+        if (view == View.OFFER_DETAIL) {
+            drawOfferMailBackground(graphics, mouseX - leftPos, mouseY - topPos);
+
+            return;
+        }
+
         if (view == View.MINAZON) {
             drawMinazonBackground(graphics, mouseX - leftPos, mouseY - topPos);
 
@@ -298,6 +309,7 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
             case MAIL_LIST -> extractMailListLabels(graphics);
             case MAIL_DETAIL -> extractMailDetailLabels(graphics);
             case JOB_DETAIL -> extractJobDetailLabels(graphics);
+            case OFFER_DETAIL -> extractOfferMailLabels(graphics);
             case MINAZON -> extractMinazonLabels(graphics);
             case CONFIRM_BUY -> extractConfirmBuyLabels(graphics);
         }
@@ -311,6 +323,10 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
 
             if (view == View.DESKTOP) {
                 if (isInside(mouseX, mouseY, MINTERNET_X, MINTERNET_Y, ICON_SIZE, ICON_SIZE)) {
+                    minazonParent = View.DESKTOP;
+
+                    selectedOfferId = null;
+
                     view = View.MINAZON;
 
                     minazonOffset = 0;
@@ -383,7 +399,11 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
 
             if (view == View.MINAZON) {
                 if (isInside(mouseX, mouseY, MINAZON_CLOSE_X, MINAZON_CLOSE_Y, 9, 9)) {
-                    view = View.DESKTOP;
+                    view = minazonParent;
+
+                    if (minazonParent == View.DESKTOP) {
+                        selectedOfferId = null;
+                    }
 
                     rebuildView();
 
@@ -451,6 +471,18 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
                     selectedOfferId = null;
 
                     view = View.DESKTOP;
+
+                    rebuildView();
+
+                    return true;
+                }
+            }
+
+            if (view == View.OFFER_DETAIL) {
+                if (isInside(mouseX, mouseY, OFFER_MAIL_CLOSE_X, OFFER_MAIL_CLOSE_Y, 9, 9)) {
+                    selectedOfferId = null;
+
+                    view = View.MAIL_LIST;
 
                     rebuildView();
 
@@ -1126,5 +1158,86 @@ public final class ComputerScreen extends AbstractContainerScreen<ComputerMenu> 
         }
 
         return new ItemStack(item).getHoverName();
+    }
+
+    private void buildOfferDetail() {
+        ComputerOfferEntry offer = getSelectedOffer();
+
+        if (offer == null) {
+            selectedOfferId = null;
+
+            view = View.MAIL_LIST;
+
+            rebuildView();
+
+            return;
+        }
+
+        addRenderableWidget(Button.builder(Component.literal("View"), button -> {
+                    minazonParent = View.OFFER_DETAIL;
+
+                    minazonOffset = findOfferOffset(offer.id());
+
+                    view = View.MINAZON;
+
+                    rebuildView();
+                })
+                .bounds(leftPos + 78, topPos + 160, 100, 20).build());
+    }
+
+    private void drawOfferMailBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        graphics.blit(RenderPipelines.GUI_TEXTURED, GENERIC_MAIL_TEXTURE, leftPos + 3,
+                topPos + 3, 0, 0, 250, 188, 256, 256);
+
+        if (isInside(mouseX, mouseY, OFFER_MAIL_CLOSE_X, OFFER_MAIL_CLOSE_Y, 9, 9)) {
+            graphics.blit(RenderPipelines.GUI_TEXTURED, GENERIC_MAIL_TEXTURE, leftPos + OFFER_MAIL_CLOSE_X,
+                    topPos + OFFER_MAIL_CLOSE_Y, 0, 188, 9, 9, 256, 256);
+        }
+    }
+
+    private void extractOfferMailLabels(GuiGraphicsExtractor graphics) {
+        ComputerOfferEntry offer = getSelectedOffer();
+
+        if (offer == null) {
+            return;
+        }
+
+        ItemStack stack = createOfferStack(offer);
+
+        Component itemName = getItemDisplayName(offer.item());
+
+        Component title = Component.empty().append("Now available: ").append(itemName);
+
+        graphics.text(font, title, 5, 4, 0xFFFFFFFF, false);
+
+        graphics.text(font, title, (imageWidth - font.width(title)) / 2, 15, 0xFF000000, false);
+
+        Component description = Component.empty().append(itemName)
+                .append(Component.literal(" is now available for you to buy on Minazon"));
+
+        List<FormattedCharSequence> lines = font.split(description, imageWidth - 16);
+
+        int y = 30;
+
+        for (FormattedCharSequence line : lines) {
+            graphics.text(font, line, 11, y, 0xFF404040, false);
+
+            y += 10;
+        }
+
+        if (!stack.isEmpty()) {
+            graphics.item(stack, OFFER_MAIL_ITEM_X, OFFER_MAIL_ITEM_Y);
+
+            if (offer.count() > 1) {
+                String count = Integer.toString(offer.count());
+
+                graphics.text(font, Component.literal(count), OFFER_MAIL_ITEM_X + 15 - font.width(count),
+                        OFFER_MAIL_ITEM_Y + 9, 0xFFFFFFFF, true);
+            }
+
+            if (isInside(desktopMouseX, desktopMouseY, OFFER_MAIL_ITEM_X, OFFER_MAIL_ITEM_Y, 16, 16)) {
+                graphics.setTooltipForNextFrame(font, stack, desktopMouseX + leftPos, desktopMouseY + topPos);
+            }
+        }
     }
 }
