@@ -76,7 +76,7 @@ public final class BulletinBoardScreen extends AbstractContainerScreen<BulletinB
         }
 
         if (requirementWidget != null) {
-            requirementWidget.extract(graphics, mouseX - leftPos, mouseY - topPos);
+            requirementWidget.extract(graphics, mouseX - leftPos, mouseY - topPos, mouseX, mouseY);
         }
 
         drawCentered(graphics, Component.literal("Page " + (page + 1) + " of " + tasks.size()), 145, 0xFF404040);

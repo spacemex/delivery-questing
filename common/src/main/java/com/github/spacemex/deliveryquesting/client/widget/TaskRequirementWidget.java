@@ -52,12 +52,12 @@ public final class TaskRequirementWidget {
         this(x, y, requirements, showProgress, null);
     }
 
-    public void extract(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+    public void extract(GuiGraphicsExtractor graphics, int localMouseX, int localMouseY, int screenMouseX, int screenMouseY) {
         graphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, 0, 0, WIDTH, HEIGHT, 256, 256);
         drawTitle(graphics);
-        drawInfoButton(graphics, mouseX, mouseY);
-        drawRequirements(graphics, mouseX, mouseY);
-        drawPageButtons(graphics, mouseX, mouseY);
+        drawInfoButton(graphics, localMouseX, localMouseY);
+        drawRequirements(graphics, localMouseX, localMouseY, screenMouseX, screenMouseY);
+        drawPageButtons(graphics, localMouseX, localMouseY);
     }
 
     private void drawTitle(GuiGraphicsExtractor graphics) {
@@ -66,7 +66,7 @@ public final class TaskRequirementWidget {
         graphics.text(font, title, x + (WIDTH - font.width(title)) / 2, y + 4, 0xFF404040, false);
     }
 
-    private void drawRequirements(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+    private void drawRequirements(GuiGraphicsExtractor graphics, int localMouseX, int localMouseY, int screenMouseX, int screenMouseY) {
         int first = page * PER_PAGE;
         int end = Math.min(first + PER_PAGE, requirements.size());
         int rowY = y + 15;
@@ -83,10 +83,8 @@ public final class TaskRequirementWidget {
 
             graphics.text(font, amount, x + 28, rowY + 5, getAmountColor(requirement), false);
 
-            if (isInside(mouseX, mouseY, x + 8, rowY, 16, 16)) {
-                if (!stack.isEmpty()) {
-                    graphics.setTooltipForNextFrame(font, stack, mouseX - x, mouseY - y);
-                }
+            if (!stack.isEmpty() && isInside(localMouseX, localMouseY, x + 8, rowY, 16, 16)) {
+                graphics.setTooltipForNextFrame(font, stack, screenMouseX, screenMouseY);
             }
             rowY += 18;
         }
