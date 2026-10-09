@@ -1,6 +1,7 @@
 package com.github.spacemex.deliveryquesting.client.render;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.block.DronePadBlock;
 import com.github.spacemex.deliveryquesting.entity.DroneEntity;
 import com.github.spacemex.deliveryquesting.item.CardboardBoxItem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -14,6 +15,7 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.NonNull;
 
 public final class DroneRenderer extends EntityRenderer<DroneEntity, DroneRenderState> {
@@ -61,14 +63,15 @@ public final class DroneRenderer extends EntityRenderer<DroneEntity, DroneRender
             blockModelResolver.update(state.payload, boxItem.getBlock().defaultBlockState(), DISPLAY_CONTEXT);
         }
 
-        float propellerSpeed =
-                switch (entity.getFlightState()) {
-                    case DEPARTING -> 1F;
-                    case RETURNING -> 0.75F;
-                    case IDLE -> 0F;
-                };
+        state.propellerRotation = entity.getPropellerRotation(partialTick);
 
-        state.propellerRotation = (entity.tickCount + partialTick) * 128F * propellerSpeed;
+        BlockState padState = entity.level().getBlockState(entity.getPadPos());
+
+        if (padState.hasProperty(DronePadBlock.FACING)) {
+            state.yaw = padState.getValue(DronePadBlock.FACING).toYRot();
+        } else {
+            state.yaw = 0F;
+        }
     }
 
     @Override
@@ -80,6 +83,10 @@ public final class DroneRenderer extends EntityRenderer<DroneEntity, DroneRender
                 collector,
                 cameraState
         );
+
+        poseStack.pushPose();
+
+        poseStack.mulPose(Axis.YP.rotationDegrees(180F - state.yaw));
 
         poseStack.pushPose();
 
@@ -149,6 +156,8 @@ public final class DroneRenderer extends EntityRenderer<DroneEntity, DroneRender
                     collector
             );
         }
+
+        poseStack.popPose();
     }
 
     private void submitRotor(DroneRenderState state, PoseStack poseStack, SubmitNodeCollector collector,

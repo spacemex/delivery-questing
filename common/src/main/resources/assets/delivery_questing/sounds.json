@@ -1,0 +1,18 @@
+{
+  "drone": {
+    "subtitle": "sound.delivery_questing.drone",
+    "sounds": [
+      {
+        "name": "delivery_questing:drone"
+      }
+    ]
+  },
+  "drone_crash": {
+    "subtitle": "sound.delivery_questing.drone_crash",
+    "sounds": [
+      {
+        "name": "delivery_questing:drone_crash"
+      }
+    ]
+  }
+}

@@ -48,5 +48,7 @@
   "tooltip.delivery_questing.by": "By %s",
   "tooltip.delivery_questing.item_count": "%s item(s)",
   "tooltip.delivery_questing.sealed_parcel.open": "Right click to open",
-  "tooltip.delivery_questing.sealed_envelope.open": "Right click to open"
+  "tooltip.delivery_questing.sealed_envelope.open": "Right click to open",
+  "sound.delivery_questing.drone": "Drone Flying",
+  "sound.delivery_questing.drone_crash": "Drone Crashes"
 }

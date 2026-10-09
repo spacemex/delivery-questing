@@ -10,4 +10,6 @@ public final class DroneRenderState extends EntityRenderState {
     public boolean hasPayload;
 
     public float propellerRotation;
+
+    public float yaw;
 }

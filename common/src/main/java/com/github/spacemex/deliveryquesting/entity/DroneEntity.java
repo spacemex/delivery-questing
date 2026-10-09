@@ -6,6 +6,7 @@ import com.github.spacemex.deliveryquesting.item.CardboardBoxItem;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
 import com.github.spacemex.deliveryquesting.progression.TaskRuntimeManager;
+import com.github.spacemex.deliveryquesting.registry.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -13,6 +14,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -50,6 +52,13 @@ public final class DroneEntity extends Entity {
     public static final int ENERGY_CAPACITY = 16_000;
     private static final int LOADED_ENERGY_PER_TICK = 5;
     private static final int RETURN_ENERGY_PER_TICK = 1;
+
+    private static final float PROPELLER_ROTATION_SPEED = 128F;
+    private static final float PROPELLER_ACCELERATION = 0.01F;
+
+    private float propellerRotation;
+    private float previousPropellerRotation;
+    private float propellerSpeed;
 
     public DroneEntity(EntityType<? extends DroneEntity> type, Level level) {
         super(type, level);
@@ -198,6 +207,8 @@ public final class DroneEntity extends Entity {
     public void tick() {
         super.tick();
 
+        tickPropellers();
+
         noPhysics = true;
 
         setNoGravity(true);
@@ -300,6 +311,9 @@ public final class DroneEntity extends Entity {
 
     private void crash(ServerLevel level) {
         DeliveryQuesting.LOGGER.debug("Drone at {} ran out of energy and crashed", blockPosition());
+
+        level.playSound(null, blockPosition(), ModSounds.DRONE_CRASH.get(), SoundSource.NEUTRAL,
+                1F, 1F);
 
         dropPayload(level);
 
@@ -444,6 +458,42 @@ public final class DroneEntity extends Entity {
     @Override
     public @NonNull PushReaction getPistonPushReaction() {
         return PushReaction.IGNORE;
+    }
+
+    private void tickPropellers() {
+        previousPropellerRotation = propellerRotation;
+
+        float targetSpeed = switch (getFlightState()) {
+            case DEPARTING -> 1F;
+            case RETURNING -> 0.75F;
+            case IDLE -> 0F;
+        };
+
+        if (propellerSpeed < targetSpeed) {
+            propellerSpeed = Math.min(targetSpeed, propellerSpeed + PROPELLER_ACCELERATION);
+        } else if (propellerSpeed > targetSpeed) {
+            propellerSpeed = Math.max(targetSpeed, propellerSpeed - PROPELLER_ACCELERATION);
+        }
+
+        propellerRotation += PROPELLER_ROTATION_SPEED * propellerSpeed;
+    }
+
+    public float getPropellerRotation(float partialTick) {
+        return previousPropellerRotation + (propellerRotation - previousPropellerRotation) * partialTick;
+    }
+
+    public float getPropellerSpeed() {
+        return propellerSpeed;
+    }
+
+    public float getEnginePitch() {
+        float pitch = Math.max(0.75F, propellerSpeed);
+
+        if (!getPayload().isEmpty()) {
+            pitch += 0.25F;
+        }
+
+        return pitch;
     }
 
     public enum FlightState {

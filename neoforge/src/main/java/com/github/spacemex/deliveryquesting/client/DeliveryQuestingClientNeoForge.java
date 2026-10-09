@@ -3,6 +3,7 @@ package com.github.spacemex.deliveryquesting.client;
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.client.render.DroneRenderer;
 import com.github.spacemex.deliveryquesting.client.screen.*;
+import com.github.spacemex.deliveryquesting.client.sound.DroneSoundManager;
 import com.github.spacemex.deliveryquesting.networking.ClientConfigSyncHandler;
 import com.github.spacemex.deliveryquesting.registry.ModEntities;
 import com.github.spacemex.deliveryquesting.registry.ModMenus;
@@ -12,10 +13,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
-@Mod(
-        value = DeliveryQuesting.MOD_ID,
-        dist = Dist.CLIENT
-)
+@Mod(value = DeliveryQuesting.MOD_ID, dist = Dist.CLIENT)
 public final class DeliveryQuestingClientNeoForge {
 
     public DeliveryQuestingClientNeoForge(IEventBus eventBus) {
@@ -23,6 +21,8 @@ public final class DeliveryQuestingClientNeoForge {
         eventBus.addListener(this::registerEntityRenderers);
 
         ClientConfigSyncHandler.initialize();
+
+        DroneSoundManager.initialize();
     }
 
     private void registerScreens(RegisterMenuScreensEvent event) {

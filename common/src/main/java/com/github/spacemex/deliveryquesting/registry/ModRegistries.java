@@ -7,6 +7,8 @@ public final class ModRegistries {
     public static void initialize() {
         ModDataComponents.initialize();
 
+        ModSounds.initialize();
+
         ModBlocks.initialize();
         ModBlockEntities.initialize();
 

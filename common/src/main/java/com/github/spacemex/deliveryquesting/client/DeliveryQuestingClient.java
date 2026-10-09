@@ -2,6 +2,7 @@ package com.github.spacemex.deliveryquesting.client;
 
 import com.github.spacemex.deliveryquesting.client.render.DroneRenderer;
 import com.github.spacemex.deliveryquesting.client.screen.*;
+import com.github.spacemex.deliveryquesting.client.sound.DroneSoundManager;
 import com.github.spacemex.deliveryquesting.registry.ModEntities;
 import com.github.spacemex.deliveryquesting.registry.ModMenus;
 import dev.architectury.registry.client.gui.MenuScreenRegistry;
@@ -29,5 +30,7 @@ public final class DeliveryQuestingClient {
         MenuScreenRegistry.registerScreenFactory(ModMenus.DRONE_PAD.get(), DronePadScreen::new);
 
         EntityRendererRegistry.register(ModEntities.DRONE, DroneRenderer::new);
+
+        DroneSoundManager.initialize();
     }
 }
