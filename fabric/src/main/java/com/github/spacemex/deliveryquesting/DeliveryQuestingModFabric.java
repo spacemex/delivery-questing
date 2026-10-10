@@ -1,6 +1,7 @@
 package com.github.spacemex.deliveryquesting;
 
 import com.github.spacemex.deliveryquesting.compat.energy.fabric.DronePadEnergyCompat;
+import com.github.spacemex.deliveryquesting.compat.energy.fabric.PackagerEnergyCompat;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -12,6 +13,7 @@ public class DeliveryQuestingModFabric implements ModInitializer {
 
         if (FabricLoader.getInstance().isModLoaded("team_reborn_energy")) {
             DronePadEnergyCompat.register();
+            PackagerEnergyCompat.register();
 
             DeliveryQuesting.LOGGER.info("Enabled Team Reborn Energy integration");
         }

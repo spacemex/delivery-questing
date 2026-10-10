@@ -1,10 +1,7 @@
 package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
-import com.github.spacemex.deliveryquesting.block.entity.CardboardBoxBlockEntity;
-import com.github.spacemex.deliveryquesting.block.entity.ComputerBlockEntity;
-import com.github.spacemex.deliveryquesting.block.entity.DronePadBlockEntity;
-import com.github.spacemex.deliveryquesting.block.entity.MailboxBlockEntity;
+import com.github.spacemex.deliveryquesting.block.entity.*;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
@@ -26,6 +23,7 @@ public final class ModBlockEntities {
     public static final RegistrySupplier<BlockEntityType<ComputerBlockEntity>> COMPUTER;
     public static final RegistrySupplier<BlockEntityType<CardboardBoxBlockEntity>> CARDBOARD_BOX;
     public static final RegistrySupplier<BlockEntityType<DronePadBlockEntity>> DRONE_PAD;
+    public static final RegistrySupplier<BlockEntityType<PackagerBlockEntity>> PACKAGER;
 
     public static void initialize() {
         BLOCK_ENTITIES.register();
@@ -53,5 +51,6 @@ public final class ModBlockEntities {
                 ModBlocks.CARDBOARD_BOX_TIER_5,
                 ModBlocks.CARDBOARD_BOX_TIER_6);
         DRONE_PAD = register("drone_pad", DronePadBlockEntity::new, ModBlocks.DRONE_PAD);
+        PACKAGER = register("packager", PackagerBlockEntity::new, ModBlocks.PACKAGER);
     }
 }

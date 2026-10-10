@@ -17,7 +17,8 @@ import java.util.function.UnaryOperator;
 
 public final class ModBlocks {
 
-    private ModBlocks() {}
+    private ModBlocks() {
+    }
 
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.BLOCK);
 
@@ -31,6 +32,7 @@ public final class ModBlocks {
     public static final RegistrySupplier<CardboardBoxBlock> CARDBOARD_BOX_TIER_5;
     public static final RegistrySupplier<CardboardBoxBlock> CARDBOARD_BOX_TIER_6;
     public static final RegistrySupplier<DronePadBlock> DRONE_PAD;
+    public static final RegistrySupplier<PackagerBlock> PACKAGER;
 
     public static void initialize() {
         BLOCKS.register();
@@ -63,5 +65,6 @@ public final class ModBlocks {
         CARDBOARD_BOX_TIER_5 = register(CardboardBoxTier.TIER_5);
         CARDBOARD_BOX_TIER_6 = register(CardboardBoxTier.TIER_6);
         DRONE_PAD = register("drone_pad", BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK), p -> p.strength(1.5f, 6.f).noOcclusion(), DronePadBlock::new);
+        PACKAGER = register("packager", BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK), p -> p.strength(3.f, 6.f).noOcclusion(), PackagerBlock::new);
     }
 }

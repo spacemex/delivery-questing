@@ -33,6 +33,7 @@ public final class DeliveryQuestingClientNeoForge {
         event.register(ModMenus.CONTRACT.get(), ContractScreen::new);
         event.register(ModMenus.CARDBOARD_BOX.get(), CardboardBoxScreen::new);
         event.register(ModMenus.DRONE_PAD.get(), DronePadScreen::new);
+        event.register(ModMenus.PACKAGER.get(), PackagerScreen::new);
     }
 
     private void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {

@@ -28,6 +28,7 @@ public final class DeliveryQuestingClient {
         MenuScreenRegistry.registerScreenFactory(ModMenus.CONTRACT.get(), ContractScreen::new);
         MenuScreenRegistry.registerScreenFactory(ModMenus.CARDBOARD_BOX.get(), CardboardBoxScreen::new);
         MenuScreenRegistry.registerScreenFactory(ModMenus.DRONE_PAD.get(), DronePadScreen::new);
+        MenuScreenRegistry.registerScreenFactory(ModMenus.PACKAGER.get(), PackagerScreen::new);
 
         EntityRendererRegistry.register(ModEntities.DRONE, DroneRenderer::new);
 

@@ -11,7 +11,8 @@ import net.minecraft.world.inventory.MenuType;
 
 public final class ModMenus {
 
-    private ModMenus() {}
+    private ModMenus() {
+    }
 
     private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.MENU);
 
@@ -22,6 +23,7 @@ public final class ModMenus {
     public static final RegistrySupplier<MenuType<ContractMenu>> CONTRACT;
     public static final RegistrySupplier<MenuType<CardboardBoxMenu>> CARDBOARD_BOX;
     public static final RegistrySupplier<MenuType<DronePadMenu>> DRONE_PAD;
+    public static final RegistrySupplier<MenuType<PackagerMenu>> PACKAGER;
 
     public static void initialize() {
         MENUS.register();
@@ -39,5 +41,6 @@ public final class ModMenus {
         CONTRACT = register("contract", ContractMenu::fromNetwork);
         CARDBOARD_BOX = register("cardboard_box", CardboardBoxMenu::fromNetwork);
         DRONE_PAD = register("drone_pad", DronePadMenu::fromNetwork);
+        PACKAGER = register("packager", PackagerMenu::fromNetwork);
     }
 }

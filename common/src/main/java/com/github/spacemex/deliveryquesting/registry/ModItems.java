@@ -20,7 +20,8 @@ import java.util.function.UnaryOperator;
 
 public final class ModItems {
 
-    private ModItems() {}
+    private ModItems() {
+    }
 
     private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.ITEM);
 
@@ -47,6 +48,7 @@ public final class ModItems {
     public static final RegistrySupplier<UpgradeItem> UPGRADE_TIER_4;
     public static final RegistrySupplier<UpgradeItem> UPGRADE_TIER_5;
     public static final RegistrySupplier<UpgradeItem> UPGRADE_TIER_6;
+    public static final RegistrySupplier<BlockItem> PACKAGER;
 
     public static void initialize() {
         ITEMS.register();
@@ -113,5 +115,6 @@ public final class ModItems {
         UPGRADE_TIER_4 = register(UpgradeTier.TIER_4);
         UPGRADE_TIER_5 = register(UpgradeTier.TIER_5);
         UPGRADE_TIER_6 = register(UpgradeTier.TIER_6);
+        PACKAGER = register("packager", ModBlocks.PACKAGER);
     }
 }
