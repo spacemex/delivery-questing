@@ -1,9 +1,11 @@
 package com.github.spacemex.deliveryquesting.progression;
 
+import com.github.spacemex.deliveryquesting.fluid.BarrelContents;
 import com.github.spacemex.deliveryquesting.job.JobDefinition;
 import com.github.spacemex.deliveryquesting.job.JobManager;
 import com.github.spacemex.deliveryquesting.task.TaskRequirement;
 import com.github.spacemex.deliveryquesting.task.definition.TaskDefinition;
+import com.github.spacemex.deliveryquesting.task.entry.FluidRequirement;
 import com.github.spacemex.deliveryquesting.task.entry.ItemRequirement;
 import com.github.spacemex.deliveryquesting.task.manager.TaskManager;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -13,6 +15,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +25,8 @@ import java.util.UUID;
 
 public final class TaskRuntimeManager {
 
-    private TaskRuntimeManager() {}
+    private TaskRuntimeManager() {
+    }
 
     public static Optional<String> getAcceptanceFailure(DeliveryGroup group, TaskDefinition task) {
         if (group.hasCompletedTask(task.id())) {
@@ -315,6 +320,119 @@ public final class TaskRuntimeManager {
         };
     }
 
+    private static boolean matches(BarrelContents contents, FluidRequirement requirement) {
+        if (contents.isEmpty()) {
+            return false;
+        }
+
+        if (requirement.targetType() == FluidRequirement.TargetType.FLUID) {
+            return requirement.target().equals(contents.fluid());
+        }
+
+        Fluid fluid = BuiltInRegistries.FLUID.getValue(contents.fluid());
+
+        if (fluid == null || fluid == Fluids.EMPTY) {
+            return false;
+        }
+
+        TagKey<Fluid> tag = TagKey.create(Registries.FLUID, requirement.target());
+
+        return fluid.builtInRegistryHolder().is(tag);
+    }
+
+    public static FluidSubmissionResult submitDeliveryFluids(DeliveryQuestingSavedData data, DeliveryGroup group, BarrelContents contents) {
+        if (contents.isEmpty()) {
+            return new FluidSubmissionResult(0L, List.of(), List.of());
+        }
+
+        long remaining = contents.amount();
+        long submitted = 0L;
+
+        for (TaskProgress progress : new ArrayList<>(group.activeTasks())) {
+            if (remaining <= 0L) {
+                break;
+            }
+
+            Optional<TaskDefinition> optionalTask = TaskManager.getTask(progress.taskId());
+
+            if (optionalTask.isEmpty()) {
+                continue;
+            }
+
+            TaskDefinition task = optionalTask.get();
+
+            for (TaskRequirement requirement : task.requirements()) {
+                if (remaining <= 0L) {
+                    break;
+                }
+
+                if (!(requirement instanceof FluidRequirement fluidRequirement)) {
+                    continue;
+                }
+
+                if (!matches(contents, fluidRequirement)) {
+                    continue;
+                }
+
+                long needed = progress.getRemaining(requirement);
+                long amount = Math.min(needed, remaining);
+
+                if (amount <= 0L) {
+                    continue;
+                }
+
+                long accepted = data.addTaskProgress(group.id(), task.id(), requirement, amount);
+
+                remaining -= accepted;
+                submitted += accepted;
+            }
+        }
+
+        for (DeliveryJobProgress progress : new ArrayList<>(group.activeJobs())) {
+            if (remaining <= 0L) {
+                break;
+            }
+
+            Optional<JobDefinition> optionalJob = JobManager.getJob(progress.jobId());
+
+            if (optionalJob.isEmpty()) {
+                continue;
+            }
+
+            JobDefinition job = optionalJob.get();
+
+            for (TaskRequirement requirement : job.requirements()) {
+                if (remaining <= 0L) {
+                    break;
+                }
+
+                if (!(requirement instanceof FluidRequirement fluidRequirement)) {
+                    continue;
+                }
+
+                if (!matches(contents, fluidRequirement)) {
+                    continue;
+                }
+
+                long needed = progress.getRemaining(requirement);
+                long amount = Math.min(needed, remaining);
+
+                if (amount <= 0L) {
+                    continue;
+                }
+
+                long accepted = data.addJobProgress(group.id(), progress.instanceId(), requirement, amount);
+
+                remaining -= accepted;
+                submitted += accepted;
+            }
+        }
+
+        MailboxSubmissionResult completed = submitMailboxItems(data, group, List.of());
+
+        return new FluidSubmissionResult(submitted, completed.completedTasks(), completed.completedJobs());
+    }
+
     public record ActionResult(boolean success, String message) {
     }
 
@@ -323,5 +441,8 @@ public final class TaskRuntimeManager {
 
     public record MailboxSubmissionResult(long submitted, long discarded, List<Identifier> completedTasks,
                                           List<UUID> completedJobs) {
+    }
+
+    public record FluidSubmissionResult(long submitted, List<Identifier> completedTasks, List<UUID> completedJobs) {
     }
 }

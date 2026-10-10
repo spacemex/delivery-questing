@@ -2,11 +2,13 @@ package com.github.spacemex.deliveryquesting.entity;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.block.entity.DronePadBlockEntity;
+import com.github.spacemex.deliveryquesting.fluid.BarrelContents;
 import com.github.spacemex.deliveryquesting.item.CardboardBoxItem;
 import com.github.spacemex.deliveryquesting.item.DronePayloads;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
 import com.github.spacemex.deliveryquesting.progression.TaskRuntimeManager;
+import com.github.spacemex.deliveryquesting.registry.ModDataComponents;
 import com.github.spacemex.deliveryquesting.registry.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -332,13 +334,8 @@ public final class DroneEntity extends Entity {
     private void submitPayload(ServerLevel level, DronePadBlockEntity pad) {
         ItemStack payload = getPayload();
 
-        if (DronePayloads.isBarrel(payload)) {
-            return;
-        }
-
-        if (!(payload.getItem() instanceof CardboardBoxItem boxItem)) {
+        if (!DronePayloads.isSupported(payload)) {
             setPayload(ItemStack.EMPTY);
-
             return;
         }
 
@@ -346,7 +343,6 @@ public final class DroneEntity extends Entity {
 
         if (optionalGroupId.isEmpty()) {
             returnPayload(level);
-
             return;
         }
 
@@ -356,7 +352,52 @@ public final class DroneEntity extends Entity {
 
         if (optionalGroup.isEmpty()) {
             returnPayload(level);
+            return;
+        }
 
+        DeliveryGroup group = optionalGroup.get();
+
+        if (DronePayloads.isBarrel(payload)) {
+            BarrelContents contents = payload.getOrDefault(ModDataComponents.BARREL_CONTENTS.get(), BarrelContents.EMPTY);
+
+            if (contents.isEmpty()) {
+                return;
+            }
+
+            TaskRuntimeManager.FluidSubmissionResult result =
+                    TaskRuntimeManager.submitDeliveryFluids(data, group, contents);
+
+            int remaining = (int) Math.max(0L, contents.amount() - result.submitted());
+
+            BarrelContents updated = remaining == 0 ? BarrelContents.EMPTY :
+                    new BarrelContents(contents.fluid(), remaining);
+
+            ItemStack returnedBarrel = payload.copy();
+
+            returnedBarrel.set(ModDataComponents.BARREL_CONTENTS.get(), updated);
+
+            setPayload(returnedBarrel);
+
+            Component message = Component.literal(
+                    "Drone delivered " + result.submitted() + " mB of " + contents.fluid()
+                            + ". Remaining: " + remaining + " mB.");
+
+            for (UUID member : group.members()) {
+                ServerPlayer player = level.getServer().getPlayerList().getPlayer(member);
+
+                if (player != null) {
+                    player.sendSystemMessage(message);
+                }
+            }
+
+            DeliveryQuesting.LOGGER.debug("Drone fluid delivery for group '{}': {} mB submitted, {} mB remaining",
+                    group.name(), result.submitted(), remaining);
+
+            return;
+        }
+
+        if (!(payload.getItem() instanceof CardboardBoxItem boxItem)) {
+            returnPayload(level);
             return;
         }
 
@@ -364,11 +405,8 @@ public final class DroneEntity extends Entity {
 
         if (contents.isEmpty()) {
             returnPayload(level);
-
             return;
         }
-
-        DeliveryGroup group = optionalGroup.get();
 
         TaskRuntimeManager.MailboxSubmissionResult result = TaskRuntimeManager.submitDeliveryItems(data, group, contents);
 
@@ -385,7 +423,8 @@ public final class DroneEntity extends Entity {
             }
         }
 
-        DeliveryQuesting.LOGGER.debug("Drone delivery for group '{}' submitted {} item(s), discarded {}",
+        DeliveryQuesting.LOGGER.debug(
+                "Drone delivery for group '{}' submitted {} item(s), discarded {}",
                 group.name(), result.submitted(), result.discarded());
     }
 

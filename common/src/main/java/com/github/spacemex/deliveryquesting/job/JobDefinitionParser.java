@@ -2,6 +2,7 @@ package com.github.spacemex.deliveryquesting.job;
 
 import com.github.spacemex.deliveryquesting.task.TaskRequirement;
 import com.github.spacemex.deliveryquesting.task.definition.ContractorDefinition;
+import com.github.spacemex.deliveryquesting.task.entry.FluidRequirement;
 import com.github.spacemex.deliveryquesting.task.entry.ItemRequirement;
 import com.github.spacemex.deliveryquesting.task.entry.ItemReward;
 import com.github.spacemex.deliveryquesting.task.entry.TaskRewards;
@@ -95,11 +96,33 @@ public final class JobDefinitionParser {
 
             switch (type) {
                 case "item" -> result.add(parseItemRequirement(source, requirement));
+                case "fluid" -> result.add(parseFluidRequirement(source, requirement));
                 default -> throw error(source, "Unknown requirement type: " + type);
             }
         }
 
         return result;
+    }
+
+    private static FluidRequirement parseFluidRequirement(Path source, JsonObject object) {
+        boolean hasFluid = object.has("fluid");
+        boolean hasTag = object.has("tag");
+
+        if (hasFluid == hasTag) {
+            throw error(source, "Fluid requirement must contain exactly one of 'fluid' or 'tag'");
+        }
+
+        long amount = optionalLong(object, "amount", 1_000L);
+
+        if (hasFluid) {
+            Identifier fluid = parseIdentifier(source, "fluid", requiredString(source, object, "fluid"));
+
+            return FluidRequirement.fluid(fluid, amount);
+        }
+
+        Identifier tag = parseIdentifier(source, "tag", requiredString(source, object, "tag"));
+
+        return FluidRequirement.tag(tag, amount);
     }
 
     private static ItemRequirement parseItemRequirement(Path source, JsonObject object) {

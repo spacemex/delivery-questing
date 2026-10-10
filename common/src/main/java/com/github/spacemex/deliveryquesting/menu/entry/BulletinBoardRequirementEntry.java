@@ -1,6 +1,7 @@
 package com.github.spacemex.deliveryquesting.menu.entry;
 
 import com.github.spacemex.deliveryquesting.task.TaskRequirement;
+import com.github.spacemex.deliveryquesting.task.entry.FluidRequirement;
 import com.github.spacemex.deliveryquesting.task.entry.ItemRequirement;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.Identifier;
@@ -9,13 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public record BulletinBoardRequirementEntry(ItemRequirement.TargetType targetType, Identifier target, long current,
-                                            long required) {
+public record BulletinBoardRequirementEntry(Kind kind, Identifier target, long current, long required) {
 
     private static final int MAX_REQUIREMENTS = 128;
 
     public BulletinBoardRequirementEntry {
-        Objects.requireNonNull(targetType, "targetType");
+        Objects.requireNonNull(kind, "kind");
         Objects.requireNonNull(target, "target");
 
         if (current < 0L) {
@@ -28,23 +28,40 @@ public record BulletinBoardRequirementEntry(ItemRequirement.TargetType targetTyp
     }
 
     public static BulletinBoardRequirementEntry from(TaskRequirement requirement, long current) {
-        if (!(requirement instanceof ItemRequirement itemRequirement)) {
-            throw new IllegalArgumentException("Unsupported requirement type: " + requirement.getClass().getName());
+        if (requirement instanceof ItemRequirement item) {
+            Kind kind = item.isItem() ? Kind.ITEM : Kind.ITEM_TAG;
+
+            return new BulletinBoardRequirementEntry(kind, item.target(), current, item.amount());
         }
 
-        return new BulletinBoardRequirementEntry(itemRequirement.targetType(), itemRequirement.target(), current, itemRequirement.amount());
+        if (requirement instanceof FluidRequirement fluid) {
+            Kind kind = fluid.targetType() == FluidRequirement.TargetType.FLUID ? Kind.FLUID : Kind.FLUID_TAG;
+
+            return new BulletinBoardRequirementEntry(kind, fluid.target(), current, fluid.amount());
+        }
+
+        throw new IllegalArgumentException("Unsupported requirement type: " + requirement.getClass().getName());
     }
 
     public boolean complete() {
         return current >= required;
     }
 
+
     public boolean isItem() {
-        return targetType == ItemRequirement.TargetType.ITEM;
+        return kind == Kind.ITEM;
     }
 
     public boolean isTag() {
-        return targetType == ItemRequirement.TargetType.TAG;
+        return kind == Kind.ITEM_TAG || kind == Kind.FLUID_TAG;
+    }
+
+    public boolean isFluid() {
+        return kind == Kind.FLUID || kind == Kind.FLUID_TAG;
+    }
+
+    public boolean isFluidTag() {
+        return kind == Kind.FLUID_TAG;
     }
 
     public String label() {
@@ -52,24 +69,20 @@ public record BulletinBoardRequirementEntry(ItemRequirement.TargetType targetTyp
     }
 
     public void write(FriendlyByteBuf buffer) {
-        buffer.writeEnum(targetType);
-
+        buffer.writeEnum(kind);
         buffer.writeUtf(target.toString(), 256);
-
         buffer.writeLong(current);
-
         buffer.writeLong(required);
     }
 
     public static BulletinBoardRequirementEntry read(FriendlyByteBuf buffer) {
-        ItemRequirement.TargetType targetType = buffer.readEnum(ItemRequirement.TargetType.class);
-
+        Kind kind = buffer.readEnum(Kind.class);
         Identifier target = Identifier.parse(buffer.readUtf(256));
 
         long current = buffer.readLong();
         long required = buffer.readLong();
 
-        return new BulletinBoardRequirementEntry(targetType, target, current, required);
+        return new BulletinBoardRequirementEntry(kind, target, current, required);
     }
 
     public static void writeList(FriendlyByteBuf buffer, List<BulletinBoardRequirementEntry> requirements) {
@@ -98,5 +111,12 @@ public record BulletinBoardRequirementEntry(ItemRequirement.TargetType targetTyp
         }
 
         return List.copyOf(result);
+    }
+
+    public enum Kind {
+        ITEM,
+        ITEM_TAG,
+        FLUID,
+        FLUID_TAG
     }
 }

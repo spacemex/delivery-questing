@@ -113,8 +113,14 @@ public final class TaskRequirementWidget {
 
             ItemStack stack = getDisplayStack(requirement);
 
-            if (!stack.isEmpty()) {
-                graphics.item(stack, x + 8, rowY);
+            if (!stack.isEmpty() && isInside(localMouseX, localMouseY, x + 8, rowY, 16, 16)) {
+
+                if (requirement.isFluid()) {
+                    graphics.setTooltipForNextFrame(font, Component.literal(requirement.label()),
+                            screenMouseX, screenMouseY);
+                } else {
+                    graphics.setTooltipForNextFrame(font, stack, screenMouseX, screenMouseY);
+                }
             }
 
             Component amount = getAmountText(requirement);
@@ -130,12 +136,19 @@ public final class TaskRequirementWidget {
     }
 
     private Component getAmountText(BulletinBoardRequirementEntry requirement) {
+        if (requirement.isFluid()) {
+            if (!showProgress) {
+                return Component.literal(requirement.required() + " mB");
+            }
+
+            return Component.literal(requirement.current() + " / " + requirement.required() + " mB");
+        }
+
         if (!showProgress) {
             return Component.literal(formatAmount(requirement.required()));
         }
 
-        return Component.literal(formatAmount(requirement.current()) + " / "
-                + formatAmount(requirement.required()));
+        return Component.literal(formatAmount(requirement.current()) + " / " + formatAmount(requirement.required()));
     }
 
     private int getAmountColor(BulletinBoardRequirementEntry requirement) {
@@ -154,7 +167,24 @@ public final class TaskRequirementWidget {
         return 0xFF8B0000;
     }
 
-    private ItemStack getDisplayStack(BulletinBoardRequirementEntry requirement) {
+    private ItemStack getDisplayStack(
+            BulletinBoardRequirementEntry requirement
+    ) {
+        if (requirement.isFluid()) {
+            if (requirement.kind() == BulletinBoardRequirementEntry.Kind.FLUID) {
+                if (requirement.target().equals(
+                        Identifier.withDefaultNamespace("water"))) {
+                    return new ItemStack(Items.WATER_BUCKET);
+                }
+
+                if (requirement.target().equals(Identifier.withDefaultNamespace("lava"))) {
+                    return new ItemStack(Items.LAVA_BUCKET);
+                }
+            }
+
+            return new ItemStack(Items.BUCKET);
+        }
+
         if (requirement.isItem()) {
             Item item = BuiltInRegistries.ITEM.getValue(requirement.target());
 
