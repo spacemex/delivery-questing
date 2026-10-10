@@ -61,5 +61,6 @@
   "block.delivery_questing.barrel_tier_6": "Barrel Tier 6",
   "fluid.delivery_questing.liquid_energy": "Liquid Energy",
   "block.delivery_questing.liquid_energy": "Liquid Energy",
-  "item.delivery_questing.liquid_energy_bucket": "Liquid Energy Bucket"
+  "item.delivery_questing.liquid_energy_bucket": "Liquid Energy Bucket",
+  "block.delivery_questing.energy_liquifier": "Energy Liquifier"
 }

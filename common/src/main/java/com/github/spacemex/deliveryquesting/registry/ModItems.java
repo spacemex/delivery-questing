@@ -60,6 +60,7 @@ public final class ModItems {
     public static final RegistrySupplier<BarrelItem> BARREL_TIER_5;
     public static final RegistrySupplier<BarrelItem> BARREL_TIER_6;
     public static final RegistrySupplier<BucketItem> LIQUID_ENERGY_BUCKET;
+    public static final RegistrySupplier<BlockItem> ENERGY_LIQUIFIER;
 
     public static void initialize() {
         ITEMS.register();
@@ -143,5 +144,6 @@ public final class ModItems {
         BARREL_TIER_5 = register(BarrelTier.TIER_5, ModBlocks.BARREL_BLOCK_TIER_5);
         BARREL_TIER_6 = register(BarrelTier.TIER_6, ModBlocks.BARREL_BLOCK_TIER_6);
         LIQUID_ENERGY_BUCKET = register("liquid_energy_bucket", p -> p.stacksTo(1).craftRemainder(Items.BUCKET), p -> new BucketItem(ModFluids.LIQUID_ENERGY.get(), p));
+        ENERGY_LIQUIFIER = register("energy_liquifier", ModBlocks.ENERGY_LIQUIFIER);
     }
 }

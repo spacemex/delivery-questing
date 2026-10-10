@@ -43,6 +43,7 @@ public final class ModBlocks {
     public static final RegistrySupplier<BarrelBlock> BARREL_BLOCK_TIER_5;
     public static final RegistrySupplier<BarrelBlock> BARREL_BLOCK_TIER_6;
     public static final RegistrySupplier<LiquidBlock> LIQUID_ENERGY;
+    public static final RegistrySupplier<EnergyLiquifierBlock> ENERGY_LIQUIFIER;
 
     public static void initialize() {
         BLOCKS.register();
@@ -91,5 +92,6 @@ public final class ModBlocks {
         BARREL_BLOCK_TIER_5 = register(BarrelTier.TIER_5);
         BARREL_BLOCK_TIER_6 = register(BarrelTier.TIER_6);
         LIQUID_ENERGY = register("liquid_energy", BlockBehaviour.Properties.ofFullCopy(Blocks.WATER), p -> p.noOcclusion().noLootTable(), p -> new LiquidBlock((FlowingFluid) ModFluids.LIQUID_ENERGY.get(), p));
+        ENERGY_LIQUIFIER = register("energy_liquifier", BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK), p -> p.strength(1.5f).noOcclusion(), EnergyLiquifierBlock::new);
     }
 }

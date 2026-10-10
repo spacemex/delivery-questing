@@ -25,6 +25,7 @@ public final class ModBlockEntities {
     public static final RegistrySupplier<BlockEntityType<DronePadBlockEntity>> DRONE_PAD;
     public static final RegistrySupplier<BlockEntityType<PackagerBlockEntity>> PACKAGER;
     public static final RegistrySupplier<BlockEntityType<BarrelBlockEntity>> BARREL;
+    public static final RegistrySupplier<BlockEntityType<EnergyLiquifierBlockEntity>> ENERGY_LIQUIFIER;
 
     public static void initialize() {
         BLOCK_ENTITIES.register();
@@ -60,5 +61,6 @@ public final class ModBlockEntities {
                 ModBlocks.BARREL_BLOCK_TIER_4,
                 ModBlocks.BARREL_BLOCK_TIER_5,
                 ModBlocks.BARREL_BLOCK_TIER_6);
+        ENERGY_LIQUIFIER = register("energy_liquifier", EnergyLiquifierBlockEntity::new, ModBlocks.ENERGY_LIQUIFIER);
     }
 }
