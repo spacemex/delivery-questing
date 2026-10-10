@@ -81,6 +81,10 @@ public final class BarrelBlockEntity extends BlockEntity {
         setChanged();
     }
 
+    public void restoreContents(BarrelContents snapshot) {
+        setContents(snapshot);
+    }
+
     @Override
     protected void saveAdditional(@NonNull ValueOutput output) {
         super.saveAdditional(output);
