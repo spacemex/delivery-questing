@@ -24,6 +24,7 @@ public final class ModBlockEntities {
     public static final RegistrySupplier<BlockEntityType<CardboardBoxBlockEntity>> CARDBOARD_BOX;
     public static final RegistrySupplier<BlockEntityType<DronePadBlockEntity>> DRONE_PAD;
     public static final RegistrySupplier<BlockEntityType<PackagerBlockEntity>> PACKAGER;
+    public static final RegistrySupplier<BlockEntityType<BarrelBlockEntity>> BARREL;
 
     public static void initialize() {
         BLOCK_ENTITIES.register();
@@ -52,5 +53,12 @@ public final class ModBlockEntities {
                 ModBlocks.CARDBOARD_BOX_TIER_6);
         DRONE_PAD = register("drone_pad", DronePadBlockEntity::new, ModBlocks.DRONE_PAD);
         PACKAGER = register("packager", PackagerBlockEntity::new, ModBlocks.PACKAGER);
+        BARREL = register("barrel", BarrelBlockEntity::new,
+                ModBlocks.BARREL_BLOCK_TIER_1,
+                ModBlocks.BARREL_BLOCK_TIER_2,
+                ModBlocks.BARREL_BLOCK_TIER_3,
+                ModBlocks.BARREL_BLOCK_TIER_4,
+                ModBlocks.BARREL_BLOCK_TIER_5,
+                ModBlocks.BARREL_BLOCK_TIER_6);
     }
 }

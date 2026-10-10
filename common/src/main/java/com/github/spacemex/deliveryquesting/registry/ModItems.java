@@ -1,8 +1,10 @@
 package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.block.BarrelBlock;
 import com.github.spacemex.deliveryquesting.block.CardboardBoxBlock;
 import com.github.spacemex.deliveryquesting.item.*;
+import com.github.spacemex.deliveryquesting.item.tier.BarrelTier;
 import com.github.spacemex.deliveryquesting.item.tier.CardboardBoxTier;
 import com.github.spacemex.deliveryquesting.item.tier.UpgradeTier;
 import dev.architectury.registry.registries.DeferredRegister;
@@ -49,6 +51,12 @@ public final class ModItems {
     public static final RegistrySupplier<UpgradeItem> UPGRADE_TIER_5;
     public static final RegistrySupplier<UpgradeItem> UPGRADE_TIER_6;
     public static final RegistrySupplier<BlockItem> PACKAGER;
+    public static final RegistrySupplier<BarrelItem> BARREL_TIER_1;
+    public static final RegistrySupplier<BarrelItem> BARREL_TIER_2;
+    public static final RegistrySupplier<BarrelItem> BARREL_TIER_3;
+    public static final RegistrySupplier<BarrelItem> BARREL_TIER_4;
+    public static final RegistrySupplier<BarrelItem> BARREL_TIER_5;
+    public static final RegistrySupplier<BarrelItem> BARREL_TIER_6;
 
     public static void initialize() {
         ITEMS.register();
@@ -65,6 +73,15 @@ public final class ModItems {
             p.useBlockDescriptionPrefix();
             return p;
         }, p -> new CardboardBoxItem(block.get(), tier, p));
+    }
+
+    private static RegistrySupplier<BarrelItem> register(BarrelTier tier, RegistrySupplier<BarrelBlock> block) {
+        String name = "barrel_tier_" + tier.level();
+        return register(name, p -> {
+            p.stacksTo(1);
+            p.useBlockDescriptionPrefix();
+            return p;
+        }, p -> new BarrelItem(block.get(), tier, p));
     }
 
     private static RegistrySupplier<UpgradeItem> register(UpgradeTier tier) {
@@ -116,5 +133,11 @@ public final class ModItems {
         UPGRADE_TIER_5 = register(UpgradeTier.TIER_5);
         UPGRADE_TIER_6 = register(UpgradeTier.TIER_6);
         PACKAGER = register("packager", ModBlocks.PACKAGER);
+        BARREL_TIER_1 = register(BarrelTier.TIER_1, ModBlocks.BARREL_BLOCK_TIER_1);
+        BARREL_TIER_2 = register(BarrelTier.TIER_2, ModBlocks.BARREL_BLOCK_TIER_2);
+        BARREL_TIER_3 = register(BarrelTier.TIER_3, ModBlocks.BARREL_BLOCK_TIER_3);
+        BARREL_TIER_4 = register(BarrelTier.TIER_4, ModBlocks.BARREL_BLOCK_TIER_4);
+        BARREL_TIER_5 = register(BarrelTier.TIER_5, ModBlocks.BARREL_BLOCK_TIER_5);
+        BARREL_TIER_6 = register(BarrelTier.TIER_6, ModBlocks.BARREL_BLOCK_TIER_6);
     }
 }

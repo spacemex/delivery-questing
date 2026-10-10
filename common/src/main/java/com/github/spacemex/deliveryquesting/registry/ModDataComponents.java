@@ -1,6 +1,7 @@
 package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
+import com.github.spacemex.deliveryquesting.fluid.BarrelContents;
 import com.github.spacemex.deliveryquesting.progression.entry.MailboxParcel;
 import com.mojang.serialization.Codec;
 import dev.architectury.registry.registries.DeferredRegister;
@@ -14,7 +15,8 @@ import java.util.function.UnaryOperator;
 
 public final class ModDataComponents {
 
-    private ModDataComponents() {}
+    private ModDataComponents() {
+    }
 
     private static final DeferredRegister<DataComponentType<?>> DATA_COMPONENTS = DeferredRegister.create(DeliveryQuesting.MOD_ID, Registries.DATA_COMPONENT_TYPE);
 
@@ -22,6 +24,7 @@ public final class ModDataComponents {
     public static final RegistrySupplier<DataComponentType<Identifier>> CONTRACT_TASK_ID;
     public static final RegistrySupplier<DataComponentType<Boolean>> MAILBOX_NEW_MAIL;
     public static final RegistrySupplier<DataComponentType<Boolean>> COMPUTER_ON;
+    public static final RegistrySupplier<DataComponentType<BarrelContents>> BARREL_CONTENTS;
 
     public static void initialize() {
         DATA_COMPONENTS.register();
@@ -36,5 +39,6 @@ public final class ModDataComponents {
         CONTRACT_TASK_ID = register("contract_task_id", b -> b.persistent(Identifier.CODEC).networkSynchronized(Identifier.STREAM_CODEC));
         MAILBOX_NEW_MAIL = register("mailbox_new_mail", b -> b.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
         COMPUTER_ON = register("computer_on", b -> b.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
+        BARREL_CONTENTS = register("barrel_contents", b -> b.persistent(BarrelContents.CODEC).networkSynchronized(BarrelContents.STREAM_CODEC));
     }
 }

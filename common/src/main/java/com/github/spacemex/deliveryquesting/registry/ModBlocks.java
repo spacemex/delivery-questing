@@ -2,6 +2,7 @@ package com.github.spacemex.deliveryquesting.registry;
 
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.block.*;
+import com.github.spacemex.deliveryquesting.item.tier.BarrelTier;
 import com.github.spacemex.deliveryquesting.item.tier.CardboardBoxTier;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -33,6 +34,12 @@ public final class ModBlocks {
     public static final RegistrySupplier<CardboardBoxBlock> CARDBOARD_BOX_TIER_6;
     public static final RegistrySupplier<DronePadBlock> DRONE_PAD;
     public static final RegistrySupplier<PackagerBlock> PACKAGER;
+    public static final RegistrySupplier<BarrelBlock> BARREL_BLOCK_TIER_1;
+    public static final RegistrySupplier<BarrelBlock> BARREL_BLOCK_TIER_2;
+    public static final RegistrySupplier<BarrelBlock> BARREL_BLOCK_TIER_3;
+    public static final RegistrySupplier<BarrelBlock> BARREL_BLOCK_TIER_4;
+    public static final RegistrySupplier<BarrelBlock> BARREL_BLOCK_TIER_5;
+    public static final RegistrySupplier<BarrelBlock> BARREL_BLOCK_TIER_6;
 
     public static void initialize() {
         BLOCKS.register();
@@ -48,6 +55,14 @@ public final class ModBlocks {
             p.strength(0.5f);
             return p;
         }, p -> new CardboardBoxBlock(tier, p));
+    }
+
+    private static RegistrySupplier<BarrelBlock> register(BarrelTier tier) {
+        String name = "barrel_tier_" + tier.level();
+        return register(name, BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK), p -> {
+            p.strength(1.5f).noOcclusion();
+            return p;
+        }, p -> new BarrelBlock(tier, p));
     }
 
     private static <T extends Block> RegistrySupplier<T> register(String name, BlockBehaviour.Properties properties, UnaryOperator<BlockBehaviour.Properties> propertiesModifier, Function<BlockBehaviour.Properties, T> factory) {
@@ -66,5 +81,11 @@ public final class ModBlocks {
         CARDBOARD_BOX_TIER_6 = register(CardboardBoxTier.TIER_6);
         DRONE_PAD = register("drone_pad", BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK), p -> p.strength(1.5f, 6.f).noOcclusion(), DronePadBlock::new);
         PACKAGER = register("packager", BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK), p -> p.strength(3.f, 6.f).noOcclusion(), PackagerBlock::new);
+        BARREL_BLOCK_TIER_1 = register(BarrelTier.TIER_1);
+        BARREL_BLOCK_TIER_2 = register(BarrelTier.TIER_2);
+        BARREL_BLOCK_TIER_3 = register(BarrelTier.TIER_3);
+        BARREL_BLOCK_TIER_4 = register(BarrelTier.TIER_4);
+        BARREL_BLOCK_TIER_5 = register(BarrelTier.TIER_5);
+        BARREL_BLOCK_TIER_6 = register(BarrelTier.TIER_6);
     }
 }

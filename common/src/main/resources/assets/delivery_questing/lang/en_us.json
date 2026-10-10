@@ -52,5 +52,11 @@
   "sound.delivery_questing.drone": "Drone Flying",
   "sound.delivery_questing.drone_crash": "Drone Crashes",
   "block.delivery_questing.packager": "Packager",
-  "screen.delivery_questing.packager": "Packager"
+  "screen.delivery_questing.packager": "Packager",
+  "block.delivery_questing.barrel_tier_1": "Barrel Tier 1",
+  "block.delivery_questing.barrel_tier_2": "Barrel Tier 2",
+  "block.delivery_questing.barrel_tier_3": "Barrel Tier 3",
+  "block.delivery_questing.barrel_tier_4": "Barrel Tier 4",
+  "block.delivery_questing.barrel_tier_5": "Barrel Tier 5",
+  "block.delivery_questing.barrel_tier_6": "Barrel Tier 6"
 }
