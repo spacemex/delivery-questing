@@ -2,11 +2,12 @@
 package com.github.spacemex.deliveryquesting.block;
 
 import com.github.spacemex.deliveryquesting.block.entity.EnergyLiquifierBlockEntity;
+import com.github.spacemex.deliveryquesting.menu.EnergyLiquifierMenu;
 import com.github.spacemex.deliveryquesting.registry.ModBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -61,25 +62,12 @@ public final class EnergyLiquifierBlock extends BaseEntityBlock {
             return InteractionResult.SUCCESS;
         }
 
-        if (!(level.getBlockEntity(pos)
-                instanceof EnergyLiquifierBlockEntity machine)) {
-            return InteractionResult.PASS;
+        if (player instanceof ServerPlayer serverPlayer
+                && level.getBlockEntity(pos)
+                instanceof EnergyLiquifierBlockEntity machine) {
+
+            EnergyLiquifierMenu.open(serverPlayer, pos, machine);
         }
-
-        if (player.isShiftKeyDown()) {
-            machine.toggleReversed();
-        }
-
-        String mode = machine.isReversed()
-                ? "Liquid Energy -> FE"
-                : "FE -> Liquid Energy";
-
-        player.sendSystemMessage(Component.literal(
-                "Energy Liquifier [" + mode + "] "
-                        + machine.getEnergy() + "/" + machine.getMaxEnergy()
-                        + " FE | "
-                        + machine.getFluidAmount() + "/"
-                        + machine.getFluidCapacity() + " mB"));
 
         return InteractionResult.SUCCESS_SERVER;
     }

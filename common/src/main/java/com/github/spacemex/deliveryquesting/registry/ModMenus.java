@@ -24,6 +24,7 @@ public final class ModMenus {
     public static final RegistrySupplier<MenuType<CardboardBoxMenu>> CARDBOARD_BOX;
     public static final RegistrySupplier<MenuType<DronePadMenu>> DRONE_PAD;
     public static final RegistrySupplier<MenuType<PackagerMenu>> PACKAGER;
+    public static final RegistrySupplier<MenuType<EnergyLiquifierMenu>> ENERGY_LIQUIFIER;
 
     public static void initialize() {
         MENUS.register();
@@ -42,5 +43,6 @@ public final class ModMenus {
         CARDBOARD_BOX = register("cardboard_box", CardboardBoxMenu::fromNetwork);
         DRONE_PAD = register("drone_pad", DronePadMenu::fromNetwork);
         PACKAGER = register("packager", PackagerMenu::fromNetwork);
+        ENERGY_LIQUIFIER = register("energy_liquifier", EnergyLiquifierMenu::fromNetwork);
     }
 }

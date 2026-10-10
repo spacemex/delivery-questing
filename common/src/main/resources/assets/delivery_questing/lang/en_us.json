@@ -62,5 +62,9 @@
   "fluid.delivery_questing.liquid_energy": "Liquid Energy",
   "block.delivery_questing.liquid_energy": "Liquid Energy",
   "item.delivery_questing.liquid_energy_bucket": "Liquid Energy Bucket",
-  "block.delivery_questing.energy_liquifier": "Energy Liquifier"
+  "block.delivery_questing.energy_liquifier": "Energy Liquifier",
+  "screen.delivery_questing.energy_liquifier": "Energy Liquifier",
+  "tooltip.delivery_questing.energy_liquifier.energy": "%s / %s FE",
+  "tooltip.delivery_questing.energy_liquifier.fluid": "%s / %s mB",
+  "tooltip.delivery_questing.energy_liquifier.switch": "Switch Conversion Direction"
 }

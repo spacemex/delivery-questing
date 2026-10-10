@@ -10,7 +10,10 @@ import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.Containers;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -23,9 +26,39 @@ public final class EnergyLiquifierBlockEntity extends BlockEntity implements Con
 
     public static final int ENERGY_CAPACITY = 16_000;
     public static final int FLUID_CAPACITY = 16_000;
+    public static final int ENERGY_ITEM_SLOT = 0;
+    public static final int FLUID_ITEM_SLOT = 1;
+    public static final int UPGRADE_SLOT = 2;
+    public static final int SLOT_COUNT = 3;
 
     private final NonNullList<ItemStack> items =
-            NonNullList.withSize(1, ItemStack.EMPTY);
+            NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
+
+    private final ContainerData menuData = new ContainerData() {
+
+        @Override
+        public int get(int index) {
+            return switch (index) {
+                case 0 -> energy;
+                case 1 -> fluidAmount;
+                case 2 -> reversed ? 1 : 0;
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int index, int value) {
+        }
+
+        @Override
+        public int getCount() {
+            return 3;
+        }
+    };
+
+    public ContainerData menuData() {
+        return menuData;
+    }
 
     private int energy;
     private int fluidAmount;
@@ -83,7 +116,7 @@ public final class EnergyLiquifierBlockEntity extends BlockEntity implements Con
     }
 
     public int getUpgradeLevel() {
-        ItemStack stack = items.get(0);
+        ItemStack stack = items.get(UPGRADE_SLOT);
 
         if (stack.getItem() instanceof UpgradeItem upgrade) {
             return upgrade.tier().level();
@@ -93,12 +126,12 @@ public final class EnergyLiquifierBlockEntity extends BlockEntity implements Con
     }
 
     public boolean installUpgrade(ItemStack source, Player player) {
-        if (!(source.getItem() instanceof UpgradeItem) ||
-                !items.get(0).isEmpty()) {
+        if (!(source.getItem() instanceof UpgradeItem)
+                || !items.get(UPGRADE_SLOT).isEmpty()) {
             return false;
         }
 
-        items.set(0, source.copyWithCount(1));
+        items.set(UPGRADE_SLOT, source.copyWithCount(1));
 
         if (player == null || !player.isCreative()) {
             source.shrink(1);
@@ -218,6 +251,7 @@ public final class EnergyLiquifierBlockEntity extends BlockEntity implements Con
         output.putInt("energy", energy);
         output.putInt("fluid", fluidAmount);
         output.putBoolean("reversed", reversed);
+        output.putInt("inventoryVersion", 2);
     }
 
     @Override
@@ -234,16 +268,24 @@ public final class EnergyLiquifierBlockEntity extends BlockEntity implements Con
                 input.getIntOr("fluid", 0), 0, FLUID_CAPACITY);
 
         reversed = input.getBooleanOr("reversed", false);
+
+        if (input.getIntOr("inventoryVersion", 1) < 2) {
+            ItemStack oldUpgrade = items.get(0);
+
+            if (oldUpgrade.getItem() instanceof UpgradeItem) {
+                items.set(UPGRADE_SLOT, oldUpgrade);
+                items.set(0, ItemStack.EMPTY);
+            }
+        }
     }
 
     @Override
     public int getContainerSize() {
-        return 1;
+        return SLOT_COUNT;
     }
-
     @Override
     public boolean isEmpty() {
-        return items.get(0).isEmpty();
+        return items.stream().allMatch(ItemStack::isEmpty);
     }
 
     @Override
@@ -282,7 +324,18 @@ public final class EnergyLiquifierBlockEntity extends BlockEntity implements Con
 
     @Override
     public boolean canPlaceItem(int slot, @NonNull ItemStack stack) {
-        return slot == 0 && stack.getItem() instanceof UpgradeItem;
+        return switch (slot) {
+            case ENERGY_ITEM_SLOT -> !(stack.getItem() instanceof UpgradeItem)
+                    && !(stack.getItem() instanceof BucketItem)
+                    && !stack.is(Items.BUCKET);
+
+            case FLUID_ITEM_SLOT -> stack.is(Items.BUCKET)
+                    || stack.getItem() instanceof BucketItem;
+
+            case UPGRADE_SLOT -> stack.getItem() instanceof UpgradeItem;
+
+            default -> false;
+        };
     }
 
     @Override
