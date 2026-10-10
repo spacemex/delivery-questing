@@ -113,14 +113,8 @@ public final class TaskRequirementWidget {
 
             ItemStack stack = getDisplayStack(requirement);
 
-            if (!stack.isEmpty() && isInside(localMouseX, localMouseY, x + 8, rowY, 16, 16)) {
-
-                if (requirement.isFluid()) {
-                    graphics.setTooltipForNextFrame(font, Component.literal(requirement.label()),
-                            screenMouseX, screenMouseY);
-                } else {
-                    graphics.setTooltipForNextFrame(font, stack, screenMouseX, screenMouseY);
-                }
+            if (!stack.isEmpty()) {
+                graphics.item(stack, x + 8, rowY);
             }
 
             Component amount = getAmountText(requirement);
@@ -128,7 +122,12 @@ public final class TaskRequirementWidget {
             graphics.text(font, amount, x + 28, rowY + 5, getAmountColor(requirement), false);
 
             if (!stack.isEmpty() && isInside(localMouseX, localMouseY, x + 8, rowY, 16, 16)) {
-                graphics.setTooltipForNextFrame(font, stack, screenMouseX, screenMouseY);
+                if (requirement.isFluid()) {
+                    graphics.setTooltipForNextFrame(font, Component.literal(requirement.label()),
+                            screenMouseX, screenMouseY);
+                } else {
+                    graphics.setTooltipForNextFrame(font, stack, screenMouseX, screenMouseY);
+                }
             }
 
             rowY += 18;

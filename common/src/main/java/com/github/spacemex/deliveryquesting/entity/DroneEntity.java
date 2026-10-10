@@ -286,11 +286,6 @@ public final class DroneEntity extends Entity {
 
         setDeltaMovement(Vec3.ZERO);
 
-
-        if (DronePayloads.isBarrel(getPayload())) {
-            returnPayload(serverLevel);
-        }
-
         setFlightState(FlightState.IDLE);
     }
 
@@ -358,29 +353,16 @@ public final class DroneEntity extends Entity {
         DeliveryGroup group = optionalGroup.get();
 
         if (DronePayloads.isBarrel(payload)) {
-            BarrelContents contents = payload.getOrDefault(ModDataComponents.BARREL_CONTENTS.get(), BarrelContents.EMPTY);
+            BarrelContents contents = payload.getOrDefault(ModDataComponents.BARREL_CONTENTS.get(),
+                    BarrelContents.EMPTY);
 
-            if (contents.isEmpty()) {
-                return;
-            }
+            TaskRuntimeManager.FluidSubmissionResult result = TaskRuntimeManager.
+                            submitDeliveryFluids(data, group, contents);
 
-            TaskRuntimeManager.FluidSubmissionResult result =
-                    TaskRuntimeManager.submitDeliveryFluids(data, group, contents);
+            setPayload(ItemStack.EMPTY);
 
-            int remaining = (int) Math.max(0L, contents.amount() - result.submitted());
-
-            BarrelContents updated = remaining == 0 ? BarrelContents.EMPTY :
-                    new BarrelContents(contents.fluid(), remaining);
-
-            ItemStack returnedBarrel = payload.copy();
-
-            returnedBarrel.set(ModDataComponents.BARREL_CONTENTS.get(), updated);
-
-            setPayload(returnedBarrel);
-
-            Component message = Component.literal(
-                    "Drone delivered " + result.submitted() + " mB of " + contents.fluid()
-                            + ". Remaining: " + remaining + " mB.");
+            Component message = Component.literal("Drone fluid delivery completed: "
+                    + result.submitted() + " mB submitted.");
 
             for (UUID member : group.members()) {
                 ServerPlayer player = level.getServer().getPlayerList().getPlayer(member);
@@ -390,8 +372,8 @@ public final class DroneEntity extends Entity {
                 }
             }
 
-            DeliveryQuesting.LOGGER.debug("Drone fluid delivery for group '{}': {} mB submitted, {} mB remaining",
-                    group.name(), result.submitted(), remaining);
+            DeliveryQuesting.LOGGER.debug("Drone fluid delivery for group '{}' submitted {} mB",
+                    group.name(), result.submitted());
 
             return;
         }
