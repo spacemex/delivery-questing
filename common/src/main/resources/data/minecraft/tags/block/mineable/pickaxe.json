@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "delivery_questing:barrel_tier_1",
+    "delivery_questing:barrel_tier_2",
+    "delivery_questing:barrel_tier_3",
+    "delivery_questing:barrel_tier_4",
+    "delivery_questing:barrel_tier_5",
+    "delivery_questing:barrel_tier_6",
+    "delivery_questing:drone_pad",
+    "delivery_questing:packager",
+    "delivery_questing:computer",
+    "delivery_questing:mailbox"
+  ]
+}

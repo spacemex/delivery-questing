@@ -3,6 +3,7 @@ package com.github.spacemex.deliveryquesting.entity;
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.block.entity.DronePadBlockEntity;
 import com.github.spacemex.deliveryquesting.item.CardboardBoxItem;
+import com.github.spacemex.deliveryquesting.item.DronePayloads;
 import com.github.spacemex.deliveryquesting.progression.DeliveryGroup;
 import com.github.spacemex.deliveryquesting.progression.DeliveryQuestingSavedData;
 import com.github.spacemex.deliveryquesting.progression.TaskRuntimeManager;
@@ -126,13 +127,7 @@ public final class DroneEntity extends Entity {
     }
 
     public int getPayloadTier() {
-        ItemStack payload = getPayload();
-
-        if (payload.getItem() instanceof CardboardBoxItem box) {
-            return box.tier().level();
-        }
-
-        return 1;
+        return DronePayloads.getTier(getPayload());
     }
 
     public double getRiseSpeed() {
@@ -172,7 +167,7 @@ public final class DroneEntity extends Entity {
             return false;
         }
 
-        if (payload.isEmpty() || !(payload.getItem() instanceof CardboardBoxItem)) {
+        if (!DronePayloads.isSupported(payload)) {
             return false;
         }
 
@@ -268,13 +263,16 @@ public final class DroneEntity extends Entity {
     }
 
     private void tickReturning() {
-        if (!(level() instanceof ServerLevel)) {
+        if (!(level() instanceof ServerLevel serverLevel)) {
             return;
         }
 
         if (getEnergy() <= 0) {
-            discard();
-
+            if (!getPayload().isEmpty()) {
+                crash(serverLevel);
+            } else {
+                discard();
+            }
             return;
         }
 
@@ -285,6 +283,11 @@ public final class DroneEntity extends Entity {
         }
 
         setDeltaMovement(Vec3.ZERO);
+
+
+        if (DronePayloads.isBarrel(getPayload())) {
+            returnPayload(serverLevel);
+        }
 
         setFlightState(FlightState.IDLE);
     }
@@ -328,6 +331,10 @@ public final class DroneEntity extends Entity {
 
     private void submitPayload(ServerLevel level, DronePadBlockEntity pad) {
         ItemStack payload = getPayload();
+
+        if (DronePayloads.isBarrel(payload)) {
+            return;
+        }
 
         if (!(payload.getItem() instanceof CardboardBoxItem boxItem)) {
             setPayload(ItemStack.EMPTY);

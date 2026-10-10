@@ -3,7 +3,7 @@ package com.github.spacemex.deliveryquesting.client.render;
 import com.github.spacemex.deliveryquesting.DeliveryQuesting;
 import com.github.spacemex.deliveryquesting.block.DronePadBlock;
 import com.github.spacemex.deliveryquesting.entity.DroneEntity;
-import com.github.spacemex.deliveryquesting.item.CardboardBoxItem;
+import com.github.spacemex.deliveryquesting.item.DronePayloads;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.NonNull;
@@ -54,13 +55,10 @@ public final class DroneRenderer extends EntityRenderer<DroneEntity, DroneRender
 
         ItemStack payload = entity.getPayload();
 
-        state.hasPayload = payload.getItem() instanceof CardboardBoxItem;
+        state.hasPayload = DronePayloads.isSupported(payload);
 
-        if (state.hasPayload
-                && payload.getItem()
-                instanceof CardboardBoxItem boxItem) {
-
-            blockModelResolver.update(state.payload, boxItem.getBlock().defaultBlockState(), DISPLAY_CONTEXT);
+        if (state.hasPayload && payload.getItem() instanceof BlockItem blockItem) {
+            blockModelResolver.update(state.payload, blockItem.getBlock().defaultBlockState(), DISPLAY_CONTEXT);
         }
 
         state.propellerRotation = entity.getPropellerRotation(partialTick);

@@ -2,7 +2,7 @@ package com.github.spacemex.deliveryquesting.menu;
 
 import com.github.spacemex.deliveryquesting.block.entity.DronePadBlockEntity;
 import com.github.spacemex.deliveryquesting.entity.DroneEntity;
-import com.github.spacemex.deliveryquesting.item.CardboardBoxItem;
+import com.github.spacemex.deliveryquesting.item.DronePayloads;
 import com.github.spacemex.deliveryquesting.item.UpgradeItem;
 import com.github.spacemex.deliveryquesting.registry.ModBlocks;
 import com.github.spacemex.deliveryquesting.registry.ModMenus;
@@ -68,7 +68,7 @@ public final class DronePadMenu extends AbstractContainerMenu {
         addSlot(new Slot(container, DronePadBlockEntity.PAYLOAD_SLOT, 53, 36) {
             @Override
             public boolean mayPlace(@NonNull ItemStack stack) {
-                return stack.getItem() instanceof CardboardBoxItem;
+                return DronePayloads.isSupported(stack);
             }
 
             @Override
@@ -166,7 +166,7 @@ public final class DronePadMenu extends AbstractContainerMenu {
             if (!moveItemStackTo(stack, PLAYER_START, PLAYER_END, true)) {
                 return ItemStack.EMPTY;
             }
-        } else if (stack.getItem() instanceof CardboardBoxItem) {
+        } else if (DronePayloads.isSupported(stack)) {
             if (!moveItemStackTo(stack, PAYLOAD_MENU_SLOT, PAYLOAD_MENU_SLOT + 1, false)) {
                 return ItemStack.EMPTY;
             }

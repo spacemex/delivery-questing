@@ -1,7 +1,7 @@
 package com.github.spacemex.deliveryquesting.block.entity;
 
 import com.github.spacemex.deliveryquesting.entity.DroneEntity;
-import com.github.spacemex.deliveryquesting.item.CardboardBoxItem;
+import com.github.spacemex.deliveryquesting.item.DronePayloads;
 import com.github.spacemex.deliveryquesting.item.UpgradeItem;
 import com.github.spacemex.deliveryquesting.registry.ModBlockEntities;
 import com.github.spacemex.deliveryquesting.registry.ModEntities;
@@ -246,7 +246,7 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
         if (drone.getPayload().isEmpty()) {
             ItemStack waitingPayload = pad.getItem(PAYLOAD_SLOT);
 
-            if (!waitingPayload.isEmpty() && waitingPayload.getItem() instanceof CardboardBoxItem) {
+            if (DronePayloads.isSupported(waitingPayload)) {
                 ItemStack payload = pad.removeItemNoUpdate(PAYLOAD_SLOT);
 
                 if (!drone.loadPayload(payload)) {
@@ -344,7 +344,7 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
     @Override
     public void setItem(int slot, ItemStack stack) {
         if (!stack.isEmpty()) {
-            if (slot == PAYLOAD_SLOT && !(stack.getItem() instanceof CardboardBoxItem)) {
+            if (slot == PAYLOAD_SLOT && !DronePayloads.isSupported(stack)) {
                 return;
             }
 
@@ -360,7 +360,7 @@ public final class DronePadBlockEntity extends BlockEntity implements Container 
     @Override
     public boolean canPlaceItem(int slot, @NonNull ItemStack stack) {
         return switch (slot) {
-            case PAYLOAD_SLOT -> stack.getItem() instanceof CardboardBoxItem;
+            case PAYLOAD_SLOT -> DronePayloads.isSupported(stack);
             case UPGRADE_SLOT -> stack.getItem() instanceof UpgradeItem;
             default -> false;
         };
