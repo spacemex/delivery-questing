@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "delivery_questing:liquid_energy",
+    "delivery_questing:liquid_energy_flowing"
+  ]
+}

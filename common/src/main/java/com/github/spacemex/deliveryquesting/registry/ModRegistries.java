@@ -2,12 +2,15 @@ package com.github.spacemex.deliveryquesting.registry;
 
 public final class ModRegistries {
 
-    private ModRegistries() {}
+    private ModRegistries() {
+    }
 
     public static void initialize() {
         ModDataComponents.initialize();
 
         ModSounds.initialize();
+
+        ModFluids.initialize();
 
         ModBlocks.initialize();
         ModBlockEntities.initialize();

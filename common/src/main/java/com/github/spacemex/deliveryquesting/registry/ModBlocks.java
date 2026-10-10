@@ -11,7 +11,9 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.FlowingFluid;
 
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -40,6 +42,7 @@ public final class ModBlocks {
     public static final RegistrySupplier<BarrelBlock> BARREL_BLOCK_TIER_4;
     public static final RegistrySupplier<BarrelBlock> BARREL_BLOCK_TIER_5;
     public static final RegistrySupplier<BarrelBlock> BARREL_BLOCK_TIER_6;
+    public static final RegistrySupplier<LiquidBlock> LIQUID_ENERGY;
 
     public static void initialize() {
         BLOCKS.register();
@@ -87,5 +90,6 @@ public final class ModBlocks {
         BARREL_BLOCK_TIER_4 = register(BarrelTier.TIER_4);
         BARREL_BLOCK_TIER_5 = register(BarrelTier.TIER_5);
         BARREL_BLOCK_TIER_6 = register(BarrelTier.TIER_6);
+        LIQUID_ENERGY = register("liquid_energy", BlockBehaviour.Properties.ofFullCopy(Blocks.WATER), p -> p.noOcclusion().noLootTable(), p -> new LiquidBlock((FlowingFluid) ModFluids.LIQUID_ENERGY.get(), p));
     }
 }

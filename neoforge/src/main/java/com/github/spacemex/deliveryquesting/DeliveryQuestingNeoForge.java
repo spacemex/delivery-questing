@@ -3,6 +3,7 @@ package com.github.spacemex.deliveryquesting;
 import com.github.spacemex.deliveryquesting.compat.energy.neoforge.DronePadEnergyCompat;
 import com.github.spacemex.deliveryquesting.compat.energy.neoforge.PackagerEnergyCompat;
 import com.github.spacemex.deliveryquesting.compat.fluid.neoforge.BarrelFluidCompat;
+import com.github.spacemex.deliveryquesting.fluid.neoforge.LiquidEnergyFluidFactoryImpl;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 
@@ -10,6 +11,8 @@ import net.neoforged.fml.common.Mod;
 public final class DeliveryQuestingNeoForge {
 
     public DeliveryQuestingNeoForge(IEventBus eventBus) {
+        LiquidEnergyFluidFactoryImpl.register(eventBus);
+
         DronePadEnergyCompat.register(eventBus);
         PackagerEnergyCompat.register(eventBus);
 

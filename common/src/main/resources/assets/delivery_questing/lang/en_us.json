@@ -58,5 +58,8 @@
   "block.delivery_questing.barrel_tier_3": "Barrel Tier 3",
   "block.delivery_questing.barrel_tier_4": "Barrel Tier 4",
   "block.delivery_questing.barrel_tier_5": "Barrel Tier 5",
-  "block.delivery_questing.barrel_tier_6": "Barrel Tier 6"
+  "block.delivery_questing.barrel_tier_6": "Barrel Tier 6",
+  "fluid.delivery_questing.liquid_energy": "Liquid Energy",
+  "block.delivery_questing.liquid_energy": "Liquid Energy",
+  "item.delivery_questing.liquid_energy_bucket": "Liquid Energy Bucket"
 }

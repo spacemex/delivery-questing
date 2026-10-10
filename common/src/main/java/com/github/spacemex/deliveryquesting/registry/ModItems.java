@@ -13,7 +13,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -57,6 +59,7 @@ public final class ModItems {
     public static final RegistrySupplier<BarrelItem> BARREL_TIER_4;
     public static final RegistrySupplier<BarrelItem> BARREL_TIER_5;
     public static final RegistrySupplier<BarrelItem> BARREL_TIER_6;
+    public static final RegistrySupplier<BucketItem> LIQUID_ENERGY_BUCKET;
 
     public static void initialize() {
         ITEMS.register();
@@ -139,5 +142,6 @@ public final class ModItems {
         BARREL_TIER_4 = register(BarrelTier.TIER_4, ModBlocks.BARREL_BLOCK_TIER_4);
         BARREL_TIER_5 = register(BarrelTier.TIER_5, ModBlocks.BARREL_BLOCK_TIER_5);
         BARREL_TIER_6 = register(BarrelTier.TIER_6, ModBlocks.BARREL_BLOCK_TIER_6);
+        LIQUID_ENERGY_BUCKET = register("liquid_energy_bucket", p -> p.stacksTo(1).craftRemainder(Items.BUCKET), p -> new BucketItem(ModFluids.LIQUID_ENERGY.get(), p));
     }
 }
