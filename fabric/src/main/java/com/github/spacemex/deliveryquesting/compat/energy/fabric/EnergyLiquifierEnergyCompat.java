@@ -7,9 +7,12 @@ import com.github.spacemex.deliveryquesting.registry.ModBlockEntities;
 import net.fabricmc.fabric.api.transfer.v1.storage.StoragePreconditions;
 import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 import org.jspecify.annotations.NonNull;
 import team.reborn.energy.api.EnergyStorage;
+import team.reborn.energy.api.EnergyStorageUtil;
 
 import java.lang.ref.WeakReference;
 import java.util.Collections;
@@ -128,5 +131,36 @@ public final class EnergyLiquifierEnergyCompat {
                 machine.setEnergy(snapshot);
             }
         }
+    }
+
+    public static void pushEnergy(Level level, BlockPos pos,
+                                  EnergyLiquifierBlockEntity machine) {
+        if (!machine.isReversed() || machine.getEnergy() <= 0) {
+            return;
+        }
+
+        Direction front = machine.getBlockState()
+                .getValue(EnergyLiquifierBlock.FACING);
+
+        Direction outputSide = front.getOpposite();
+        BlockPos targetPos = pos.relative(outputSide);
+
+        if (!level.hasChunkAt(targetPos)) {
+            return;
+        }
+
+        EnergyStorage source = EnergyStorage.SIDED.find(
+                level, pos, outputSide);
+
+        EnergyStorage target = EnergyStorage.SIDED.find(
+                level, targetPos, front);
+
+        if (source == null || target == null || !target.supportsInsertion()) {
+            return;
+        }
+
+        long maxTransfer = Math.min(1_000L, machine.getEnergy());
+
+        EnergyStorageUtil.move(source, target, maxTransfer, null);
     }
 }

@@ -1,6 +1,7 @@
 
 package com.github.spacemex.deliveryquesting.block.entity;
 
+import com.github.spacemex.deliveryquesting.compat.energy.EnergyLiquifierOutput;
 import com.github.spacemex.deliveryquesting.item.UpgradeItem;
 import com.github.spacemex.deliveryquesting.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -62,6 +63,10 @@ public final class EnergyLiquifierBlockEntity extends BlockEntity implements Con
                 machine.fluidAmount += converted;
                 machine.setChanged();
             }
+        }
+
+        if (machine.isReversed() && machine.getEnergy() > 0) {
+            EnergyLiquifierOutput.push(level, pos, machine);
         }
     }
 

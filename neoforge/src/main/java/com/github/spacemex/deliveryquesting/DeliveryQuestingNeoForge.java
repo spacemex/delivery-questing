@@ -1,7 +1,7 @@
 package com.github.spacemex.deliveryquesting;
 
-import com.github.spacemex.deliveryquesting.compat.EnergyLiquifierCompat;
 import com.github.spacemex.deliveryquesting.compat.energy.neoforge.DronePadEnergyCompat;
+import com.github.spacemex.deliveryquesting.compat.energy.neoforge.EnergyLiquifierCompat;
 import com.github.spacemex.deliveryquesting.compat.energy.neoforge.PackagerEnergyCompat;
 import com.github.spacemex.deliveryquesting.compat.fluid.neoforge.BarrelFluidCompat;
 import com.github.spacemex.deliveryquesting.fluid.neoforge.LiquidEnergyFluidFactoryImpl;

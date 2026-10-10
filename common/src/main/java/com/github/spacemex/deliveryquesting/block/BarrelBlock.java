@@ -4,12 +4,15 @@ package com.github.spacemex.deliveryquesting.block;
 import com.github.spacemex.deliveryquesting.block.entity.BarrelBlockEntity;
 import com.github.spacemex.deliveryquesting.fluid.BarrelContents;
 import com.github.spacemex.deliveryquesting.item.tier.BarrelTier;
+import com.github.spacemex.deliveryquesting.util.DisplayHelpers;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -78,6 +81,7 @@ public final class BarrelBlock extends BaseEntityBlock {
                 && !emptyBucket && !(stack.getItem() instanceof MobBucketItem);
 
         if (!emptyBucket && !filledBucket) {
+            sendContents(barrel, player);
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
 
@@ -95,12 +99,14 @@ public final class BarrelBlock extends BaseEntityBlock {
             }
 
             if (fluid == Fluids.EMPTY) {
+                sendContents(barrel, player);
                 return InteractionResult.FAIL;
             }
 
             Identifier fluidId = BuiltInRegistries.FLUID.getKey(fluid);
 
             if (barrel.fill(fluidId, 1_000, true) != 1_000) {
+                sendContents(barrel, player);
                 return InteractionResult.FAIL;
             }
 
@@ -114,12 +120,14 @@ public final class BarrelBlock extends BaseEntityBlock {
         BarrelContents contents = barrel.getContents();
 
         if (contents.amount() < 1_000) {
+            sendContents(barrel, player);
             return InteractionResult.FAIL;
         }
 
         Fluid fluid = BuiltInRegistries.FLUID.getValue(contents.fluid());
 
         if (fluid == null || fluid == Fluids.EMPTY) {
+            sendContents(barrel, player);
             return InteractionResult.FAIL;
         }
 
@@ -130,6 +138,7 @@ public final class BarrelBlock extends BaseEntityBlock {
         Item bucketItem = fluid.getBucket();
 
         if (!(bucketItem instanceof BucketItem) || bucketItem == Items.BUCKET) {
+            sendContents(barrel, player);
             return InteractionResult.FAIL;
         }
 
@@ -146,6 +155,20 @@ public final class BarrelBlock extends BaseEntityBlock {
         return InteractionResult.SUCCESS_SERVER;
     }
 
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return super.useWithoutItem(state, level, pos, player, hitResult);
+        }
+
+        if (!(level.getBlockEntity(pos) instanceof BarrelBlockEntity barrel)) {
+            return super.useWithoutItem(state, level, pos, player, hitResult);
+        }
+
+        sendContents(barrel, serverPlayer);
+        return InteractionResult.SUCCESS_SERVER;
+    }
 
     @Override
     public @NonNull BlockState getStateForPlacement(BlockPlaceContext context) {
@@ -166,5 +189,25 @@ public final class BarrelBlock extends BaseEntityBlock {
     protected void createBlockStateDefinition(StateDefinition.@NonNull Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
         builder.add(FACING);
+    }
+
+    private void sendContents(BarrelBlockEntity barrel, Player player) {
+        BarrelContents contents = barrel.getContents();
+
+        Component message;
+
+        if (contents.isEmpty()) {
+            message = Component.literal("Empty: 0 / " + tier.capacity() + " mB");
+        } else {
+            message = Component.empty()
+                    .append(DisplayHelpers.getFluidDisplayName(contents.fluid()))
+                    .append(Component.literal(": "
+                            + contents.amount()
+                            + " / "
+                            + tier.capacity()
+                            + " mB"));
+        }
+
+        player.sendOverlayMessage(message);
     }
 }

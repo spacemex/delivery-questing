@@ -1,11 +1,12 @@
-
-package com.github.spacemex.deliveryquesting.compat;
+package com.github.spacemex.deliveryquesting.compat.energy.neoforge;
 
 import com.github.spacemex.deliveryquesting.block.EnergyLiquifierBlock;
 import com.github.spacemex.deliveryquesting.block.entity.EnergyLiquifierBlockEntity;
 import com.github.spacemex.deliveryquesting.registry.ModBlockEntities;
 import com.github.spacemex.deliveryquesting.registry.ModFluids;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
@@ -14,6 +15,7 @@ import net.neoforged.neoforge.transfer.TransferPreconditions;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 import org.jspecify.annotations.NonNull;
 
@@ -263,6 +265,54 @@ public final class EnergyLiquifierCompat {
 
             if (machine != null) {
                 machine.setFluidAmount(snapshot);
+            }
+        }
+    }
+
+    public static void pushEnergy(Level level, BlockPos pos, EnergyLiquifierBlockEntity machine) {
+        if (!machine.isReversed() || machine.getEnergy() <= 0) {
+            return;
+        }
+
+        Direction front = machine.getBlockState()
+                .getValue(EnergyLiquifierBlock.FACING);
+
+        Direction outputSide = front.getOpposite();
+        BlockPos targetPos = pos.relative(outputSide);
+
+        if (!level.hasChunkAt(targetPos)) {
+            return;
+        }
+
+        EnergyHandler source = level.getCapability(
+                Capabilities.Energy.BLOCK,
+                pos,
+                outputSide
+        );
+
+        EnergyHandler target = level.getCapability(
+                Capabilities.Energy.BLOCK,
+                targetPos,
+                front
+        );
+
+        if (source == null || target == null || source == target) {
+            return;
+        }
+
+        int maxTransfer = Math.min(1_000, machine.getEnergy());
+
+        try (Transaction transaction = Transaction.openRoot()) {
+            int accepted = target.insert(maxTransfer, transaction);
+
+            if (accepted <= 0) {
+                return;
+            }
+
+            int extracted = source.extract(accepted, transaction);
+
+            if (extracted == accepted) {
+                transaction.commit();
             }
         }
     }
